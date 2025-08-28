@@ -1,0 +1,22 @@
+{
+  "name": "mini-crud",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "build": "rimraf dist/ && tsc --noEmitOnError --pretty  --extendedDiagnostics",
+    "start": "node dist/index.js",
+    "prisma:generate": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "express": "^4.21.2",
+    "rimraf": "^6.0.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "prisma": "^5.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}
