@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/grafana/grafana/main/devenv/tools/provisioning/schemas/datasource.schema.json
+apiVersion: 1
+
+datasources:
+  # --- DataSource Prometheus ---
+  - name: Prometheus
+    type: prometheus          
+    url: http://prometheus:9090
+    access: proxy            
+    isDefault: true          
+    jsonData:                
+      timeInterval: "5s"     
+      httpMethod: "POST"     
+    editable: true           
+
+  # --- DataSource Loki ---
+  - name: Loki
+    type: loki               
+    url: http://loki:3100    
+    access: proxy            
+    jsonData:
+      maxLines: 1000         
+    editable: true           

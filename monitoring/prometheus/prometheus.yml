@@ -1,0 +1,35 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+rule_files:
+  - /etc/prometheus/alerts.rules
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # Scrape Prometheus lui-même
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Scrape Node Exporter (métriques système)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # Scrape ton backend (si tu exposes des métriques)
+  - job_name: 'backend'
+    static_configs:
+      - targets: ['backend:3000']  # Assure-toi que ton backend expose /metrics
+    metrics_path: '/metrics'       # Endpoint standard pour les métriques
+
+  # Scrape MongoDB (si tu actives les métriques)
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: ['mongo:9216']    # Nécessite un exporteur MongoDB (voir plus bas)

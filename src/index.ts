@@ -1,9 +1,12 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
+import metricsRouter from "./services/metrics/metrics";
 
 const prisma = new PrismaClient();
 const app = express();
 app.use(express.json());
+
+app.use(metricsRouter);
 
 const PORT = 3000;
 

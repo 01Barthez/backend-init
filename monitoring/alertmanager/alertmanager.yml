@@ -1,0 +1,17 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+  receiver: 'default-receiver'
+
+receivers:
+- name: 'default-receiver'
+  email_configs:
+  - to: 'ton-email@example.com'
+    from: 'alertmanager@example.com'
+    smarthost: 'mailhog:1025'  # Utilise Mailhog pour les tests
+    require_tls: false

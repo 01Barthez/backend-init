@@ -1,0 +1,20 @@
+groups:
+- name: example
+  rules:
+  - alert: HighMemoryUsage
+    expr: node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes > 0.8 * node_memory_MemTotal_bytes
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High memory usage on {{ $labels.instance }}"
+      description: "Memory usage is {{ $value | humanize }} ({{ $value / 1024 / 1024 / 1024 | printf \"%.2f\" }} GB)"
+
+  - alert: BackendDown
+    expr: up{job="backend"} == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Backend is down"
+      description: "Backend service is not responding"

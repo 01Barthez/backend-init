@@ -18,6 +18,10 @@ services:
       - "3000:3000"
     networks:
       - backend_network
+    labels:
+      - "prometheus.scrape=true"
+      - "prometheus.port=3000"
+      - "prometheus.path=/metrics"
 
   mongo:
     image: mongo:6.0-jammy
@@ -40,6 +44,10 @@ services:
       timeout: 30s
       retries: 5
       start_period: 30s
+    labels:
+      - "prometheus.scrape=true"
+      - "prometheus.port=9216"
+    
   redis:
     image: redis:8-alpine
     container_name: redis
@@ -54,6 +62,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    labels:
+      - "prometheus.scrape=true"
+      - "prometheus.port=9121"
 
   minio:
     image: minio/minio
@@ -75,6 +86,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    labels:
+      - "prometheus.scrape=true"
+      - "prometheus.port=9000"
 
   mailhog:
     image: mailhog/mailhog
@@ -105,3 +119,4 @@ volumes:
 networks:
   backend_network:
     driver: bridge
+    attachable: true
