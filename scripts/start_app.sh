@@ -3,6 +3,8 @@
 
 set -e  # Stop the script in case of error
 
+clear
+
 echo "Starting the main application..."
 
 # Check that Docker is running

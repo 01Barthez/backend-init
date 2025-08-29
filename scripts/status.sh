@@ -1,5 +1,7 @@
 #!/bin/bash
 
+clear
+
 echo "=== Main services status ==="
 docker compose ps
 

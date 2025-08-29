@@ -2,6 +2,8 @@
 
 set -e
 
+clear
+
 echo "Checking that the main application is started..."
 
 # Check that the backend is Up

@@ -32,6 +32,10 @@ ENV NODE_ENV=production
 COPY --from=builder /usr/src/app/.env.example ./
 COPY --from=builder /usr/src/app/.env ./
 
+# Copy and set permissions for MongoDB startup script
+COPY scripts/start-mongo.sh /usr/local/bin/start-mongo.sh
+RUN chmod +x /usr/local/bin/start-mongo.sh
+
 # Install production dependencies only
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
