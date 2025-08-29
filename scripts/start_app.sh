@@ -1,29 +1,29 @@
 #!/bin/bash
-# Démarre uniquement les services principaux (backend, mongo, redis, etc.)
+# Starts only the main services (backend, mongo, redis, etc.)
 
-set -e  # Arrête le script en cas d'erreur
+set -e  # Stop the script in case of error
 
-echo "Démarrage de l'application principale..."
+echo "Starting the main application..."
 
-# Vérifie que Docker est en cours d'exécution
+# Check that Docker is running
 if ! docker info &> /dev/null; then
-  echo "❌Erreur: Docker n'est pas démarré. Lance-le avec 'sudo systemctl start docker'"
+  echo "❌Error: Docker is not running. Start it with 'sudo systemctl start docker'"
   exit 1
 fi
 
-# Démarre les services principaux
-docker compose up -d
+# Start the main services
+docker compose up -d --build
 
-# Vérifie que les services critiques sont bien démarrés
+# Check that the critical services have started correctly
 for service in backend mongo redis minio; do
   if ! docker compose ps | grep -q "$service.*Up"; then
-    echo "❌ Erreur: Le service $service n'a pas démarré correctement"
+    echo "❌ Error: The service $service did not start correctly"
     docker compose logs $service
     exit 1
   fi
 done
 
-echo "Application principale démarrée avec succès"
+echo "Main application started successfully"
 echo "   - Backend:       http://localhost:3000"
 echo "   - MongoDB:       mongodb://localhost:27017"
 echo "   - Redis:         redis://localhost:6379"

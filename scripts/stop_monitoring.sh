@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "🛑 Arrêt des services de monitoring..."
+echo "🛑 Stopping monitoring services..."
 
 docker compose -f docker-compose.monitoring.yml down -v
 
-echo "✅ Services de monitoring arrêtés"
+echo "✅ Monitoring services stopped"

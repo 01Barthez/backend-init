@@ -1,28 +1,28 @@
-# Scripts de Gestion de l'Application
+# Application Management Scripts
 
-Ce dossier contient des scripts pour **démarrer, arrêter et surveiller** ton application et sa stack de monitoring de manière **fiable et ordonnée**.
+This folder contains scripts to **start, stop, and monitor** your application and its monitoring stack in a **reliable and orderly** way.
 
 ---
 
-## Structure des Scripts
+## Script Structure
 
 | Script                                         | Description                                                                                                                        |
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| [`start_app.sh`](./start_app.sh)               | Démarre **uniquement les services principaux** (backend, MongoDB, Redis, etc.).                                                    |
-| [`start_monitoring.sh`](./start_monitoring.sh) | Démarre **uniquement les services de monitoring** (Prometheus, Grafana, Loki). **Nécessite que l'application soit déjà démarrée**. |
-| [`stop_app.sh`](./stop_app.sh)                 | Arrête **proprement les services principaux**.                                                                                     |
-| [`stop_monitoring.sh`](./stop_monitoring.sh)   | Arrête **proprement les services de monitoring**.                                                                                  |
-| [`status.sh`](./status.sh)                     | Affiche l'**état de tous les services** (application + monitoring).                                                                |
-| [`full_start.sh`](./full_start.sh)             | **Script maître** : Démarre tout dans le bon ordre (d'abord l'application, puis le monitoring).                                    |
-| [`full_stop.sh`](./full_stop.sh)               | Arrête **tout proprement** (d'abord le monitoring, puis l'application).                                                            |
+| [`start_app.sh`](./start_app.sh)               | Starts **only the main services** (backend, MongoDB, Redis, etc.).                                                                 |
+| [`start_monitoring.sh`](./start_monitoring.sh) | Starts **only the monitoring services** (Prometheus, Grafana, Loki). **Requires the application to already be running**.           |
+| [`stop_app.sh`](./stop_app.sh)                 | **Cleanly stops the main services**.                                                                                               |
+| [`stop_monitoring.sh`](./stop_monitoring.sh)   | **Cleanly stops the monitoring services**.                                                                                         |
+| [`status.sh`](./status.sh)                     | Shows the **status of all services** (application + monitoring).                                                                   |
+| [`full_start.sh`](./full_start.sh)             | **Master script**: Starts everything in the correct order (first the application, then monitoring).                                |
+| [`full_stop.sh`](./full_stop.sh)               | **Cleanly stops everything** (first monitoring, then the application).                                                             |
 
 ---
 
-## Utilisation
+## Usage
 
-### **1. Démarrer tout (recommandé)**
+### **1. Start everything (recommended)**
 
 ```bash
-chmod +x scripts/*.sh  # Rends les scripts exécutables (une seule fois)
+chmod +x scripts/*.sh  # Make the scripts executable (only once)
 ./full_start.sh
 ```

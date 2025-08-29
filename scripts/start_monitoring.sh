@@ -2,31 +2,31 @@
 
 set -e
 
-echo "Vérification que l'application principale est démarrée..."
+echo "Checking that the main application is started..."
 
-# Vérifie que le backend est Up
+# Check that the backend is Up
 if ! docker compose ps | grep -q "backend.*Up"; then
-  echo "❌ Erreur: L'application principale (backend) n'est pas démarrée"
-  echo "   Lance d'abord: ./scripts/start_app.sh"
+  echo "❌ Error: The main application (backend) is not started"
+  echo "   First run: ./scripts/start_app.sh"
   exit 1
 fi
 
-echo "Démarrage des services de monitoring..."
+echo "Starting monitoring services..."
 
-# Démarre les services de monitoring
+# Start monitoring services
 docker compose -f docker-compose.monitoring.yml up -d
 
-# Vérifie que les services de monitoring sont bien démarrés
+# Check that monitoring services are started
 for service in prometheus grafana loki; do
   if ! docker compose -f docker-compose.monitoring.yml ps | grep -q "$service.*Up"; then
-    echo "❌ Erreur: Le service de monitoring $service n'a pas démarré correctement"
+    echo "❌ Error: The monitoring service $service did not start correctly"
     docker compose -f docker-compose.monitoring.yml logs $service
     exit 1
   fi
 done
 
-echo "Monitoring démarré avec succès"
+echo "Monitoring started successfully"
 echo "   - Prometheus:    http://localhost:9090"
 echo "   - Grafana:       http://localhost:3001 (admin/grafana)"
-echo "   - Loki:          Intégré à Grafana"
+echo "   - Loki:          Integrated with Grafana"
 echo "   - Alertmanager:  http://localhost:9093"

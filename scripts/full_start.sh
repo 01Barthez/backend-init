@@ -1,32 +1,32 @@
 #!/bin/bash
-# Script maître qui lance tout dans le bon ordre:
-# 1. Démarre l'application
-# 2. Vérifie que tout est OK
-# 3. Démarre le monitoring
+# Master script that starts everything in the correct order:
+# 1. Starts the application
+# 2. Checks that everything is OK
+# 3. Starts monitoring
 
-echo "🎯 Démarrage complet de l'application et du monitoring..."
+echo "🎯 Full startup of the application and monitoring..."
 
-# Étape 1: Démarre l'application
+# Step 1: Start the application
 ./scripts/start_app.sh
 if [ $? -ne 0 ]; then
-  echo "❌ Échec du démarrage de l'application"
+  echo "❌ Failed to start the application"
   exit 1
 fi
 
-# Attends 10 secondes pour que tout soit stable
-echo "⏳ Attente de 10 secondes pour stabilisation..."
+# Wait 10 seconds for everything to stabilize
+echo "⏳ Waiting 10 seconds for stabilization..."
 sleep 10
 
-# Étape 2: Démarre le monitoring
+# Step 2: Start monitoring
 ./scripts/start_monitoring.sh
 if [ $? -ne 0 ]; then
-  echo "❌ Échec du démarrage du monitoring"
+  echo "❌ Failed to start monitoring"
   exit 1
 fi
 
-# Étape 3: Affiche l'état final
+# Step 3: Show final status
 ./scripts/status.sh
 
-echo -e "\n🎉 Tout est démarré avec succès !"
+echo -e "\n🎉 Everything started successfully!"
 echo "   - Application: http://localhost:3000"
 echo "   - Monitoring: http://localhost:3001 (Grafana)"

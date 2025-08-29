@@ -1,12 +1,12 @@
 #!/bin/bash
-# Arrête tout proprement (d'abord monitoring, puis application)
+# Stops everything cleanly (first monitoring, then application)
 
-echo "🧹 Nettoyage complet..."
+echo "🧹 Full cleanup..."
 
-# Arrête d'abord le monitoring
+# First stop monitoring
 ./scripts/stop_monitoring.sh
 
-# Puis l'application
+# Then the application
 ./scripts/stop_app.sh
 
-echo "✅ Tout est arrêté et nettoyé"
+echo "✅ Everything is stopped and cleaned up"

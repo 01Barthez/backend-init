@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "🛑 Arrêt des services principaux..."
+echo "🛑 Stopping main services..."
 
 docker compose down -v
 
-echo "✅ Services principaux arrêtés"
+echo "✅ Main services stopped"
