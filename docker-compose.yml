@@ -15,7 +15,7 @@ services:
     environment:
       DATABASE_URL: "mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/${MONGO_DB}?authSource=admin"
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     networks:
       - backend_network
     labels:

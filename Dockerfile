@@ -3,6 +3,9 @@ FROM node:24-bookworm AS builder
 
 WORKDIR /usr/src/app
 
+COPY .env.example ./
+COPY .env ./
+
 # Install dependencies
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -24,6 +27,10 @@ FROM node:24-bookworm AS production
 WORKDIR /usr/src/app
 
 ENV NODE_ENV=production
+
+# Copy environment files
+COPY --from=builder /usr/src/app/.env.example ./
+COPY --from=builder /usr/src/app/.env ./
 
 # Install production dependencies only
 COPY package.json package-lock.json ./

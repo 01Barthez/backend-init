@@ -7,11 +7,12 @@
  *
  */
 
-import winston, { createLogger, format, transports } from 'winston';
+import { createLogger, format, transports } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import { envs } from '../../config/env/env';
 import { ensureDirectoryExists } from '../../utils/fsUtils';
 import path from 'path';
+import LokiTransport from 'winston-loki';
 
 // checking logs directory exists
 const logsDir = path.join(process.cwd(), 'logs');
@@ -34,12 +35,30 @@ const createTransport = (filename: string, level: string, maxFiles: number) => {
     maxSize: '30m',
     maxFiles: `${maxFiles}d`,
     level,
-  });
-  transport.on('error', (err) => {
+  }).on('error', (err) => {
     console.error(`Error in transport ${filename}:`, err);
   });
   return transport;
 };
+
+
+// Transport for Grafana Loki
+const lokiTransport = new LokiTransport({
+  host: 'http://loki:3100',
+  labels: {
+    app: 'backend',
+    env: envs.NODE_ENV,
+    service: 'api',
+    version: '1.0.0'
+  },
+  json: true,
+  replaceTimestamp: true,
+  onConnectionError: (err) => {
+    console.error('Échec de connexion à Loki:', err);
+  },
+}).on('error', (err) => {
+  console.error(`Error in loki transport:`, err);
+});
 
 // File transports
 const transportsList = [
@@ -68,11 +87,18 @@ const log = createLogger({
   ),
   defaultMeta: { service: 'your-service-name' },
   transports: [
+    // Console transport
     new transports.Console({
       level: envs.NODE_ENV === 'production' ? 'info' : 'debug',
     }),
+
+    // Loki transport only in non-development environments
+    ...(envs.NODE_ENV !== 'development' ? [lokiTransport] : []),
+
+    // Other file transports
     ...transportsList,
   ],
+
   // Manage uncaught exceptions and unhandled rejections
   handleExceptions: true,
   handleRejections: true,
