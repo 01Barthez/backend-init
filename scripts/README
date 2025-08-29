@@ -1,0 +1,28 @@
+# Scripts de Gestion de l'Application
+
+Ce dossier contient des scripts pour **démarrer, arrêter et surveiller** ton application et sa stack de monitoring de manière **fiable et ordonnée**.
+
+---
+
+## Structure des Scripts
+
+| Script                                         | Description                                                                                                                        |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| [`start_app.sh`](./start_app.sh)               | Démarre **uniquement les services principaux** (backend, MongoDB, Redis, etc.).                                                    |
+| [`start_monitoring.sh`](./start_monitoring.sh) | Démarre **uniquement les services de monitoring** (Prometheus, Grafana, Loki). **Nécessite que l'application soit déjà démarrée**. |
+| [`stop_app.sh`](./stop_app.sh)                 | Arrête **proprement les services principaux**.                                                                                     |
+| [`stop_monitoring.sh`](./stop_monitoring.sh)   | Arrête **proprement les services de monitoring**.                                                                                  |
+| [`status.sh`](./status.sh)                     | Affiche l'**état de tous les services** (application + monitoring).                                                                |
+| [`full_start.sh`](./full_start.sh)             | **Script maître** : Démarre tout dans le bon ordre (d'abord l'application, puis le monitoring).                                    |
+| [`full_stop.sh`](./full_stop.sh)               | Arrête **tout proprement** (d'abord le monitoring, puis l'application).                                                            |
+
+---
+
+## Utilisation
+
+### **1. Démarrer tout (recommandé)**
+
+```bash
+chmod +x scripts/*.sh  # Rends les scripts exécutables (une seule fois)
+./full_start.sh
+```
