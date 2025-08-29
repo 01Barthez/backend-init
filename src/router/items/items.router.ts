@@ -11,7 +11,7 @@ items.post("/", itemsControllers.createItem);
 items.get("/", itemsControllers.getAllItems);
 
 // Get One item
-items.get("/", itemsControllers.getOneItem);
+items.get("/:id", itemsControllers.getOneItem);
 
 // Update an item
 items.put("/:id", itemsControllers.updateItem);
