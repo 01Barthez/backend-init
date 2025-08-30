@@ -34,22 +34,20 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-securepassword}
       MONGO_INITDB_DATABASE: ${MONGO_DB:-admin}
     volumes:
-      - ./mongo-keyfile:/mongo-keyfile
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ./mongo-keyfile:/mongo-keyfile:ro
       - ./scripts/start-mongo.sh:/scripts/start-mongo.sh:ro
       - mongo_data:/data/db
+      # - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     ports:
       - "27017:27017"
     networks:
       - backend_network
     healthcheck:
       test: ["CMD", "mongosh", "-u", "${MONGO_USER:-admin}", "-p", "${MONGO_PASSWORD:-securepassword}", "--authenticationDatabase", "admin", "--eval", "rs.status().ok || rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo:27017'}]}).ok"]
-      # test: ["CMD", "mongosh", "-u", "${MONGO_USER:-admin}", "-p", "${MONGO_PASSWORD:-securepassword}", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping')"]
-      # test: ["CMD", "mongosh", "-u", "${MONGO_USER}", "-p", "${MONGO_PASSWORD}", "--authenticationDatabase", "admin", "--quiet", "--eval", "rs.status().ok || (rs.initiate({\"_id\": \"rs0\", \"members\": [{\"_id\": 0, \"host\": \"mongo:27017\"}]}).ok && sleep 5 && rs.status().ok)"]
       interval: 10s
       timeout: 10s
       retries: 10
-      start_period: 30s
+      start_period: 90s
     labels:
       - "prometheus.scrape=true"
       - "prometheus.port=9216"

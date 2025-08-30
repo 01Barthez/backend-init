@@ -5,6 +5,9 @@ set -e  # Stop the script in case of error
 
 clear
 
+# Then the application
+./scripts/stop_app.sh
+
 echo "Starting the main application..."
 
 # Check that Docker is running
