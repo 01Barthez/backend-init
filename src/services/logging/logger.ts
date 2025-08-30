@@ -113,15 +113,6 @@ const log = createLogger({
       ),
     }),
 
-    // HTTP transport for API logs
-    new transports.Console({
-      level: 'http',
-      format: format.combine(
-        format.colorize({ all: true }),
-        httpFormat
-      ),
-    }),
-
     // Loki transport only in non-development environments
     ...(envs.NODE_ENV !== 'development' ? [lokiTransport] : []),
 
