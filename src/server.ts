@@ -6,51 +6,36 @@ import health from "@router/healtcheck/health.router";
 import { errorLog, requestLog } from "@middlewares/requestLogger";
 import errorHandler from "@middlewares/errorHandler";
 import log from "@services/logging/logger";
+import notFoundHandler from "@middlewares/notFoundRoutes";
+import setupSwagger from "@config/swagger/swagger";
+import { requestTimeMiddleware } from "./middlewares/responseTime";
+import { validationErrorHandler } from "./middlewares/validationErrorHandler";
 
 const app = express();
 
-// Configuration de base
+// Globals Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// Middleware de journalisation personnalisé
-app.use(requestLog);
+// Setup Swagger for API documentation
+setupSwagger(app);
 
-// Routes
+// Request Logging Middleware 
+app.use(requestLog);
+app.use(requestTimeMiddleware);
+
+// Routes Middleware
 app.use(metricsRouter);
 app.use('/items', items);
 app.use('/health', health);
 
-// Gestion des erreurs
+// Error Handling Middleware
+app.use(validationErrorHandler);
 app.use(errorLog);
 app.use(errorHandler);
+app.use(notFoundHandler);
 
-// Middleware pour les routes non trouvées
-app.use((req, res, next) => {
-  // Si la réponse a déjà été envoyée, on ne fait rien
-  if (res.headersSent) {
-    return next();
-  }
-
-  const responseData = {
-    status: 'error',
-    message: 'Not found route',
-    path: req.originalUrl
-  };
-  
-  // Log spécifique pour les routes non trouvées
-  log.warn('Route not found', {
-    method: req.method,
-    url: req.originalUrl,
-    ip: req.ip,
-    userAgent: req.get('user-agent'),
-    statusCode: 404,
-    responseTime: '0ms' // Le temps de réponse sera calculé par le middleware de log
-  });
-  
-  res.status(404).json(responseData);
-});
 
 // Gestion des erreurs non capturées
 process.on('unhandledRejection', (reason, promise) => {

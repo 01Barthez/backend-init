@@ -1,71 +1,99 @@
-import { Request, Response, NextFunction } from 'express';
-import log from '@services/logging/logger';
+import { Request, Response, NextFunction } from "express";
+import log from "@services/logging/logger";
 
+/**
+ * Middleware: Request Logger
+ * Logs incoming HTTP requests and outgoing responses
+ * (excluding swagger/docs and static files).
+ *
+ * - Captures method, URL, status code, response time, content length
+ * - Optionally logs request body and response body (only if JSON and not too large)
+ */
 export const requestLog = (req: Request, res: Response, next: NextFunction) => {
-  const start = Date.now();
-  
-  // Ignore les requêtes pour les fichiers statiques
-  if (req.path.startsWith('/static/')) {
+  if (req.path.startsWith("/api-docs") || req.path.startsWith("/static/")) {
     return next();
   }
 
-  // Sauvegarde de la méthode originale de fin de réponse
+  const start = Date.now();
   const originalEnd = res.end;
-  const chunks: any[] = [];
+  const chunks: Buffer[] = [];
 
-  // Interception de la réponse
-  // @ts-ignore
-  res.end = (chunk: any, ...args: any[]) => {
+  // Override res.end to capture response body
+  res.end = ((chunk?: any, encoding?: any, cb?: any) => {
     if (chunk) {
-      chunks.push(chunk);
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding));
     }
 
-    const responseBody = Buffer.concat(chunks).toString('utf8');
     const responseTime = Date.now() - start;
+    let responseBody: any = null;
 
-    // Ne pas logger pour les requêtes non trouvées (404) car elles seront gérées par le middleware notFound
+    try {
+      if (chunks.length > 0) {
+        const buffer = Buffer.concat(chunks);
+        const contentType = res.getHeader("content-type");
+
+        if (contentType && typeof contentType === "string" && contentType.includes("application/json")) {
+          responseBody = safeJsonParse(buffer.toString("utf8"));
+        } else {
+          responseBody = "[Non-JSON response]";
+        }
+      }
+    } catch {
+      responseBody = "[Error parsing response]";
+    }
+
+    // Avoid logging excessive payloads
+    const MAX_LOG_SIZE = 5 * 1024; // 5 KB
+    const trimmedResponse =
+      responseBody && JSON.stringify(responseBody).length > MAX_LOG_SIZE
+        ? "[Response too large]"
+        : responseBody;
+
     if (res.statusCode !== 404) {
-      // Log de la réponse
-      log.http('Outgoing Response', {
+      log.http("Outgoing Response", {
         method: req.method,
         url: req.originalUrl,
         statusCode: res.statusCode,
         responseTime: `${responseTime}ms`,
-        contentLength: res.get('Content-Length') || 0,
+        contentLength: res.get("Content-Length") || 0,
         ...(req.body && Object.keys(req.body).length > 0 && { requestBody: req.body }),
-        ...(responseBody && { responseBody: safeJsonParse(responseBody) })
+        ...(trimmedResponse && { responseBody: trimmedResponse }),
       });
     }
 
-    // Restauration de la méthode originale
-    // @ts-ignore
-    originalEnd.apply(res, [chunk, ...args]);
-  };
+    return originalEnd.call(res, chunk, encoding, cb);
+  }) as any;
 
   next();
 };
 
-// Middleware pour log les erreurs
+/**
+ * Middleware: Error Logger
+ * Logs application errors before passing them to the global error handler.
+ *
+ * - Captures error message, stack trace (only in dev), path, method and IP
+ */
 export const errorLog = (err: Error, req: Request, res: Response, next: NextFunction) => {
-  // Ne pas logger les erreurs 404 ici, elles seront gérées par le middleware notFound
   if (res.statusCode !== 404) {
-    log.error('Error Handler', {
+    log.error("Error occurred", {
       error: err.message,
-      stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
+      stack: process.env.NODE_ENV === "production" ? undefined : err.stack,
       path: req.path,
       method: req.method,
-      ip: req.ip
+      ip: req.ip,
     });
   }
-  
   next(err);
 };
 
-// Fonction utilitaire pour parser en toute sécurité le JSON
+/**
+ * Utility: Safe JSON Parse
+ * Attempts to parse a string to JSON, falls back to string if invalid.
+ */
 function safeJsonParse(str: string) {
   try {
     return JSON.parse(str);
-  } catch (e) {
+  } catch {
     return str;
   }
 }

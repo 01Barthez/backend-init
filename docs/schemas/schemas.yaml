@@ -1,0 +1,27 @@
+components:
+  schemas:
+    Item:
+      type: object
+      required:
+        - name
+        - price
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: L'ID unique de l'item
+        name:
+          type: string
+          minLength: 3
+          maxLength: 100
+        price:
+          type: number
+          minimum: 0
+        description:
+          type: string
+          maxLength: 1000
+      example:
+        id: d5fE_asz
+        name: Item de test
+        price: 99.99
+        description: Une description de l'item

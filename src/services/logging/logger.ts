@@ -53,7 +53,7 @@ const lokiTransport = new LokiTransport({
   json: true,
   replaceTimestamp: true,
   onConnectionError: (err) => {
-    console.error('Échec de connexion à Loki:', err);
+    console.error('Failed to connect to Loki:', err);
   },
 }).on('error', (err) => {
   console.error(`Error in loki transport:`, err);
@@ -67,9 +67,22 @@ const transportsList = [
   createTransport('errors', 'error', 30),
 ];
 
-// Format personnalisé pour les logs HTTP
+// Custom format for HTTP logs
 const httpFormat = format.printf(({ timestamp, level, message, method, url, status, responseTime, ...meta }) => {
   return `${timestamp} [${level}]: ${method} ${url} ${status} - ${responseTime}ms`;
+});
+
+
+const errorFormatter = format((info) => {
+  if (info instanceof Error) {
+    return {
+      ...info,
+      message: info.message,
+      stack: info.stack,
+      ...(typeof info.cause !== 'undefined' ? { cause: info.cause } : {})
+    };
+  }
+  return info;
 });
 
 // Winston logger configuration
@@ -77,13 +90,13 @@ const log = createLogger({
   level: logLevel,
   format: format.combine(
     format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    errorFormatter(),
     format.errors({ stack: true }),
     format.splat(),
     format.json()
   ),
-  defaultMeta: { service: 'api-service' },
   transports: [
-    // Console transport avec formatage amélioré
+    // Console transport with enhanced formatting
     new transports.Console({
       level: envs.NODE_ENV === 'production' ? 'info' : 'debug',
       format: format.combine(
@@ -100,7 +113,7 @@ const log = createLogger({
       ),
     }),
 
-    // Transport HTTP pour les logs d'API
+    // HTTP transport for API logs
     new transports.Console({
       level: 'http',
       format: format.combine(
@@ -132,11 +145,30 @@ const log = createLogger({
 
 // Prevent Winston from exiting after handling exceptions
 process.on('uncaughtException', (error) => {
-  log.error('Uncaught Exception:', error);
+  log.error('Uncaught Exception', {
+    error: {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      ...('cause' in error && error.cause !== undefined ? { cause: (error as any).cause } : {})
+    }
+  });
+  process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  log.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
+  const error = reason instanceof Error ? {
+    name: reason.name,
+    message: reason.message,
+    stack: reason.stack,
+    ...('cause' in reason && (reason as any).cause !== undefined ? { cause: (reason as any).cause } : {})
+  } : { message: String(reason) };
 
+  log.error('Unhandled Rejection', {
+    error,
+    promise: {
+      promise: promise
+    }
+  });
+});
 export default log;

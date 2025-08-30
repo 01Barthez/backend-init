@@ -7,6 +7,14 @@ export const envs = {
     PORT: env.get('PORT').required().asPortNumber(),
     API_PREFIX: env.get('DEFAULT_API_PREFIX').default('/api/v1').asString(),
     NODE_ENV: env.get('NODE_ENV').default('development').asString(),
+    
+    DB_TYPE: env.get('DB_TYPE').default('mongodb').asString(),
+    APP_NAME: env.get('APP_NAME').default('My Backend APP').asString(),
+    APP_VERSION: env.get('APP_VERSION').default('1.0.0').asString(),
+    APP_DESCRIPTION: env.get('APP_DESCRIPTION').default('This is my backend application').asString(),
+    APP_AUTHOR: env.get('APP_AUTHOR').default('Barthez Kenwou').asString(),
+    APP_LICENSE: env.get('APP_LICENSE').default('MIT').asString(),
+    
 
     // Database
     DATABASE_URL: env.get('DATABASE_URL').required().asString(),

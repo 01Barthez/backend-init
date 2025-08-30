@@ -1,11 +1,14 @@
 import app from "./server";
 import { envs } from "@config/env/env";
 import log from "@services/logging/logger";
+import { displayStartupMessage } from "./utils/startupMessage";
 
 
 // Start server
 const server = app.listen(envs.PORT, () => {
+  displayStartupMessage();
   log.info(`Server running at http://localhost:${envs.PORT}`);
+  log.info(`Swagger documentation at http://localhost:${envs.PORT}/api-docs`);
 })
   // Handle server errors
   .on('error', (err) => {
