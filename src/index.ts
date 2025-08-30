@@ -1,14 +1,22 @@
 import app from "./server";
 import { envs } from "@config/env/env";
 import log from "@services/logging/logger";
-import { displayStartupMessage } from "./utils/startupMessage";
+import { bottomBorder, displayStartupMessage, topBorder } from "./utils/startupMessage";
+import chalk from "chalk";
 
 
 // Start server
 const server = app.listen(envs.PORT, () => {
+  console.clear();
   displayStartupMessage();
-  log.info(`Server running at http://localhost:${envs.PORT}`);
-  log.info(`Swagger documentation at http://localhost:${envs.PORT}/api-docs`);
+  log.info(chalk.hex('#27ae60')('│ ') + chalk.hex('##ff00ff').bold('🌐 Server running at 🌐  : ') + chalk.hex('##40ff00').bold.underline(`http://localhost:${envs.PORT}`) + chalk.hex('#27ae60')(''));
+  log.info(chalk.hex('#27ae60')('│ ') + chalk.hex('##ff00ff').bold('📖 Swagger documentation at 📖  : ') + chalk.hex('##40ff00').bold.underline(`http://localhost:${envs.PORT}/api-docs`) + chalk.hex('#27ae60')(''));
+
+  console.log('\n');
+  console.log(topBorder);
+  console.log(bottomBorder);
+  console.log('\n');
+
 })
   // Handle server errors
   .on('error', (err) => {
