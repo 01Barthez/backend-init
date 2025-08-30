@@ -41,7 +41,6 @@ const createTransport = (filename: string, level: string, maxFiles: number) => {
   return transport;
 };
 
-
 // Transport for Grafana Loki
 const lokiTransport = new LokiTransport({
   host: 'http://loki:3100',
@@ -68,28 +67,46 @@ const transportsList = [
   createTransport('errors', 'error', 30),
 ];
 
+// Format personnalisé pour les logs HTTP
+const httpFormat = format.printf(({ timestamp, level, message, method, url, status, responseTime, ...meta }) => {
+  return `${timestamp} [${level}]: ${method} ${url} ${status} - ${responseTime}ms`;
+});
+
 // Winston logger configuration
 const log = createLogger({
   level: logLevel,
   format: format.combine(
     format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     format.errors({ stack: true }),
-    format.align(),
-    envs.NODE_ENV === 'production'
-      ? format.json()
-      : format.combine(
-        format.colorize({ all: true }),
-        format.printf(
-          ({ level, message, timestamp }) =>
-            `${timestamp} [${level}]: ${message}`
-        )
-      )
+    format.splat(),
+    format.json()
   ),
-  defaultMeta: { service: 'your-service-name' },
+  defaultMeta: { service: 'api-service' },
   transports: [
-    // Console transport
+    // Console transport avec formatage amélioré
     new transports.Console({
       level: envs.NODE_ENV === 'production' ? 'info' : 'debug',
+      format: format.combine(
+        format.colorize({ all: true }),
+        format.printf(
+          ({ level, message, timestamp, ...meta }) => {
+            let logMessage = `${timestamp} [${level}]: ${message}`;
+            if (Object.keys(meta).length > 0) {
+              logMessage += `\n${JSON.stringify(meta, null, 2)}`;
+            }
+            return logMessage;
+          }
+        )
+      ),
+    }),
+
+    // Transport HTTP pour les logs d'API
+    new transports.Console({
+      level: 'http',
+      format: format.combine(
+        format.colorize({ all: true }),
+        httpFormat
+      ),
     }),
 
     // Loki transport only in non-development environments
