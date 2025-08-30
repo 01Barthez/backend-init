@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import log from "../services/logging/logger";
+import log from "@services/logging/logger";
 
 /**
  * Middleware to handle errors centrally.

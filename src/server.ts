@@ -1,11 +1,11 @@
 import express from "express";
-import metricsRouter from "./services/metrics/metrics";
-import items from "./router/items/items.router";
-import health from "./router/healtcheck/health.router";
 import cors from "cors";
-import { errorLog, requestLog } from "./middlewares/requestLogger";
-import errorHandler from "./middlewares/errorHandler";
-import log from "./services/logging/logger";
+import items from "@router/items/items.router";
+import metricsRouter from "@services/metrics/metrics";
+import health from "@router/healtcheck/health.router";
+import { errorLog, requestLog } from "@middlewares/requestLogger";
+import errorHandler from "@middlewares/errorHandler";
+import log from "@services/logging/logger";
 
 const app = express();
 

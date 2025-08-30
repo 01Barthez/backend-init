@@ -2,8 +2,24 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
-    "outDir": "dist",
+    "outDir": "./dist",
+    "rootDir": "./src",
     "strict": true,
-    "esModuleInterop": true
-  }
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@config/*": ["src/config/*"],
+      "@services/*": ["src/services/*"],
+      "@middlewares/*": ["src/middlewares/*"],
+      "@router/*": ["src/router/*"],
+      "@controllers/*": ["src/controllers/*"],
+      "@utils/*": ["src/utils/*"]
+    },
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

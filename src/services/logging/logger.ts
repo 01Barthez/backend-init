@@ -9,10 +9,10 @@
 
 import { createLogger, format, transports } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
-import { envs } from '../../config/env/env';
-import { ensureDirectoryExists } from '../../utils/fsUtils';
 import path from 'path';
 import LokiTransport from 'winston-loki';
+import { ensureDirectoryExists } from '@utils/fsUtils';
+import { envs } from '@config/env/env';
 
 // checking logs directory exists
 const logsDir = path.join(process.cwd(), 'logs');

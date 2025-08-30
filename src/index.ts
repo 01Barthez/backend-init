@@ -1,6 +1,6 @@
-import { envs } from "./config/env/env";
 import app from "./server";
-import log from "./services/logging/logger";
+import { envs } from "@config/env/env";
+import log from "@services/logging/logger";
 
 
 // Start server

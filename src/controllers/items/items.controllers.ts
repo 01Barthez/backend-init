@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../../config/prisma/prisma";
-import { ObjectId } from 'mongodb';
+import prisma from "@config/prisma/prisma";
 
 const itemsControllers = {
     // Create

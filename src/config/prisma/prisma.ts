@@ -1,6 +1,6 @@
 // Dans ton fichier de config Prisma (ex: config/prisma/prisma.ts)
 import { PrismaClient } from '@prisma/client';
-import log from '../../services/logging/logger';
+import log from '@services/logging/logger';
 
 const prisma = new PrismaClient({
   log: [

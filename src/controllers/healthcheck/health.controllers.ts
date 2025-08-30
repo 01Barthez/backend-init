@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import log from "../../services/logging/logger";
+import log from "@services/logging/logger";
 
 const healthControllers = {
     // Read
