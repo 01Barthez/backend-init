@@ -1,0 +1,71 @@
+# Common HTTP Responses
+
+# Réponse de succès générique
+SuccessResponse:
+  description: Opération réussie
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          success:
+            type: boolean
+            example: true
+          message:
+            type: string
+            example: "Opération effectuée avec succès"
+
+# Réponse d'erreur générique
+ErrorResponse:
+  description: Erreur lors du traitement de la requête
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          success:
+            type: boolean
+            example: false
+          error:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "ITEM_NOT_FOUND"
+              message:
+                type: string
+                example: "Aucun item trouvé avec l'ID fourni"
+
+# Réponse de validation échouée
+ValidationErrorResponse:
+  description: Erreur de validation des données
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          success:
+            type: boolean
+            example: false
+          error:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "VALIDATION_ERROR"
+              message:
+                type: string
+                example: "Erreur de validation des données"
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    path:
+                      type: array
+                      items:
+                        type: string
+                      example: ["body", "name"]
+                    message:
+                      type: string
+                      example: "Le nom est requis"

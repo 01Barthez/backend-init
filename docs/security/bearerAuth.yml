@@ -1,0 +1,5 @@
+BearerAuth:
+  type: http
+  scheme: bearer
+  bearerFormat: JWT
+  description: Jeton d'authentification JWT

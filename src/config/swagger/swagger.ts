@@ -1,75 +1,41 @@
-import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { Express } from 'express';
-import { envs } from '../env/env';
+import path from 'path';
+import YAML from 'yamljs';
+import fs from 'fs';
 
 const setupSwagger = (app: Express) => {
-  const options = {
-    definition: {
-      openapi: '3.0.0',
-      info: {
-        title: 'GTA IT API Documentation',
-        version: '1.0.0',
-        description: 'Documentation complète de l\'API',
-        contact: {
-          name: "Barthez Kenwou",
-          email: "kenwoubarthez@gmail.com",
-          phone: "+237 655 646 688",
-          address: {
-            street: "",
-            city: "Yaounde",
-            state: "Centre",
-            country: "Cameroun"
-          }
-        }
-      },
-      servers: [
-        {
-          url: `https://localhost:${envs.PORT}`,
-          description: 'Serveur de développement',
-        }
-      ],
-      components: {
-        securitySchemes: {
-          bearerAuth: {
-            type: 'http',
-            scheme: 'bearer',
-            bearerFormat: 'JWT',
-          },
-        },
-      },
-    },
-    // Chemins vers les fichiers contenant la documentation
-    apis: [
-      './src/routes/*.ts',
-      './src/docs/**/*.yaml',
-      './src/docs/**/*.ts',
-    ],
-  };
-
-  const specs = swaggerJsdoc(options);
-
-  // Options personnalisées pour Swagger UI
+  // Use absolute path to load the configuration
+  const configPath = path.resolve(__dirname, '../../../docs/openapi.config.js');
+  
+  if (!fs.existsSync(configPath)) {
+    console.error(`OpenAPI config file not found at: ${configPath}`);
+    return;
+  }
+  
+  const swaggerDocument = require('swagger-jsdoc')(require(configPath));
+  
+  // Custom Swagger UI options
   const optionsUI = {
     explorer: true,
     customCss: '.swagger-ui .topbar { display: none }',
     customSiteTitle: 'GTA-API Documentation',
-    // swaggerOptions: {
-    //   defaultModelsExpandDepth: -1,
-    //   docExpansion: 'none',
-    // }
+    swaggerOptions: {
+      defaultModelsExpandDepth: -1,
+      docExpansion: 'none',
+    }
   };
 
-  // Route pour la documentation Swagger
+  // Swagger documentation route
   app.use('/api-docs',
     swaggerUi.serve,
-    swaggerUi.setup(specs, optionsUI)
+    swaggerUi.setup(swaggerDocument, optionsUI)
   );
 
-  // Génère le fichier openapi.json
+  // Generate openapi.json file
   app.get('/api-docs.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
-    res.send(specs);
+    res.send(swaggerDocument);
   });
 };
 

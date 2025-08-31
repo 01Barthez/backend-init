@@ -8,7 +8,7 @@ import chalk from "chalk";
 // Start server
 const server = app.listen(envs.PORT, () => {
   console.clear();
-  displayStartupMessage();
+  displayStartupMessage(),
   log.info(chalk.hex('#27ae60')('│ ') + chalk.hex('##ff00ff').bold('🌐 Server running at 🌐  : ') + chalk.hex('##40ff00').bold.underline(`http://localhost:${envs.PORT}`) + chalk.hex('#27ae60')(''));
   log.info(chalk.hex('#27ae60')('│ ') + chalk.hex('##ff00ff').bold('📖 Swagger documentation at 📖  : ') + chalk.hex('##40ff00').bold.underline(`http://localhost:${envs.PORT}/api-docs`) + chalk.hex('#27ae60')(''));
 

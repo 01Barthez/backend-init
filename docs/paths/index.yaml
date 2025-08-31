@@ -1,0 +1,7 @@
+# docs/paths/index.yaml
+/items:
+  $ref: './items/items.yaml'
+/items/{id}:
+  $ref: './items/items.yaml#/items/{id}'
+/health:
+  $ref: './health/health.yaml'

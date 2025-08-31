@@ -1,0 +1,54 @@
+# Common Parameters
+
+# Paramètre d'ID d'item
+itemId:
+  name: id
+  in: path
+  description: ID unique de l'item
+  required: true
+  schema:
+    type: string
+    format: uuid
+  example: 550e8400-e29b-41d4-a716-446655440000
+
+# Pagination
+page:
+  name: page
+  in: query
+  description: Numéro de la page (commence à 1)
+  required: false
+  schema:
+    type: integer
+    minimum: 1
+    default: 1
+
+limit:
+  name: limit
+  in: query
+  description: Nombre d'éléments par page (max 100)
+  required: false
+  schema:
+    type: integer
+    minimum: 1
+    maximum: 100
+    default: 10
+
+# Filtres de recherche
+itemName:
+  name: name
+  in: query
+  description: Filtre par nom d'item (recherche insensible à la casse)
+  required: false
+  schema:
+    type: string
+    minLength: 2
+    maxLength: 100
+
+itemValue:
+  name: value
+  in: query
+  description: Filtre par valeur exacte de l'item
+  required: false
+  schema:
+    type: number
+    format: double
