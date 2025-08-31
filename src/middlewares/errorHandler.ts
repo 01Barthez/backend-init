@@ -14,13 +14,26 @@ import { sendResponse } from "@/utils/responses/response";
  * - Never exposes internal error details to the client (unless in dev mode)
  */
 
-// Formateur d'erreur personnalisé
+/**
+ * Format error stack trace for better readability
+ */
+const formatErrorStack = (stack?: string): string[] | undefined => {
+    if (!stack) return undefined;
+    return stack
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+};
 
 const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
     // Optionally hide stack traces in production
     const extraMeta: Record<string, any> = {};
     if (process.env.NODE_ENV !== 'production') {
         extraMeta.stack = err.stack;
+    }
+
+    if (err.code === "EBADCSRFTOKEN") {
+        return sendResponse(req, res, 403, 'Invalid CSRF token', null, { details: err.meta?.message });
     }
 
     // Specific Prisma errors

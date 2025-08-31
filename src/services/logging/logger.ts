@@ -113,8 +113,8 @@ const log = createLogger({
       ),
     }),
 
-    // Loki transport only in non-development environments
-    ...(envs.NODE_ENV !== 'development' ? [lokiTransport] : []),
+    // Loki transport only if accept
+    ...(envs.LOKI_ENABLED === true ? [lokiTransport] : []),
 
     // Other file transports
     ...transportsList,
