@@ -71,6 +71,9 @@ export const envs = {
     CSRF_HEADER_NAME: env.get('CSRF_HEADER_NAME').default('X-XSRF-TOKEN').asString(),
     CSRF_EXPIRES_IN: env.get('CSRF_EXPIRES_IN').default('2h').asString(),
 
+    // CSP Reorting
+    CSP_REPORT_URI: env.get('CSP_REPORT_URI').default('/security/csp-violation').asString(),
+
     // Cookie
     COOKIE_DOMAIN: env.get('COOKIE_DOMAIN').default('localhost').asString(),
     COOKIE_SECURE: env.get('COOKIE_SECURE').default('true').asBool(),

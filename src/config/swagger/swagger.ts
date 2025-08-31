@@ -4,6 +4,20 @@ import path from 'path';
 import YAML from 'yamljs';
 import fs from 'fs';
 
+/**
+ * Sets up Swagger UI and OpenAPI documentation routes for the provided Express application.
+ *
+ * This function loads the OpenAPI configuration from an absolute path, generates the Swagger documentation,
+ * and configures the Swagger UI with custom options. It also exposes the raw OpenAPI JSON at `/api-docs.json`.
+ *
+ * @param app - The Express application instance to which Swagger documentation routes will be attached.
+ *
+ * @remarks
+ * - The OpenAPI configuration file is expected at `../../../docs/openapi.config.js` relative to this file.
+ * - If the configuration file is not found, an error is logged and Swagger is not set up.
+ * - The Swagger UI is available at `/api-docs`.
+ * - The raw OpenAPI JSON is available at `/api-docs.json`.
+ */
 const setupSwagger = (app: Express) => {
   // Use absolute path to load the configuration
   const configPath = path.resolve(__dirname, '../../../docs/openapi.config.js');

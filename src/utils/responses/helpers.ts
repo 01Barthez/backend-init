@@ -25,6 +25,9 @@ export const response = {
     created: <T>(req: Request, res: Response, data: T, message = 'Resource created') =>
         sendResponse(req, res, 201, message, data),
 
+    success: <T>(req: Request, res: Response, data: T, message = 'No Content') =>
+        sendResponse(req, res, 204, message, data),
+
     badRequest: (req: Request, res: Response, message = 'Bad request') =>
         sendResponse(req, res, 400, message),
 
