@@ -15,12 +15,14 @@ export const envs = {
     APP_AUTHOR: env.get('APP_AUTHOR').default('Barthez Kenwou').asString(),
     APP_LICENSE: env.get('APP_LICENSE').default('MIT').asString(),
     
+    DISABLE_CONSOLE_LOGS: env.get('DISABLE_CONSOLE_LOGS').default('true').asBool(),
 
     // Database
     DATABASE_URL: env.get('DATABASE_URL').required().asString(),
     MONGO_USER: env.get('MONGO_USER').required().asString(),
     MONGO_PASSWORD: env.get('MONGO_PASSWORD').required().asString(),
     MONGO_DB: env.get('MONGO_DB').required().asString(),
+    LOG_TO_MONGODB: env.get('LOG_TO_MONGODB').default('false').asBool(),
 
     // Redis
     MINIO_ROOT_USER: env.get('MINIO_ROOT_USER').required().asString(),
@@ -35,13 +37,13 @@ export const envs = {
     SMTP_PORT: env.get('SMTP_PORT').required().asPortNumber(),
     SMTP_USER: env.get('SMTP_USER').required().asString(),
     SMTP_PASS: env.get('SMTP_PASS').required().asString(),
-
+    
     // Logging
     LOG_LEVEL: env.get('LOG_LEVEL').default('info').asString(),
     LOG_TO_FILE: env.get('LOG_TO_FILE').default('false').asBool(),
-    LOG_TO_MONGODB: env.get('LOG_TO_MONGODB').default('false').asBool(),
 
     // Rate Limiting
     RATE_LIMIT_WINDOW_MS: env.get('RATE_LIMIT_WINDOW_MS').default(900000).asInt(),
     RATE_LIMIT_MAX_REQUESTS: env.get('RATE_LIMIT_MAX_REQUESTS').default(100).asInt(),
+
 };

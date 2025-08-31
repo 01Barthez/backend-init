@@ -10,6 +10,7 @@ import notFoundHandler from "@middlewares/notFoundRoutes";
 import setupSwagger from "@config/swagger/swagger";
 import { requestTimeMiddleware } from "./middlewares/responseTime";
 import { validationErrorHandler } from "./middlewares/validationErrorHandler";
+import disableLogsInProduction from "./middlewares/disableLog";
 
 const app = express();
 
@@ -24,6 +25,7 @@ setupSwagger(app);
 // Request Logging Middleware 
 app.use(requestLog);
 app.use(requestTimeMiddleware);
+app.use(disableLogsInProduction)
 
 // Routes Middleware
 app.use(metricsRouter);
