@@ -1,25 +1,4 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Validate commit message format
-COMMIT_MSG=$(cat "$1")
-
-if ! echo "$COMMIT_MSG" | grep -qE '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z]+\))?: .{1,100}$'; then
-  echo "❌ Invalid commit message format."
-  echo "Please use: <type>(<scope>): <subject>"
-  echo "Example: feat(auth): add login functionality"
-  echo ""
-  echo "Allowed types:"
-  echo "  feat: A new feature"
-  echo "  fix: A bug fix"
-  echo "  docs: Documentation only changes"
-  echo "  style: Changes that do not affect the meaning of the code"
-  echo "  refactor: A code change that neither fixes a bug nor adds a feature"
-  echo "  perf: A code change that improves performance"
-  echo "  test: Adding missing tests or correcting existing tests"
-  echo "  build: Changes that affect the build system or external dependencies"
-  echo "  ci: Changes to CI configuration files and scripts"
-  echo "  chore: Other changes that don't modify src or test files"
-  echo "  revert: Revert a previous commit"
-  exit 1
-fi
+npx --no-install commitlint --edit "$1"

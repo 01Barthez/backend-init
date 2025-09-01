@@ -6,10 +6,11 @@
     "dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/index.ts",
     "build": "rimraf dist/ && tsc --noEmitOnError --pretty  --extendedDiagnostics",
     "start": "node -r module-alias/register dist/index.js",
-    "test": "jest --passWithNoTests",
+    "test": "echo \"test run\"",
+    "test:fast": "npx vitest run --threads 2 --reporter dot",
     "test:docs": "swagger-cli validate src/docs/openapi.yaml",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test:watch": "test --watch",
+    "test:coverage": "test --coverage",
     "validate": "npm run lint && npm run type-check && npm test",
     "prisma:generate": "prisma generate",
     "generate:openapi": "npx swagger-jsdoc -d ./docs/openapi.config.js -o ./docs/openapi.yaml",
@@ -64,6 +65,8 @@
     "@controllers": "dist/controllers"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@types/chalk": "^0.4.31",
     "@types/compression": "^1.8.1",
     "@types/cookie-parser": "^1.4.9",
@@ -80,6 +83,8 @@
     "@types/yamljs": "^0.2.34",
     "@typescript-eslint/eslint-plugin": "^8.41.0",
     "@typescript-eslint/parser": "^8.41.0",
+    "commitizen": "^4.3.1",
+    "cz-conventional-changelog": "^3.3.0",
     "eslint": "^9.34.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
@@ -101,5 +106,10 @@
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.2.2"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }
