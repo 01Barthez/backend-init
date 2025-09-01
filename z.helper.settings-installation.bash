@@ -1,3 +1,5 @@
+#! ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
 # Installez les dépendances
 npm install --save-dev @commitlint/{config-conventional,cli} husky lint-staged
 
@@ -26,3 +28,25 @@ npm install --save-dev npm-audit-resolver audit-ci
 
 # Outils de documentation
 npm install --save-dev typedoc @microsoft/api-extractor
+
+
+
+#! ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Vitest et outils de test
+npm install --save-dev vitest @vitest/coverage-v8 @vitest/ui @vitest/browser @vitest/snapshot @vitest/coverage-c8
+
+# Tests d'API
+npm install --save-dev supertest @types/supertest
+
+# Tests de charge
+npm install --save-dev k6 @types/k6
+
+# Sécurité
+npm install --save-dev snyk trivy
+
+# Utilitaires de test
+npm install --save-dev @faker-js/faker @vitest/mock
+
+# Types partagés
+npm install --save-dev @types/node @types/express

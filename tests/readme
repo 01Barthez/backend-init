@@ -1,0 +1,34 @@
+tests/
+├── unit/                 # Tests unitaires
+│   ├── services/
+│   ├── controllers/
+│   └── utils/
+│
+├── integration/          # Tests d'intégration
+│   ├── api/
+│   └── database/
+│
+├── e2e/                  # Tests de bout en bout
+│   └── scenarios/
+│
+├── load/                 # Tests de charge K6
+│   ├── scenarios/
+│   └── scripts/
+│
+├── security/             # Tests de sécurité
+│   ├── sast/             # Static Application Security Testing
+│   └── dast/             # Dynamic Application Security Testing
+│
+├── __mocks__/            # Mocks globaux
+│   ├── node-fetch.ts
+│   └── logger.ts
+│
+├── factories/            # Factories pour les fixtures
+│   ├── user.factory.ts
+│   └── ...
+│
+├── utils/                # Utilitaires de test
+│   ├── test-utils.ts
+│   └── test-server.ts
+│
+└── setup.ts              # Configuration globale des tests
