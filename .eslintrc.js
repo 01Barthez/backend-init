@@ -4,7 +4,7 @@ module.exports = {
   env: {
     node: true,
     es2022: true,
-    jest: true,
+    jest: false,
   },
   extends: [
     'eslint:recommended',
