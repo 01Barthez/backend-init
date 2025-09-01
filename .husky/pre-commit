@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Format and lint code
+echo "Running pre-commit checks..."
+npx lint-staged
+
+# Verify commit message format
+if ! grep -qE '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z]+\))?: .{1,100}$' .git/COMMIT_EDITMSG; then
+  echo "❌ Invalid commit message format. Please use: <type>(<scope>): <subject>"
+  echo "Example: feat(auth): add login functionality"
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed!"

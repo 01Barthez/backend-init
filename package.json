@@ -5,11 +5,25 @@
   "scripts": {
     "dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/index.ts",
     "build": "rimraf dist/ && tsc --noEmitOnError --pretty  --extendedDiagnostics",
-    "test": "npx jest",
-    "test:docs": "swagger-cli validate src/docs/openapi.yaml",
     "start": "node -r module-alias/register dist/index.js",
+    
+    "test": "jest --passWithNoTests",
+    "test:docs": "swagger-cli validate src/docs/openapi.yaml",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "validate": "npm run lint && npm run type-check && npm test",
+    
     "prisma:generate": "prisma generate",
-    "generate:openapi": "npx swagger-jsdoc -d ./docs/openapi.config.js -o ./docs/openapi.yaml"
+    "generate:openapi": "npx swagger-jsdoc -d ./docs/openapi.config.js -o ./docs/openapi.yaml",
+    "postinstall": "npm run generate:openapi && npm run prisma:generate",
+    
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx --max-warnings=5",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,mdx,yml,yaml}\"",
+    "lint:fix": "npm run lint -- --fix",
+    "type-check": "tsc --noEmit",
+    
+    "prepare": "husky install",
+    "precommit": "lint-staged"
   },
   "dependencies": {
     "@bull-board/api": "^6.12.7",
@@ -63,7 +77,21 @@
     "@types/jest": "^30.0.0",
     "@types/morgan": "^1.9.10",
     "@types/yamljs": "^0.2.34",
+    "@typescript-eslint/eslint-plugin": "^8.41.0",
+    "@typescript-eslint/parser": "^8.41.0",
+    "eslint": "^9.34.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-security": "^3.0.1",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-sonarjs": "^3.0.5",
+    "eslint-plugin-unicorn": "^60.0.0",
+    "eslint-plugin-unused-imports": "^4.2.0",
     "jest": "^30.1.1",
+    "prettier": "^3.6.2",
     "prisma": "^5.0.0",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.9.1",

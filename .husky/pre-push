@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Running pre-push checks..."
+
+# Run tests
+echo "Running tests..."
+npm test
+
+# Run type checking
+echo "Type checking..."
+npx tsc --noEmit
+
+# Run security audit
+echo "Running security audit..."
+npm audit --audit-level=moderate
+
+# Check for uncommitted changes
+if [ -n "$(git status --porcelain)" ]; then
+  echo "There are uncommitted changes. Please commit or stash them before pushing."
+  exit 1
+fi
+
+echo "✅ All checks passed! Pushing changes..."
