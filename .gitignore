@@ -3,3 +3,7 @@ node_modules
 .env
 dist/
 logs/
+
+
+#Ignore test folde for the moment
+tests/

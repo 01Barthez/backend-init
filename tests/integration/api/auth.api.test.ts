@@ -1,7 +1,5 @@
 import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { app } from '@/app';
-import { createTestUser, clearTestDatabase } from '../../utils/test-database';
 
 describe('Auth API', () => {
   let testUser: { email: string; password: string; token: string };

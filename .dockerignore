@@ -3,3 +3,7 @@ dist
 .git
 Dockerfile
 docker-compose.yml
+
+#Ignore test folde for the moment
+tests/
+

@@ -8,7 +8,7 @@ COPY .env ./
 
 # Install dependencies
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts --loglevel verbose
 
 # Copy source code
 COPY tsconfig.json ./
@@ -20,8 +20,8 @@ COPY docs/openapi.config.js ./docs/
 RUN mkdir -p node_modules
 RUN echo "{\"dependencies\":{\"@config\":\"file:./src/config\",\"@services\":\"file:./src/services\",\"@middlewares\":\"file:./src/middlewares\",\"@router\":\"file:./src/router\",\"@utils\":\"file:./src/utils\"}}" > node_modules/package.json
 
-# Generate Prisma client
-RUN npx prisma generate
+# Generate OpenAPI and Prisma client
+RUN npm run generate:openapi && npm run prisma:generate
 
 # Build TypeScript
 RUN npm run build
@@ -52,7 +52,7 @@ COPY docs/openapi.yaml /usr/src/app/docs/
 
 # Install production dependencies only
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --ignore-scripts --loglevel verbose
 
 
 # Copy build output and prisma schema
