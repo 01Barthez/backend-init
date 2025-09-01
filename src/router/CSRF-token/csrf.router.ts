@@ -1,11 +1,11 @@
+import { Router } from 'express';
 
-import { Router } from "express";
-import CSRFControllers from "@/controllers/CSRF-token/csrf.controllers";
+import CSRFControllers from '@/controllers/CSRF-token/csrf.controllers';
 
 const CSRF = Router();
 
-CSRF.get("/", CSRFControllers.sendToken);
+CSRF.get('/', CSRFControllers.sendToken);
 
-export default CSRF
+export default CSRF;
 
-CSRF
+CSRF;

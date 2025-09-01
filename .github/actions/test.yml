@@ -1,6 +1,6 @@
-name : Test application
+name: Test application
 
-on: 
+on:
   pull_request:
     branches: [main, develop]
   push:
@@ -61,8 +61,8 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
-      - run: npm run start:prod &  # Démarre l'API en arrière-plan
-      - run: zap-baseline.py -t http://localhost:3000 -r report.html  # OWASP ZAP
+      - run: npm run start:prod & # Démarre l'API en arrière-plan
+      - run: zap-baseline.py -t http://localhost:3000 -r report.html # OWASP ZAP
 
   deploy:
     needs: dast
@@ -77,4 +77,4 @@ jobs:
       - run: npm run docker:build
       - run: npm run docker:scan
       - run: npm run docker:push
-      - run: ./deploy.sh  # Script de déploiement (Kubernetes, AWS, etc.)
+      - run: ./deploy.sh # Script de déploiement (Kubernetes, AWS, etc.)

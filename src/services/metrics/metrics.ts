@@ -4,9 +4,9 @@ import client, { collectDefaultMetrics } from 'prom-client';
 const metricsRouter = Router();
 
 collectDefaultMetrics({
-  register: client.register,  
-  prefix: 'nodejs_',         
-  gcDurationBuckets: [0.1, 0.5, 1, 1.5, 2, 5],  
+  register: client.register,
+  prefix: 'nodejs_',
+  gcDurationBuckets: [0.1, 0.5, 1, 1.5, 2, 5],
 });
 
 // Endpoint pour exposer les métriques

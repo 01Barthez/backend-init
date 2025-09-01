@@ -11,46 +11,46 @@ module.exports = {
       `,
       version: '1.0.0',
       contact: {
-        name: "Support API",
-        email: "support@example.com",
-        phone: "+237 655 646 688",
+        name: 'Support API',
+        email: 'support@example.com',
+        phone: '+237 655 646 688',
         address: {
-          street: "",
-          city: "Yaounde",
-          state: "Centre",
-          country: "Cameroun",
-        }
+          street: '',
+          city: 'Yaounde',
+          state: 'Centre',
+          country: 'Cameroun',
+        },
       },
       license: {
-        name: "MIT",
-        url: "https://opensource.org/licenses/MIT"
-      }
+        name: 'MIT',
+        url: 'https://opensource.org/licenses/MIT',
+      },
     },
     servers: [
       {
         url: 'http://localhost:3000',
-        description: 'Serveur de développement local'
+        description: 'Serveur de développement local',
       },
       {
         url: 'https://api.example.com',
-        description: 'Serveur de production'
-      }
+        description: 'Serveur de production',
+      },
     ],
     components: {
       securitySchemes: {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT'
-        }
-      }
-    }
+          bearerFormat: 'JWT',
+        },
+      },
+    },
   },
   apis: [
     './src/routes/*.ts',
     './src/controllers/**/*.ts',
     './docs/paths/**/*.yaml',
     './docs/components/*.yaml',
-    './docs/schemas/*.yaml'
-  ]
+    './docs/schemas/*.yaml',
+  ],
 };

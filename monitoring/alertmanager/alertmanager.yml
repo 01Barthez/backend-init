@@ -9,9 +9,9 @@ route:
   receiver: 'default-receiver'
 
 receivers:
-- name: 'default-receiver'
-  email_configs:
-  - to: 'ton-email@example.com'
-    from: 'alertmanager@example.com'
-    smarthost: 'mailhog:1025'  # Utilise Mailhog pour les tests
-    require_tls: false
+  - name: 'default-receiver'
+    email_configs:
+      - to: 'ton-email@example.com'
+        from: 'alertmanager@example.com'
+        smarthost: 'mailhog:1025' # Utilise Mailhog pour les tests
+        require_tls: false

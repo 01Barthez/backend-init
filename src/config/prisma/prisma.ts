@@ -13,7 +13,6 @@ prisma.$on('error', (e) => {
   log.error('Prisma Error:', e);
 });
 
-
 prisma.$on('warn', (e) => {
   log.warn('Prisma Warn:', e);
 });

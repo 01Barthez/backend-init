@@ -10,7 +10,7 @@ alerting:
   alertmanagers:
     - static_configs:
         - targets:
-          - alertmanager:9093
+            - alertmanager:9093
 
 scrape_configs:
   # Scrape Prometheus lui-même
@@ -26,10 +26,10 @@ scrape_configs:
   # Scrape ton backend (si tu exposes des métriques)
   - job_name: 'backend'
     static_configs:
-      - targets: ['backend:3000']  # Assure-toi que ton backend expose /metrics
-    metrics_path: '/metrics'       # Endpoint standard pour les métriques
+      - targets: ['backend:3000'] # Assure-toi que ton backend expose /metrics
+    metrics_path: '/metrics' # Endpoint standard pour les métriques
 
   # Scrape MongoDB (si tu actives les métriques)
   - job_name: 'mongodb'
     static_configs:
-      - targets: ['mongo:9216']    # Nécessite un exporteur MongoDB (voir plus bas)
+      - targets: ['mongo:9216'] # Nécessite un exporteur MongoDB (voir plus bas)

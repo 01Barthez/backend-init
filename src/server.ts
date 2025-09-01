@@ -1,9 +1,9 @@
-import express from "express";
-import metricsRouter from "@services/metrics/metrics";
-import health from "@router/healtcheck/health.router";
-import log from "@services/logging/logger";
-import setupSwagger from "@config/swagger/swagger";
-import initMiddlewares from "@utils/middleware/_initMiddlewares";
+import setupSwagger from '@config/swagger/swagger';
+import health from '@router/healtcheck/health.router';
+import log from '@services/logging/logger';
+import metricsRouter from '@services/metrics/metrics';
+import initMiddlewares from '@utils/middleware/_initMiddlewares';
+import express from 'express';
 
 const app = express();
 
@@ -13,16 +13,16 @@ setupSwagger(app);
 initMiddlewares(app);
 
 // Metrics endpoint
-app.use("/metrics", metricsRouter);
+app.use('/metrics', metricsRouter);
 
 // Health check endpoint
-app.use("/health", health);
+app.use('/health', health);
 
 // Global error handling for unhandled promise rejections and uncaught exceptions
 process.on('unhandledRejection', (reason, promise) => {
   log.error('Unhandled Rejection at:', {
     promise,
-    reason: reason instanceof Error ? reason.stack : reason
+    reason: reason instanceof Error ? reason.stack : reason,
   });
 });
 

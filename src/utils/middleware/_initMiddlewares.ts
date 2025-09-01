@@ -1,25 +1,27 @@
-import express, { Express } from 'express';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
-import morgan from 'morgan';
-import helmet from 'helmet';
-import { envs } from '@/config/env/env';
-import csurf from 'csurf';
-import { cspConfig, morganFormat, morganOptions, rateLimiting } from './securityConfig';
+import notFoundHandler from '@middlewares/notFoundRoutes';
 import compression from 'compression';
-import { errorLog, requestLog } from '@/middlewares/requestLogger';
-import { requestTimeMiddleware } from '@/middlewares/responseTime';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import csurf from 'csurf';
+import express, { Express } from 'express';
+import helmet from 'helmet';
+import morgan from 'morgan';
+
+import { envs } from '@/config/env/env';
 import disableLogsInProduction from '@/middlewares/disableLog';
 import errorHandler from '@/middlewares/errorHandler';
+import { errorLog, requestLog } from '@/middlewares/requestLogger';
+import { requestTimeMiddleware } from '@/middlewares/responseTime';
 import { validationErrorHandler } from '@/middlewares/validationErrorHandler';
-import notFoundHandler from '@middlewares/notFoundRoutes';
-import setupRoutes from './routes-middleware';
 import { securityRequestLogger } from '@/services/logging/securityLogger';
+
+import setupRoutes from './routes-middleware';
+import { cspConfig, morganFormat, morganOptions, rateLimiting } from './securityConfig';
 
 /**
  * @file _initMiddlewares.ts
  * @description Initializes and configures all core middlewares for the Express application.
- * 
+ *
  * Initializes and configures all global middlewares for the Express application.
  *
  * This function sets up a comprehensive middleware stack to enhance security, logging,
@@ -47,65 +49,71 @@ import { securityRequestLogger } from '@/services/logging/securityLogger';
  */
 
 const initMiddlewares = (app: Express): void => {
-    // 1. Security middlewares: Set HTTP headers for security
-    app.use(helmet()); // Basic security headers
-    app.use(helmet.hsts({
-        maxAge: envs.HSTS_MAX_AGE, // HTTP Strict Transport Security
-        includeSubDomains: true,
-        preload: true,
-    }));
-    app.use(helmet.contentSecurityPolicy(cspConfig)); // Content Security Policy
-    app.use(securityRequestLogger); // Log security-related requests
+  // 1. Security middlewares: Set HTTP headers for security
+  app.use(helmet()); // Basic security headers
+  app.use(
+    helmet.hsts({
+      maxAge: envs.HSTS_MAX_AGE, // HTTP Strict Transport Security
+      includeSubDomains: true,
+      preload: true,
+    }),
+  );
+  app.use(helmet.contentSecurityPolicy(cspConfig)); // Content Security Policy
+  app.use(securityRequestLogger); // Log security-related requests
 
-    // 2. Core middlewares: Cookie parsing and CORS configuration
-    app.use(cookieParser()); // Parse cookies from incoming requests
-    app.use(cors({
-        origin: envs.CLIENT_URL || 'http://localhost:5173', // Allow requests from client
-        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-        credentials: true, // Allow cookies to be sent
-    }));
+  // 2. Core middlewares: Cookie parsing and CORS configuration
+  app.use(cookieParser()); // Parse cookies from incoming requests
+  app.use(
+    cors({
+      origin: envs.CLIENT_URL || 'http://localhost:5173', // Allow requests from client
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+      credentials: true, // Allow cookies to be sent
+    }),
+  );
 
-    // 3. Parsing middlewares: Parse request bodies
-    app.use(express.json({ limit: '20kb' })); // Parse JSON bodies with size limit
-    app.use(express.urlencoded({ extended: true, limit: '10kb' })); // Parse URL-encoded bodies
+  // 3. Parsing middlewares: Parse request bodies
+  app.use(express.json({ limit: '20kb' })); // Parse JSON bodies with size limit
+  app.use(express.urlencoded({ extended: true, limit: '10kb' })); // Parse URL-encoded bodies
 
-    // 4. Logging middlewares: Log requests and measure response time
-    app.use(morgan(morganFormat, morganOptions)); // HTTP request logging
-    app.use(requestLog); // Custom request logger
-    app.use(requestTimeMiddleware); // Track response time
-    app.use(disableLogsInProduction); // Disable logs in production environment
+  // 4. Logging middlewares: Log requests and measure response time
+  app.use(morgan(morganFormat, morganOptions)); // HTTP request logging
+  app.use(requestLog); // Custom request logger
+  app.use(requestTimeMiddleware); // Track response time
+  app.use(disableLogsInProduction); // Disable logs in production environment
 
-    // 5. Additional security and performance middlewares
-    app.disable('x-powered-by'); // Hide Express signature
-    app.use(compression()); // Enable gzip compression
-    app.use(rateLimiting); // Rate limiting to prevent abuse
+  // 5. Additional security and performance middlewares
+  app.disable('x-powered-by'); // Hide Express signature
+  app.use(compression()); // Enable gzip compression
+  app.use(rateLimiting); // Rate limiting to prevent abuse
 
-    // 6. CSRF protection middleware (must be after cookieParser and before routes)
-    app.use(csurf({
-        cookie: {
-            key: envs.CSRF_COOKIE_NAME,
-            secure: envs.COOKIE_SECURE as boolean,
-            httpOnly: envs.COOKIE_HTTP_STATUS as boolean,
-            sameSite: envs.COOKIE_SAME_SITE as 'strict' | 'lax' | 'none',
-            domain: envs.COOKIE_DOMAIN as string,
-            path: '/',
-            maxAge: 86400 // 24 hours
-        },
-        ignoreMethods: ['GET', 'HEAD', 'OPTIONS'] // Do not require CSRF token for safe methods
-    }));
+  // 6. CSRF protection middleware (must be after cookieParser and before routes)
+  app.use(
+    csurf({
+      cookie: {
+        key: envs.CSRF_COOKIE_NAME,
+        secure: envs.COOKIE_SECURE as boolean,
+        httpOnly: envs.COOKIE_HTTP_STATUS as boolean,
+        sameSite: envs.COOKIE_SAME_SITE as 'strict' | 'lax' | 'none',
+        domain: envs.COOKIE_DOMAIN as string,
+        path: '/',
+        maxAge: 86400, // 24 hours
+      },
+      ignoreMethods: ['GET', 'HEAD', 'OPTIONS'], // Do not require CSRF token for safe methods
+    }),
+  );
 
-    // 7. Route configuration middleware
-    setupRoutes(app); // Register all application routes
+  // 7. Route configuration middleware
+  setupRoutes(app); // Register all application routes
 
-    // 8. Data validation error handler
-    app.use(validationErrorHandler); // Handle validation errors from request data
+  // 8. Data validation error handler
+  app.use(validationErrorHandler); // Handle validation errors from request data
 
-    // 9. Centralized error handling (must be after routes and before not found handler)
-    app.use(errorLog); // Log errors
-    app.use(errorHandler); // Handle errors and send response
+  // 9. Centralized error handling (must be after routes and before not found handler)
+  app.use(errorLog); // Log errors
+  app.use(errorHandler); // Handle errors and send response
 
-    // 10. 404 Not Found handler (must be the last middleware)
-    app.use(notFoundHandler); // Handle unmatched routes
+  // 10. 404 Not Found handler (must be the last middleware)
+  app.use(notFoundHandler); // Handle unmatched routes
 };
 
 export default initMiddlewares;

@@ -1,5 +1,3 @@
-
-
 services:
   # Prometheus : Collecte les métriques
   prometheus:
@@ -16,7 +14,7 @@ services:
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
     ports:
-      - "9090:9090"
+      - '9090:9090'
     networks:
       - backend_network
 
@@ -29,7 +27,7 @@ services:
       - ./monitoring/loki/loki-config.yaml:/etc/loki/local-config.yaml
       - loki_data:/loki
     ports:
-      - "3100:3100"
+      - '3100:3100'
     networks:
       - backend_network
 
@@ -46,7 +44,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=grafana
       - GF_USERS_ALLOW_SIGN_UP=false
     ports:
-      - "3001:3000"  # Évite le conflit avec ton backend (port 3000)
+      - '3001:3000' # Évite le conflit avec ton backend (port 3000)
     networks:
       - backend_network
     depends_on:
@@ -61,7 +59,7 @@ services:
     volumes:
       - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
     ports:
-      - "9093:9093"
+      - '9093:9093'
     networks:
       - backend_network
     depends_on:
@@ -81,7 +79,7 @@ services:
       - '--path.sysfs=/host/sys'
       - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
     ports:
-      - "9100:9100"
+      - '9100:9100'
     networks:
       - backend_network
 
@@ -90,9 +88,9 @@ services:
     container_name: mongodb-exporter
     restart: unless-stopped
     environment:
-      MONGODB_URI: "mongodb://admin:secret123@mongo:27017/appDB?authSource=admin"
+      MONGODB_URI: 'mongodb://admin:secret123@mongo:27017/appDB?authSource=admin'
     ports:
-      - "9216:9216"
+      - '9216:9216'
     networks:
       - backend_network
 
@@ -101,9 +99,9 @@ services:
     container_name: redis-exporter
     restart: unless-stopped
     environment:
-      REDIS_ADDR: "redis:6379"
+      REDIS_ADDR: 'redis:6379'
     ports:
-      - "9121:9121"
+      - '9121:9121'
     networks:
       - backend_network
 
@@ -115,4 +113,4 @@ volumes:
 networks:
   backend_network:
     external: true
-    name: backend_backend_network  
+    name: backend_backend_network

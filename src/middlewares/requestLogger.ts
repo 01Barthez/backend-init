@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from "express";
-import log from "@services/logging/logger";
+import log from '@services/logging/logger';
+import { NextFunction, Request, Response } from 'express';
 
 /**
  * Middleware: Request Logger
@@ -10,7 +10,7 @@ import log from "@services/logging/logger";
  * - Optionally logs request body and response body (only if JSON and not too large)
  */
 export const requestLog = (req: Request, res: Response, next: NextFunction) => {
-  if (req.path.startsWith("/api-docs") || req.path.startsWith("/static/")) {
+  if (req.path.startsWith('/api-docs') || req.path.startsWith('/static/')) {
     return next();
   }
 
@@ -30,32 +30,36 @@ export const requestLog = (req: Request, res: Response, next: NextFunction) => {
     try {
       if (chunks.length > 0) {
         const buffer = Buffer.concat(chunks);
-        const contentType = res.getHeader("content-type");
+        const contentType = res.getHeader('content-type');
 
-        if (contentType && typeof contentType === "string" && contentType.includes("application/json")) {
-          responseBody = safeJsonParse(buffer.toString("utf8"));
+        if (
+          contentType &&
+          typeof contentType === 'string' &&
+          contentType.includes('application/json')
+        ) {
+          responseBody = safeJsonParse(buffer.toString('utf8'));
         } else {
-          responseBody = "[Non-JSON response]";
+          responseBody = '[Non-JSON response]';
         }
       }
     } catch {
-      responseBody = "[Error parsing response]";
+      responseBody = '[Error parsing response]';
     }
 
     // Avoid logging excessive payloads
     const MAX_LOG_SIZE = 5 * 1024; // 5 KB
     const trimmedResponse =
       responseBody && JSON.stringify(responseBody).length > MAX_LOG_SIZE
-        ? "[Response too large]"
+        ? '[Response too large]'
         : responseBody;
 
     if (res.statusCode !== 404) {
-      log.http("Outgoing Response", {
+      log.http('Outgoing Response', {
         method: req.method,
         url: req.originalUrl,
         statusCode: res.statusCode,
         responseTime: `${responseTime}ms`,
-        contentLength: res.get("Content-Length") || 0,
+        contentLength: res.get('Content-Length') || 0,
         ...(req.body && Object.keys(req.body).length > 0 && { requestBody: req.body }),
         ...(trimmedResponse && { responseBody: trimmedResponse }),
       });
@@ -75,9 +79,9 @@ export const requestLog = (req: Request, res: Response, next: NextFunction) => {
  */
 export const errorLog = (err: Error, req: Request, res: Response, next: NextFunction) => {
   if (res.statusCode !== 404) {
-    log.error("Error occurred", {
+    log.error('Error occurred', {
       error: err.message,
-      stack: process.env.NODE_ENV === "production" ? undefined : err.stack,
+      stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
       path: req.path,
       method: req.method,
       ip: req.ip,

@@ -1,34 +1,5 @@
 # Items API
 
-# Récupérer tous les items
-/items:
-  get:
-    <<: *get_items
-  post:
-    <<: *create_item
-  delete:
-    tags:
-      - Items
-    summary: Supprime tous les items
-    description: Supprime tous les items de la base de données
-    responses:
-      '200':
-        $ref: '../../components/responses.yaml#/SuccessResponse'
-      '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
-# Opérations sur un item spécifique
-/items/{id}:
-  parameters:
-    - $ref: '../../components/parameters.yaml#/id'
-  
-  get:
-    <<: *get_item
-  put:
-    <<: *update_item
-  delete:
-    <<: *delete_item
-
 # Définitions des méthodes HTTP
 get_items: &get_items
   tags:
@@ -155,3 +126,32 @@ delete_item: &delete_item
       $ref: '../../components/responses.yaml#/NotFound'
     '500':
       $ref: '../../components/responses.yaml#/ServerError'
+
+# Récupérer tous les items
+/items:
+  get:
+    <<: *get_items
+  post:
+    <<: *create_item
+  delete:
+    tags:
+      - Items
+    summary: Supprime tous les items
+    description: Supprime tous les items de la base de données
+    responses:
+      '200':
+        $ref: '../../components/responses.yaml#/SuccessResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Opérations sur un item spécifique
+/items/{id}:
+  parameters:
+    - $ref: '../../components/parameters.yaml#/id'
+
+  get:
+    <<: *get_item
+  put:
+    <<: *update_item
+  delete:
+    <<: *delete_item

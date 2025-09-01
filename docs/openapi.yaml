@@ -9,18 +9,16 @@ info:
   contact:
     name: Support API
     email: support@example.com
-    phone: "+237 655 646 688"
+    phone: '+237 655 646 688'
     address:
-      street: ""
-      city: "Yaounde"
-      state: "Centre"
-      country: "Cameroun"
-    
+      street: ''
+      city: 'Yaounde'
+      state: 'Centre'
+      country: 'Cameroun'
 
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-  
 
 servers:
   - url: http://localhost:3000/
@@ -44,18 +42,18 @@ components:
   schemas:
     Item:
       $ref: './schemas/item.yaml'
-  
+
   parameters:
     $ref: './components/parameters.yaml'
-  
+
   responses:
     $ref: './components/responses.yaml'
-  
+
   securitySchemes:
     $ref: './security/bearerAuth.yaml'
 
 security:
-    - BearerAuth: []
+  - BearerAuth: []
 
 externalDocs:
   description: Documentation complète de l'API

@@ -13,7 +13,7 @@ SuccessResponse:
             example: true
           message:
             type: string
-            example: "Opération effectuée avec succès"
+            example: 'Opération effectuée avec succès'
 
 # Réponse d'erreur générique
 ErrorResponse:
@@ -31,7 +31,7 @@ ErrorResponse:
             properties:
               code:
                 type: string
-                example: "ITEM_NOT_FOUND"
+                example: 'ITEM_NOT_FOUND'
               message:
                 type: string
                 example: "Aucun item trouvé avec l'ID fourni"
@@ -52,10 +52,10 @@ ValidationErrorResponse:
             properties:
               code:
                 type: string
-                example: "VALIDATION_ERROR"
+                example: 'VALIDATION_ERROR'
               message:
                 type: string
-                example: "Erreur de validation des données"
+                example: 'Erreur de validation des données'
               details:
                 type: array
                 items:
@@ -65,7 +65,7 @@ ValidationErrorResponse:
                       type: array
                       items:
                         type: string
-                      example: ["body", "name"]
+                      example: ['body', 'name']
                     message:
                       type: string
-                      example: "Le nom est requis"
+                      example: 'Le nom est requis'
