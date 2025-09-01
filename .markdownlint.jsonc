@@ -1,0 +1,41 @@
+{
+  // Active toutes les règles par défaut
+  "default": true,
+
+  // === Structure des titres ===
+  "MD001": true, // titres doivent respecter l'ordre (pas sauter H2 -> H4)
+  "MD003": { "style": "atx" }, // forcer les titres en style # et pas ===
+  "MD025": { "front_matter_title": "" }, // pas de H1 multiple sauf frontmatter
+  "MD041": false, // H1 obligatoire désactivé (utile pour README partiels)
+
+  // === Longueur et lisibilité ===
+  "MD013": { "line_length": 100, "tables": false, "code_blocks": false }, 
+  // wrap max 100 colonnes sauf dans tables et code
+  "MD014": false, // pas d’erreur si shell prompt "$" est utilisé dans exemples
+  "MD033": false, // autoriser HTML inline si besoin
+
+  // === Espaces et indentations ===
+  "MD009": { "br_spaces": 2 }, // autoriser 2 espaces fin de ligne (saut de ligne)
+  "MD010": { "code_blocks": true }, // pas de tabs, sauf dans code blocks
+  "MD012": { "maximum": 2 }, // pas plus de 2 lignes blanches consécutives
+  "MD030": { "ul_single": 1, "ol_single": 1 }, // indentations listes cohérentes
+  "MD032": true, // ligne vide avant titres obligatoire
+
+  // === Liens et images ===
+  "MD042": true, // liens doivent avoir un texte
+  "MD045": true, // images doivent avoir un alt
+
+  // === Tableaux ===
+  "MD046": true, // toujours ``` pour code
+  "MD047": true, // fichier doit finir par une ligne vide
+
+  // === Style général ===
+  "MD026": { "punctuation": ".,;:!?" }, // éviter ponctuation en fin de titre
+  "MD018": true, // pas d’espace après `#` dans titres
+  "MD019": true, // mais espace requis après `#`
+  "MD034": true, // pas d’URL brute → toujours en markdown [texte](url)
+  
+  // === Spécifique à la doc technique ===
+  "MD040": true, // lignes de code doivent avoir langage spécifié ```ts
+  "MD048": { "style": "backtick" } // inline code avec ` et pas ~
+}

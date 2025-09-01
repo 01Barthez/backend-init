@@ -13,16 +13,7 @@ module.exports = {
   arrowParens: 'always',
   endOfLine: 'lf',
   singleAttributePerLine: true,
-  overrides: [
-    {
-      files: '*.{yaml,yml,md,json}',
-      options: {
-        singleQuote: false,
-        tabWidth: 2,
-      },
-    },
-  ],
-
+  embeddedLanguageFormatting: 'off',
   overrides: [
     {
       files: '*.md',
@@ -47,5 +38,16 @@ module.exports = {
         tabWidth: 2,
       },
     },
+    {
+      files: '*.json',
+      options: {
+        singleQuote: false,
+      },
+    },
   ],
+  plugins: ['@trivago/prettier-plugin-sort-imports'],
+importOrder: ['^react', '<THIRD_PARTY_MODULES>', '^@/.*', '^[./]'],
+importOrderSeparation: true,
+importOrderSortSpecifiers: true,
+
 };

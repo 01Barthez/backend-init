@@ -16,8 +16,11 @@
     "generate:openapi": "npx swagger-jsdoc -d ./docs/openapi.config.js -o ./docs/openapi.yaml",
     "postinstall": "npm run generate:openapi && npm run prisma:generate",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx --max-warnings=5",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,mdx,yml,yaml}\"",
     "lint:fix": "npm run lint -- --fix",
+    "lint:md": "markdownlint-cli2 **/*.md",
+    "lint:md:fix": "markdownlint-cli2 --fix '**/*.md'",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,cjs,json,md,mdx,yml,yaml}\"",
+    "format:check": "prettier --check .",
     "type-check": "tsc --noEmit",
     "prepare": "husky install",
     "ci": "echo 'CI=true'",
@@ -56,9 +59,12 @@
     "yamljs": "^0.3.0"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx}": [
-      "eslint --fix",
-      "prettier --write"
+    "*.{ts,tsx,js,json,md,yml,yaml}": [
+      "npm run format",
+      "npm run lint"
+    ],
+    "*.{md,mdx}": [
+      "npm run lind:md:fix"
     ]
   },
   "_moduleAliases": {
@@ -73,6 +79,7 @@
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@types/chalk": "^0.4.31",
     "@types/compression": "^1.8.1",
     "@types/cookie-parser": "^1.4.9",
@@ -105,6 +112,7 @@
     "husky": "^9.1.7",
     "jest": "^30.1.1",
     "k6": "^0.0.0",
+    "markdownlint-cli2": "^0.18.1",
     "prettier": "^3.6.2",
     "prisma": "^5.0.0",
     "supertest": "^7.1.4",
