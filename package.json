@@ -3,11 +3,10 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/index.ts",
     "build": "rimraf dist/ && tsc --noEmitOnError --pretty  --extendedDiagnostics",
+    "dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/index.ts",
     "start": "node -r module-alias/register dist/index.js",
     "test": "echo \"test run\"",
-    "test:fast": "npx vitest run --threads 2 --reporter dot",
     "test:docs": "swagger-cli validate src/docs/openapi.yaml",
     "test:watch": "test --watch",
     "test:coverage": "test --coverage",
