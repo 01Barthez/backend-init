@@ -1,5 +1,5 @@
 import prisma from '@config/prisma/prisma';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 const itemsControllers = {
   // Create

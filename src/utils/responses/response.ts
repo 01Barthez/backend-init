@@ -1,5 +1,5 @@
 import log from '@services/logging/logger';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 interface MetaData {
   path: string;

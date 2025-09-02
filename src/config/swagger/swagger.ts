@@ -1,8 +1,7 @@
-import { Express } from 'express';
+import type { Express } from 'express';
 import fs from 'fs';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
-import YAML from 'yamljs';
 
 /**
  * Sets up Swagger UI and OpenAPI documentation routes for the provided Express application.

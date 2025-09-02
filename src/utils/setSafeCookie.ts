@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import type { Response } from 'express';
 
 import { envs } from '@/config/env/env';
 import log from '@/services/logging/logger';

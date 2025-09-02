@@ -1,4 +1,4 @@
-import { Express } from 'express';
+import type { Express } from 'express';
 
 import { envs } from '@/config/env/env';
 import CSP from '@/router/CSP/csp.router';

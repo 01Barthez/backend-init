@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 import { envs } from '@/config/env/env';
 import { response } from '@/utils/responses/helpers';

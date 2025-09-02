@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 
 export const requestTimeMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
