@@ -31,7 +31,7 @@ const server = app
   // Handle server errors
   .on('error', (err) => {
     log.error(`Error while starting the server: ${err.message}`);
-    process.exit(1);
+    throw new Error(`Error while starting the server: ${err.message}`);
   })
   // Handle unexpected errors
   .on('unhandledRejection', (reason, promise) => {

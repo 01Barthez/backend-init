@@ -24,7 +24,7 @@ export function ensureDirectoryExists(dirPath: string): void {
       fs.writeFileSync(testFile, 'test');
       fs.unlinkSync(testFile);
     } catch (writeError) {
-      throw new Error(`Cannot write to directory: ${dirPath}. Check permissions.`);
+      throw new Error(`Cannot write to directory: ${dirPath}. Check permissions.` + writeError);
     }
   } catch (error) {
     console.error(`Error while checking directory ${dirPath}:`, error);

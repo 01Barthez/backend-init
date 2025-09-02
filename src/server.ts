@@ -28,7 +28,7 @@ process.on('unhandledRejection', (reason, promise) => {
 
 process.on('uncaughtException', (error) => {
   log.error('Uncaught Exception:', error.stack || error);
-  process.exit(1);
+  throw new Error(`Uncaught Exception:: ${error.message || error}`);
 });
 
 export default app;

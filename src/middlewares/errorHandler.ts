@@ -18,7 +18,7 @@ import { sendResponse } from '@/utils/responses/response';
 /**
  * Format error stack trace for better readability
  */
-const formatErrorStack = (stack?: string): string[] | undefined => {
+const _formatErrorStack = (stack?: string): string[] | undefined => {
   if (!stack) return undefined;
   return stack
     .split('\n')
@@ -26,7 +26,7 @@ const formatErrorStack = (stack?: string): string[] | undefined => {
     .filter((line) => line.length > 0);
 };
 
-const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+const errorHandler = (err: any, req: Request, res: Response, _next: NextFunction) => {
   // Optionally hide stack traces in production
   const extraMeta: Record<string, any> = {};
   if (process.env.NODE_ENV !== 'production') {

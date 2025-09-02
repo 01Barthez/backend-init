@@ -18,7 +18,7 @@ const CSPControllers = {
 
       response.success(req, res, 'CSP report received').end();
     } catch (error) {
-      response.serverError(req, res, 'Failed to process CSP report');
+      response.serverError(req, res, `Failed to process CSP report: ${error}`);
     }
   },
 };

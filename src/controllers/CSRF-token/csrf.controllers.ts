@@ -18,7 +18,7 @@ const CSRFControllers = {
 
       response.ok(req, res, { csrfToken: req.csrfToken() }, 'CSRF Token successfuly send');
     } catch (error) {
-      response.serverError(req, res, 'Error generating CSRF token');
+      response.serverError(req, res, `Error generating CSRF token: ${error}`);
     }
   },
 };

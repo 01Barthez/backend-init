@@ -19,7 +19,7 @@ try {
   ensureDirectoryExists(logsDir);
 } catch (error) {
   console.error('Critical error: Impossible to settings logs');
-  process.exit(1);
+  throw new Error(`Critical error: Impossible to settings logs: ${error}`);
 }
 
 // Dynamic log level based on environment
@@ -67,8 +67,8 @@ const transportsList = [
 ];
 
 // Custom format for HTTP logs
-const httpFormat = format.printf(
-  ({ timestamp, level, message, method, url, status, responseTime, ...meta }) => {
+const _httpFormat = format.printf(
+  ({ timestamp, level, _message, method, url, status, responseTime, ..._meta }) => {
     return `${timestamp} [${level}]: ${method} ${url} ${status} - ${responseTime}ms`;
   },
 );
@@ -137,7 +137,7 @@ process.on('uncaughtException', (error) => {
       ...('cause' in error && error.cause !== undefined ? { cause: (error as any).cause } : {}),
     },
   });
-  process.exit(1);
+  throw new Error(`Uncaught Exception: ${error}`);
 });
 
 process.on('unhandledRejection', (reason, promise) => {

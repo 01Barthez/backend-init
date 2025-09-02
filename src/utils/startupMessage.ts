@@ -9,7 +9,6 @@ export const bottomBorder = chalk.hex('#2c3e50')('╚' + '═'.repeat(55) + '╝
 export const sideBorder = chalk.hex('#2c3e50')('║');
 //
 const memoryUsage = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
-const uptime = process.uptime().toFixed(2);
 const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 //
 const runtimeHeader =
@@ -21,7 +20,7 @@ const runtimeFooter = chalk.hex('#8e44ad')(
 );
 const linkedName = `\u001b]8;;https://www.linkedin.com/in/barthez-kenwou/\u0007BARTHEZ KENWOU\u001b]8;;\u0007`;
 
-export const displayStartupMessage = (port: number = envs.PORT) => {
+export const displayStartupMessage = (_port: number = envs.PORT) => {
   // ==== HEADER BANNER ====
   const banner = `
 ${chalk.bgHex('#91f70c').white(' █████████████████████████████████████████████████████████████████████████')}

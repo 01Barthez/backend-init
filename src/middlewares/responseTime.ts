@@ -6,6 +6,7 @@ export const requestTimeMiddleware = (req: Request, res: Response, next: NextFun
 
   res.on('finish', () => {
     const endTime = Date.now();
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const responseTime = endTime - startTime;
   });
 

@@ -23,6 +23,7 @@ const disableLogsInProduction = (_req: Request, _res: Response, next: NextFuncti
       if (!originalConsole[method]) {
         originalConsole[method] = console[method];
       }
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
       console[method] = (() => {}) as any;
     });
   }

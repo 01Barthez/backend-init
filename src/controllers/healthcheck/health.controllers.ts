@@ -8,7 +8,7 @@ const healthControllers = {
     try {
       response.ok(_req, res, [], 'Health check successful');
     } catch (error) {
-      response.serverError(_req, res, 'Health check failed');
+      response.serverError(_req, res, `Health check failed: ${error}`);
     }
   },
 };
