@@ -27,6 +27,8 @@ export default [
       'node_modules/**',
       'logs/**',
       'vitest.config.ts',
+      '*.config.js',
+      'commitlint.config.js',
     ],
   },
   {

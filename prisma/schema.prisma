@@ -7,8 +7,45 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// User model: Use to manage all users
+model users {
+  id         String  @id @default(auto()) @map("_id") @db.ObjectId
+  email      String  @unique
+  password   String
+  first_name String
+  last_name  String
+  avatar_url String
+  phone      String
+  is_active  Boolean @default(true)
+
+  // verifier indicator
+  otp         Otp?
+  is_verified Boolean @default(false)
+
+  email_verified_at    DateTime?
+  last_login_at        DateTime?
+  last_password_change DateTime?
+
+  // tracing
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  is_deleted Boolean   @default(false)
+  deleted_at DateTime?
+
+  @@index([email, is_verified])
+  @@index([phone])
+  @@index([deleted_at])
+}
+
+// Item model: Use to define one item to manage crud information
 model Item {
   id    String @id @default(auto()) @map("_id") @db.ObjectId
   name  String
   value Int
+}
+
+// Types & Enums
+type Otp {
+  code      String
+  expire_at DateTime
 }
