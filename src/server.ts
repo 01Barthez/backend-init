@@ -1,10 +1,10 @@
 import setupSwagger from '@config/swagger/swagger';
 import log from '@services/logging/logger';
-import metricsRouter from '@services/metrics/metrics';
 import initMiddlewares from '@utils/middleware/_initMiddlewares';
 import express from 'express';
 
 import health from '@/router/_config/healtcheck/health.router';
+import metricsRouter from '@/services/metrics/metrics';
 
 const app = express();
 

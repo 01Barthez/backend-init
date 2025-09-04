@@ -39,6 +39,7 @@ export const envs = {
   SMTP_PORT: env.get('SMTP_PORT').required().asPortNumber(),
   SMTP_USER: env.get('SMTP_USER').required().asString(),
   SMTP_PASS: env.get('SMTP_PASS').required().asString(),
+  USER_EMAIL: env.get('USER_EMAIL').required().asEmailString(),
 
   // Logging
   LOG_LEVEL: env.get('LOG_LEVEL').default('info').asString(),
