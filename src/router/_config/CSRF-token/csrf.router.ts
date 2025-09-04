@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import CSRFControllers from '@/controllers/CSRF-token/csrf.controllers';
+import CSRFControllers from '@/controllers/_config/CSRF-token/csrf.controllers';
 
 const CSRF = Router();
 

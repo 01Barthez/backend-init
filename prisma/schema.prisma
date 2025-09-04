@@ -16,7 +16,7 @@ model users {
   last_name  String
   avatar_url String
   phone      String
-  is_active  Boolean @default(true)
+  is_active  Boolean @default(false)
 
   // verifier indicator
   otp         Otp?

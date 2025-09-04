@@ -25,8 +25,10 @@ export const envs = {
   LOG_TO_MONGODB: env.get('LOG_TO_MONGODB').default('false').asBool(),
 
   // Redis
-  MINIO_ROOT_USER: env.get('MINIO_ROOT_USER').required().asString(),
-  MINIO_ROOT_PASSWORD: env.get('MINIO_ROOT_PASSWORD').required().asString(),
+  MINIO_ACCESS_KEY: env.get('MINIO_ACCESS_KEY').required().asString(),
+  MINIO_SECRET_KEY: env.get('MINIO_SECRET_KEY').required().asString(),
+  MINIO_PORT: env.get('MINIO_PORT').required().asPortNumber(),
+  MINIO_ENDPOINT: env.get('MINIO_ENDPOINT').default('localhost').asString(),
 
   // Redis
   REDIS_HOST: env.get('REDIS_HOST').required().asString(),
@@ -73,6 +75,7 @@ export const envs = {
   CSRF_COOKIE_NAME: env.get('CSRF_COOKIE_NAME').default('XSRF-TOKEN').asString(),
   CSRF_HEADER_NAME: env.get('CSRF_HEADER_NAME').default('X-XSRF-TOKEN').asString(),
   CSRF_EXPIRES_IN: env.get('CSRF_EXPIRES_IN').default('2h').asString(),
+  ALLOW_CSRF_PROTECTION: env.get('ALLOW_CSRF_PROTECTION').default('true').asBool(),
 
   // CSP Reorting
   CSP_REPORT_URI: env.get('CSP_REPORT_URI').default('/security/csp-violation').asString(),
@@ -88,6 +91,9 @@ export const envs = {
   SWAGGER_ENABLED: env.get('SWAGGER_ENABLED').default('true').asBool(),
   SWAGGER_USER: env.get('SWAGGER_USER').default('admin').asString(),
   SWAGGER_PASSWORD: env.get('SWAGGER_PASSWORD').default('admin').asString(),
+
+  // Otp delay
+  OTP_DELAY: env.get('OTP_DELAY').default(900000).asInt(),
 
   // OAuth
   // OAUTH_GOOGLE_CLIENT_ID: env.get('OAUTH_GOOGLE_CLIENT_ID').required().asString(),

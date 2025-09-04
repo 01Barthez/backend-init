@@ -1,6 +1,6 @@
 import express, { Router } from 'express';
 
-import CSPControllers from '@/controllers/CSP/csp.controllers';
+import CSPControllers from '@/controllers/_config/CSP/csp.controllers';
 
 const CSP = Router();
 

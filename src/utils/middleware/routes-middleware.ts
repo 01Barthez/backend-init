@@ -1,10 +1,11 @@
 import type { Express } from 'express';
 
 import { envs } from '@/config/env/env';
-import CSP from '@/router/CSP/csp.router';
-import CSRF from '@/router/CSRF-token/csrf.router';
-import health from '@/router/healtcheck/health.router';
+import CSP from '@/router/_config/CSP/csp.router';
+import CSRF from '@/router/_config/CSRF-token/csrf.router';
+import health from '@/router/_config/healtcheck/health.router';
 import items from '@/router/items/items.router';
+import users from '@/router/users/users.router';
 
 import { rateLimitingSubRoute } from './securityConfig';
 
@@ -21,6 +22,9 @@ const setupRoutes = (app: Express): void => {
 
   // Health check routes
   app.use('/health', rateLimitingSubRoute, health);
+
+  // Users check routes
+  app.use('/', rateLimitingSubRoute, users);
 };
 
 export default setupRoutes;
