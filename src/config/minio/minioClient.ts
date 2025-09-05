@@ -1,9 +1,10 @@
-import { envs } from '@/config/env/env';
-import { MinioUploader } from '@/services/upload/Minio-s3-uploader';
+import { Client as Minio } from 'minio';
 
-export const minioClient = new MinioUploader({
-  endPoint: 'localhost',
-  port: 9000,
+import { envs } from '@/config/env/env';
+
+export const minioClient = new Minio({
+  endPoint: envs.MINIO_ENDPOINT || 'localhost',
+  port: envs.MINIO_PORT ? Number(envs.MINIO_PORT) : 9000,
   useSSL: false,
   accessKey: envs.MINIO_ACCESS_KEY!,
   secretKey: envs.MINIO_SECRET_KEY!,

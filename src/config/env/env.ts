@@ -29,6 +29,8 @@ export const envs = {
   MINIO_SECRET_KEY: env.get('MINIO_SECRET_KEY').required().asString(),
   MINIO_PORT: env.get('MINIO_PORT').required().asPortNumber(),
   MINIO_ENDPOINT: env.get('MINIO_ENDPOINT').default('localhost').asString(),
+  MINIO_APP_BUCKET: env.get('MINIO_APP_BUCKET').default('my-app-uploads').asString(),
+  MINIO_BASE_PATH: env.get('MINIO_BASE_PATH').default('uploads/').asString(),
 
   // Redis
   REDIS_HOST: env.get('REDIS_HOST').required().asString(),

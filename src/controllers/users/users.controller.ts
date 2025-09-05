@@ -11,7 +11,7 @@ import { response } from '@/utils/responses/helpers';
 const users_controller = {
   //* AUTH SETUP **********************************************************************************************************************************************************
   // Insciption (Sign up)
-  login: async (req: Request, res: Response): Promise<void | Response<any>> => {
+  signup: async (req: Request, res: Response): Promise<void | Response<any>> => {
     const { email, password, first_name, last_name, phone } = req.body;
 
     // Check all information are provided
@@ -36,7 +36,7 @@ const users_controller = {
           contentType: req.file.mimetype,
           size: req.file.size,
         },
-        { profile: 'avatar', prefix: 'profils', datePartition: true },
+        // { profile: 'avatar', prefix: 'profils', datePartition: true },
       );
     }
     // const profile_url: string = upload_image_to_storage(req);
@@ -92,7 +92,6 @@ const users_controller = {
       },
     };
 
-    // all is done here
     response.created(req, res, user_data, 'user_successfully creadted');
   },
 
