@@ -8,7 +8,7 @@ clear
 # Then the application
 ./scripts/stop_app.sh
 
-echo "Starting the main application..."
+echo "---------------------STARTINT THE MAIN APPLICATION---------------------"
 
 # Check that Docker is running
 if ! docker info &> /dev/null; then
@@ -27,10 +27,7 @@ for service in backend mongo redis minio; do
     exit 1
   fi
 done
-
-echo "Main application started successfully"
-echo "   - Backend:       http://localhost:3000"
-echo "   - MongoDB:       mongodb://localhost:27017"
-echo "   - Redis:         redis://localhost:6379"
-echo "   - Minio:         http://localhost:9001"
-echo "   - Mailhog:       http://localhost:8025"
+echo ""
+echo ""
+echo "---------------------MAIN APPLICATION SUCCESSFULY LAUNCHED---------------------"
+echo ""

@@ -8,7 +8,15 @@ const CSRFControllers = {
   // Read
   sendToken: async (req: Request, res: Response): Promise<void> => {
     try {
+      if (!req.csrfToken) {
+        throw new Error('CSRF protection is not properly configured');
+      }
+
       const csrfToken = req.csrfToken();
+
+      if (!csrfToken) {
+        throw new Error('Failed to generate CSRF token');
+      }
 
       // send token through a secure cookie
       setSafeCookie(res, envs.CSRF_COOKIE_NAME, csrfToken, {

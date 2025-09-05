@@ -88,7 +88,7 @@ const initMiddlewares = (app: Express): void => {
   app.use(rateLimiting); // Rate limiting to prevent abuse
 
   // 6. CSRF protection middleware (must be after cookieParser and before routes)
-  if (process.env.NODE_ENV !== 'development' && envs.ALLOW_CSRF_PROTECTION)
+  if (envs.ALLOW_CSRF_PROTECTION)
     app.use(
       csurf({
         cookie: {
@@ -100,7 +100,7 @@ const initMiddlewares = (app: Express): void => {
           path: '/',
           maxAge: 86400, // 24 hours
         },
-        ignoreMethods: ['GET', 'HEAD', 'OPTIONS'], // Do not require CSRF token for safe methods
+        ignoreMethods: ['HEAD', 'OPTIONS'], // Do not require CSRF token for safe methods
       }),
     );
 
