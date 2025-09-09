@@ -30,8 +30,6 @@ const users_controller = {
 
     // Upload image to storage and save image
     let profile_url = '';
-    let profile_url2 = '';
-    let profile_url3 = '';
 
     if (req.file) {
       try {
@@ -47,20 +45,14 @@ const users_controller = {
 
         if (profile?.key) {
           // fetch the url of the storage file only if upload was successful
-          profile_url = await uploader['presigned'].presignedGet(profile.key, 3600);
-          profile_url2 = `http://${envs.MINIO_ENDPOINT}:${envs.MINIO_PORT}/${envs.MINIO_APP_BUCKET}/${profile.key}`;
-          profile_url3 = `http://${req.get('host')}/api/v1/files/${profile.key}`;
-
-          log.info(profile_url2);
+          profile_url = `http${envs.MINIO_USE_SSL ? 's' : ''}://${envs.MINIO_ENDPOINT}${[80, 443].includes(Number(envs.MINIO_PORT)) ? '' : `:${envs.MINIO_PORT}`}/${envs.MINIO_APP_BUCKET}/${profile.key}`;
         }
       } catch (err: any) {
         return response.unprocessable(req, res, `Failed to upload avatar: ${err}`);
       }
+    } else {
+      log.info("profile picture isn't defined !");
     }
-
-    log.info(`Profile URL 1: ${profile_url}`);
-    log.info(`Profile URL 2: ${profile_url2}`);
-    log.info(`Profile URL 3: ${profile_url3}`);
 
     // hash password
     const user_password = (await hash_password(password)) || '';
@@ -78,7 +70,7 @@ const users_controller = {
         first_name,
         last_name,
         phone,
-        avatar_url: profile_url2,
+        avatar_url: profile_url,
         otp: {
           code: user_otp,
           expire_at: otp_expire_date,

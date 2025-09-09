@@ -28,6 +28,7 @@ export const envs = {
   MINIO_ACCESS_KEY: env.get('MINIO_ACCESS_KEY').required().asString(),
   MINIO_SECRET_KEY: env.get('MINIO_SECRET_KEY').required().asString(),
   MINIO_PORT: env.get('MINIO_PORT').required().asPortNumber(),
+  MINIO_USE_SSL: env.get('MINIO_USE_SSL').default('false').asBool(),
   MINIO_ENDPOINT: env.get('MINIO_ENDPOINT').default('localhost').asString(),
   MINIO_APP_BUCKET: env.get('MINIO_APP_BUCKET').default('my-app-uploads').asString(),
   MINIO_BASE_PATH: env.get('MINIO_BASE_PATH').default('uploads/').asString(),
