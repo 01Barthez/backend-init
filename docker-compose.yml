@@ -81,13 +81,13 @@ services:
       - 'prometheus.port=9121'
 
   minio:
-    image: minio/minio
+    image: minio/minio:RELEASE.2023-10-25T06-33-25Z
     container_name: ${MINIO_NAME:-minio_storage}
     restart: always
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
-    command: server /data --console-address ":9001"
+    command: server /data --console-address ":9001" --address ":9000"
     ports:
       - '${MINIO_PORT:-9000}:9000'
       - '${MINIO_CONSOLE:-9001}:9001'
@@ -96,13 +96,28 @@ services:
     networks:
       - backend_network
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/ready']
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
       interval: 30s
       timeout: 10s
       retries: 5
-    labels:
-      - 'prometheus.scrape=true'
-      - 'prometheus.port=${MINIO_PORT:-9000}'
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: minio_initializer
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/scripts/init-minio.sh"]
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_APP_BUCKET: ${MINIO_APP_BUCKET}
+    volumes:
+      - ./scripts/init-minio.sh:/scripts/init-minio.sh:ro
+    networks:
+      - backend_network
+
+
 
   mailhog:
     image: mailhog/mailhog

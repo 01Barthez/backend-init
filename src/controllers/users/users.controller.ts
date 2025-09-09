@@ -45,7 +45,7 @@ const users_controller = {
 
         if (profile?.key) {
           // fetch the url of the storage file only if upload was successful
-          profile_url = `http${envs.MINIO_USE_SSL ? 's' : ''}://${envs.MINIO_ENDPOINT}${[80, 443].includes(Number(envs.MINIO_PORT)) ? '' : `:${envs.MINIO_PORT}`}/${envs.MINIO_APP_BUCKET}/${profile.key}`;
+          profile_url = `http${envs.MINIO_USE_SSL ? 's' : ''}://localhost${[80, 443].includes(Number(envs.MINIO_PORT)) ? '' : `:${envs.MINIO_PORT}`}/${envs.MINIO_APP_BUCKET}/${profile.key}`;
         }
       } catch (err: any) {
         return response.unprocessable(req, res, `Failed to upload avatar: ${err}`);
