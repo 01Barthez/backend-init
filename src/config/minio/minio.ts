@@ -29,10 +29,10 @@ export const uploader = new MinioUploader({
   // multipartPartSize: 10 * 1024 * 1024,
   maxRetries: 5,
   // concurrency: 4,
-  scanner: new ClamAVScanner({
-    host: 'clamd.local',
-    port: 3310,
-  }),
+  // scanner: new ClamAVScanner({
+  //   host: 'clamd.local',
+  //   port: 3310,
+  // }),
 });
 
 uploader.on('uploaded', (info) => console.log('uploaded', info));

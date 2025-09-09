@@ -1,7 +1,9 @@
 import type { Request, Response } from 'express';
 
+import { envs } from '@/config/env/env';
 import { uploader } from '@/config/minio/minio';
 import prisma from '@/config/prisma/prisma';
+import log from '@/services/logging/logger';
 import { get_expire_date } from '@/utils/Otp/OTPExpirationDate';
 import generate_otp from '@/utils/Otp/generateOtp';
 import { hash_password } from '@/utils/password/hashPassword';
@@ -27,20 +29,38 @@ const users_controller = {
     if (emailAlreadyExist) return response.conflict(req, res, 'Email already exist !');
 
     // Upload image to storage and save image
-    let profile: any = '';
+    let profile_url = '';
+    let profile_url2 = '';
+    let profile_url3 = '';
+
     if (req.file) {
-      profile = await uploader.uploadBuffer(
-        req.file.buffer,
-        {
-          filename: req.file.originalname,
-          contentType: req.file.mimetype,
-          size: req.file.size,
-        },
-        // { profile: 'avatar', prefix: 'profils', datePartition: true },
-      );
+      try {
+        const profile = await uploader.uploadBuffer(
+          req.file.buffer,
+          {
+            filename: req.file.originalname,
+            contentType: req.file.mimetype,
+            size: req.file.size,
+          },
+          // { profile: 'avatar', prefix: 'profils', datePartition: true },
+        );
+
+        if (profile?.key) {
+          // fetch the url of the storage file only if upload was successful
+          profile_url = await uploader['presigned'].presignedGet(profile.key, 3600);
+          profile_url2 = `http://${envs.MINIO_ENDPOINT}:${envs.MINIO_PORT}/${envs.MINIO_APP_BUCKET}/${profile.key}`;
+          profile_url3 = `http://${req.get('host')}/api/v1/files/${profile.key}`;
+
+          log.info(profile_url2);
+        }
+      } catch (err: any) {
+        return response.unprocessable(req, res, `Failed to upload avatar: ${err}`);
+      }
     }
-    // const profile_url: string = upload_image_to_storage(req);
-    const profile_url: string = profile.location || '';
+
+    log.info(`Profile URL 1: ${profile_url}`);
+    log.info(`Profile URL 2: ${profile_url2}`);
+    log.info(`Profile URL 3: ${profile_url3}`);
 
     // hash password
     const user_password = (await hash_password(password)) || '';
@@ -58,7 +78,7 @@ const users_controller = {
         first_name,
         last_name,
         phone,
-        avatar_url: profile_url,
+        avatar_url: profile_url2,
         otp: {
           code: user_otp,
           expire_at: otp_expire_date,

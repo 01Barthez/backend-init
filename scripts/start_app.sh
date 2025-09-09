@@ -8,7 +8,11 @@ clear
 # Then the application
 ./scripts/stop_app.sh
 
+echo ""
+echo ""
 echo "---------------------STARTINT THE MAIN APPLICATION---------------------"
+echo ""
+echo ""
 
 # Check that Docker is running
 if ! docker info &> /dev/null; then
@@ -27,6 +31,7 @@ for service in backend mongo redis minio; do
     exit 1
   fi
 done
+
 echo ""
 echo ""
 echo "---------------------MAIN APPLICATION SUCCESSFULY LAUNCHED---------------------"

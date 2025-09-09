@@ -8,7 +8,7 @@ COPY .env ./
 
 # Install dependencies
 COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts --loglevel verbose
+RUN npm ci --ignore-scripts
 
 # Copy source code
 COPY tsconfig.json ./
@@ -52,7 +52,7 @@ COPY docs/openapi.yaml /usr/src/app/docs/
 
 # Install production dependencies only
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --ignore-scripts --loglevel verbose
+RUN npm ci --omit=dev --ignore-scripts
 
 
 # Copy build output and prisma schema
