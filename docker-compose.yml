@@ -147,12 +147,15 @@ services:
     environment:
       - CLAMAV_NO_CLAMD=false
       - CLAMAV_NO_FRESHCLAMD=false
-      - CLAMD_STARTUP_TIMEOUT=900
+      - CLAMD_STARTUP_TIMEOUT=300
       - CLAMD_STARTUP_SLEEP=30
       - CLAMD_CONNECT_TIMEOUT=30
-      - CLAMD_STREAM_MAX_LENGTH=100M
+      - CLAMD_STREAM_MAX_LENGTH=50M
       - FRESHCLAM_CHECKS=4
       - CLAMD_HOST=0.0.0.0 
+      - CLAMD_EXTRA_ARGS=--foreground --stream-max-ratio=300 --max-queue=100
+      - FRESHCLAM_MOD=3600
+
     volumes:
       - clamav_data:/var/lib/clamav
       - ./monitoring/clamav/clamd.conf:/etc/clamav/clamd.conf
@@ -169,6 +172,14 @@ services:
       start_period: 60s
     command: ["sh", "-c", "freshclam --daemon --stdout && clamd --foreground"]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
 
 volumes:
   mongo_data:

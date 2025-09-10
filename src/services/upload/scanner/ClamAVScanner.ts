@@ -11,13 +11,14 @@ export class ClamAVScanner implements Scanner {
   private lastError?: Error;
   private lastChecked: Date = new Date(0);
   private readonly CHECK_INTERVAL_MS = 30000; // 30 seconds
-  private readonly MAX_RETRIES = 3;
-  private readonly RETRY_DELAY = 2000; // 2 seconds
+  private readonly MAX_RETRIES = 2;
+  private readonly RETRY_DELAY = 1000; // 1 second
+  private readonly SCAN_TIMEOUT_MS = 30000; // 30 seconds max per scan
 
   constructor(opts: { host?: string; port?: number; timeoutMs?: number } = {}) {
     this.host = opts.host ?? process.env.CLAMAV_HOST ?? 'clamav';
     this.port = opts.port ?? Number(process.env.CLAMAV_PORT) ?? 3310;
-    this.timeoutMs = opts.timeoutMs ?? 20000;
+    this.timeoutMs = opts.timeoutMs ?? 15000; // 15 seconds for initial connection
 
     // Initial availability check
     this.checkAvailability().catch((err) => {
@@ -95,7 +96,7 @@ export class ClamAVScanner implements Scanner {
     });
 
     try {
-      // Vérifier si le service est disponible
+      // Check if service is available with a quick ping first
       if (!(await this.isAvailable())) {
         throw new Error('ClamAV service is not available');
       }
@@ -107,23 +108,20 @@ export class ClamAVScanner implements Scanner {
         ? Readable.from([streamOrBuffer])
         : streamOrBuffer;
 
-      const result = await new Promise<ScanResult>((resolve) => {
-        let timedOut = false;
-        const timer = setTimeout(() => {
-          timedOut = true;
-          log.warn('Scan timed out', { scanId, duration: Date.now() - startTime });
-          resolve(this.createErrorResult('timeout', 'Scan operation timed out'));
-        }, this.timeoutMs);
-
+      // Wrap the scan in a timeout
+      const scanPromise = new Promise<ScanResult>((resolve, reject) => {
         scanner.scanStream(input, (err: any, reply: any) => {
-          clearTimeout(timer);
-          if (timedOut) return;
-
           const scanDuration = Date.now() - startTime;
-
+          
           if (err) {
-            log.error('Scan error', { scanId, error: err, duration: scanDuration });
-            return resolve(this.createErrorResult('error', err.message, err));
+            log.error('Scan error', { 
+              scanId, 
+              error: err, 
+              duration: scanDuration,
+              filename,
+              size: fileSize
+            });
+            return reject(err);
           }
 
           const text = String(reply?.toString?.() ?? reply ?? '').trim();
@@ -131,48 +129,79 @@ export class ClamAVScanner implements Scanner {
           if (/OK$/i.test(text)) {
             log.info('Scan completed - Clean', {
               scanId,
+              filename,
+              size: fileSize,
               duration: scanDuration,
-              result: 'clean',
             });
             return resolve({
               ok: true,
               reason: 'clean',
-              scannedAt: new Date(),
               scanDuration,
-              fileInfo: { name: filename, size: fileSize },
+              scannedAt: new Date(),
+              fileInfo: {
+                name: filename,
+                size: fileSize
+              }
             });
           }
 
-          // Détection d'infection
-          const threat = text.replace(/^stream: /i, '').replace(/ FOUND$/, '');
-          log.warn('Infection detected', {
+          // If we get here, the file might be infected
+          const threat = text.split('FOUND')[0]?.trim() || 'Unknown threat';
+          log.warn('Scan detected threat', {
             scanId,
+            filename,
             threat,
             duration: scanDuration,
           });
-
+          
           resolve({
             ok: false,
             reason: 'infected',
             threat,
-            scannedAt: new Date(),
             scanDuration,
-            fileInfo: { name: filename, size: fileSize },
-            raw: text,
+            scannedAt: new Date(),
+            fileInfo: {
+              name: filename,
+              size: fileSize
+            }
           });
         });
       });
 
-      return result;
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      log.error('Scan failed', {
-        scanId,
-        error: errorMsg,
-        duration: Date.now() - startTime,
+      // Add timeout to the scan operation
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          const duration = Date.now() - startTime;
+          log.warn('Scan timed out', { scanId, duration, filename, size: fileSize });
+          reject(new Error(`Scan timed out after ${duration}ms`));
+        }, this.SCAN_TIMEOUT_MS);
       });
 
-      return this.createErrorResult('service_unavailable', `Scan failed: ${errorMsg}`, error);
+      // Race between the scan and the timeout
+      return await Promise.race([scanPromise, timeoutPromise]);
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      log.error('Scan failed', { 
+        scanId, 
+        error: error instanceof Error ? error.message : String(error),
+        duration,
+        filename,
+        size: fileSize
+      });
+      
+      return {
+        ok: false,
+        reason: error instanceof Error ? 
+          (error.message.includes('timeout') ? 'timeout' : 'error') : 
+          'service_unavailable',
+        scanDuration: duration,
+        threat: 'Scan failed',
+        scannedAt: new Date(),
+        fileInfo: {
+          name: filename,
+          size: fileSize
+        }
+      };
     }
   }
 
