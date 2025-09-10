@@ -10,6 +10,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      clamav:
+        condition: service_healthy
       mailhog:
         condition: service_started
     environment:
@@ -96,7 +98,7 @@ services:
     networks:
       - backend_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/ready']
       interval: 30s
       timeout: 10s
       retries: 5
@@ -107,7 +109,7 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    entrypoint: ["/bin/sh", "/scripts/init-minio.sh"]
+    entrypoint: ['/bin/sh', '/scripts/init-minio.sh']
     environment:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
@@ -116,8 +118,6 @@ services:
       - ./scripts/init-minio.sh:/scripts/init-minio.sh:ro
     networks:
       - backend_network
-
-
 
   mailhog:
     image: mailhog/mailhog
@@ -141,9 +141,39 @@ services:
     networks:
       - backend_network
 
+  clamav:
+    image: clamav/clamav:1.0.9
+    container_name: ${CLAMAV_NAME:-clamav}
+    environment:
+      - CLAMAV_NO_CLAMD=false
+      - CLAMAV_NO_FRESHCLAMD=false
+      - CLAMD_STARTUP_TIMEOUT=900
+      - CLAMD_STARTUP_SLEEP=5
+      - CLAMD_CONNECT_TIMEOUT=30
+      - CLAMD_STREAM_MAX_LENGTH=100M
+      - FRESHCLAM_CHECKS=4
+    volumes:
+      - clamav_data:/var/lib/clamav
+      - ./monitoring/clamav/clamd.conf:/etc/clamav/clamd.conf
+      - clamav_logs:/var/log/clamav
+    ports:
+      - ${CLAMAV_PORT:-3310}
+    networks:
+      - backend_network
+    healthcheck:
+      test: ["CMD", "clamdscan", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    command: ["sh", "-c", "freshclam --daemon --stdout && clamd --foreground"]
+    restart: unless-stopped
+
 volumes:
   mongo_data:
   minio_data:
+  clamav_data:
+  clamav_logs:
 
 networks:
   backend_network:

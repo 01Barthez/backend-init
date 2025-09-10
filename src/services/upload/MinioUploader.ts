@@ -1,10 +1,11 @@
 import EventEmitter from 'events';
 
+import log from '../logging/logger';
 import { UploadError, ValidationError } from './core/Errors';
 import { defaultLogger } from './core/Logger';
 import type { Logger } from './core/Logger';
 import type { UploadResult } from './core/UploadResult';
-import { sleep } from './core/Utils';
+import { generateFilePath, sleep } from './core/Utils';
 import type { FileMeta, ValidationPolicy } from './core/ValidationPolicy';
 import { MinioProvider } from './providers/MinioProvider';
 import type { Scanner } from './scanner/Scanner';
@@ -19,7 +20,6 @@ export class MinioUploader extends EventEmitter {
   private presigned: PresignedUrlService;
   private scanner?: Scanner;
   private maxRetries: number;
-  private logger: Logger;
 
   constructor(config: {
     client: any;
@@ -45,24 +45,88 @@ export class MinioUploader extends EventEmitter {
     this.presigned = new PresignedUrlService(this.provider);
     this.scanner = config.scanner;
     this.maxRetries = config.maxRetries ?? 3;
-    this.logger = config.logger ?? defaultLogger();
   }
 
   async uploadBuffer(buffer: Buffer, meta: FileMeta): Promise<UploadResult> {
-    this.validator.validate(meta);
+    const startTime = Date.now();
+    const uploadId = `upload-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
-    if (this.scanner) {
-      const scan = await this.scanner.scan(buffer, meta.filename);
-      if (!scan.ok) throw new ValidationError('virus_detected', scan);
-    }
-
-    const key = meta.filename; // simplifié
-    return this.retry(async () => {
-      await this.provider.ensureBucketExists();
-      await this.provider.putObject(key, buffer, buffer.length, meta.contentType);
-      this.emit('uploaded', { key, bucket: 'bucket', size: buffer.length });
-      return { bucket: 'bucket', key, size: buffer.length, location: key };
+    log.info('Starting file upload', {
+      uploadId,
+      filename: meta.filename,
+      size: buffer.length,
+      contentType: meta.contentType,
     });
+
+    try {
+      // 1. Validation du fichier
+      this.validator.validate(meta);
+
+      // 2. Scan antivirus
+      if (this.scanner) {
+        log.debug('Starting virus scan', { uploadId });
+        const scanResult = await this.scanner.scan(buffer, meta.filename);
+
+        if (!scanResult.ok) {
+          log.warn('Virus scan failed', {
+            uploadId,
+            reason: scanResult.reason,
+            threat: scanResult.threat,
+            duration: Date.now() - startTime,
+          });
+
+          throw new ValidationError(
+            `virus_scan_failed: ${scanResult.threat || 'File is potentially malicious'}`,
+            scanResult,
+          );
+        }
+        log.debug('Virus scan completed', { uploadId, duration: scanResult.scanDuration });
+      }
+
+      // 3. Génération du chemin de fichier
+      const { key, path } = generateFilePath(meta.filename);
+
+      // 4. Upload vers MinIO
+      await this.retry(async () => {
+        await this.provider.ensureBucketExists();
+        await this.provider.putObject(key, buffer, buffer.length, meta.contentType);
+      });
+
+      const result: UploadResult = {
+        bucket: this.provider['bucket'],
+        key,
+        path,
+        size: buffer.length,
+        originalName: meta.filename,
+        mimeType: meta.contentType ?? '',
+        uploadedAt: new Date().toISOString(),
+        uploadDuration: Date.now() - startTime,
+        scanResult: this.scanner ? 'clean' : 'not_scanned',
+      };
+
+      log.info('File uploaded successfully', {
+        uploadId,
+        key,
+        size: buffer.length,
+        duration: result.uploadDuration,
+      });
+
+      this.emit('uploaded', result);
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log.error('Upload failed', {
+        uploadId,
+        error: errorMessage,
+        duration: Date.now() - startTime,
+      });
+
+      if (error instanceof ValidationError) {
+        throw error; // Laissez le gestionnaire d'erreurs global gérer ça
+      }
+
+      throw new UploadError(`upload_failed: ${errorMessage}`, error);
+    }
   }
 
   private async retry<T>(fn: () => Promise<T>): Promise<T> {

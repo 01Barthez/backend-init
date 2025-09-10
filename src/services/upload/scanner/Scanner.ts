@@ -1,7 +1,18 @@
-import type { Readable } from 'stream';
-
-export type ScanResult = { ok: true } | { ok: false; reason: string; raw?: any };
+export interface ScanResult {
+  ok: boolean;
+  reason?: 'clean' | 'infected' | 'error' | 'timeout' | 'unsupported' | 'service_unavailable';
+  threat?: string;
+  fileInfo?: {
+    name: string;
+    size: number;
+    mimeType?: string;
+  };
+  scannedAt: Date;
+  scanDuration: number;
+  raw?: any;
+}
 
 export interface Scanner {
-  scan(stream: Readable | Buffer, filename?: string): Promise<ScanResult>;
+  scan(streamOrBuffer: Buffer | NodeJS.ReadableStream, filename: string): Promise<ScanResult>;
+  isAvailable(): Promise<boolean>;
 }

@@ -65,6 +65,11 @@ export const envs = {
   JWT_COOKIE_SECURITY: env.get('JWT_COOKIE_SECURITY').default('true').asBool(),
   JWT_COOKIE_HTTP_STATUS: env.get('JWT_COOKIE_HTTP_STATUS').default('true').asBool(),
 
+  // ClamAV
+  CLAMAV_HOST: env.get('CLAMAV_HOST').default('BACKEND_CLAMAV').asString(),
+  CLAMAV_PORT: env.get('CLAMAV_PORT').required().asPortNumber(),
+  CLAMAV_TIMEOUT: env.get('CLAMAV_TIMEOUT').default(20000).asInt(),
+
   // URL
   CLIENT_URL: env.get('CLIENT_URL').default('http://localhost:5173').asString(),
   SERVER_URL: env
@@ -122,3 +127,7 @@ export const envs = {
 
   // OAUTH_GITHUB_ADMIN: env.get('OAUTH_GITHUB_ADMIN').required().asString(),
 };
+
+// CLAMAV_HOST=BACKEND_CLAMAV
+// CLAMAV_PORT=3310
+// CLAMAV_TIMEOUT=20000
