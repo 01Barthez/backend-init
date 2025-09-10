@@ -7,23 +7,48 @@ export class ClamAVScanner implements Scanner {
   private readonly host: string;
   private readonly port: number;
   private readonly timeoutMs: number;
-  private isServiceAvailable: boolean = true;
+  private isServiceAvailable: boolean = false;
   private lastError?: Error;
   private lastChecked: Date = new Date(0);
-  private readonly CHECK_INTERVAL_MS = 30000; // 30 secondes
+  private readonly CHECK_INTERVAL_MS = 30000; // 30 seconds
+  private readonly MAX_RETRIES = 3;
+  private readonly RETRY_DELAY = 2000; // 2 seconds
 
   constructor(opts: { host?: string; port?: number; timeoutMs?: number } = {}) {
     this.host = opts.host ?? process.env.CLAMAV_HOST ?? 'clamav';
     this.port = opts.port ?? Number(process.env.CLAMAV_PORT) ?? 3310;
     this.timeoutMs = opts.timeoutMs ?? 20000;
 
-    // Vérifier périodiquement la disponibilité du service
+    // Initial availability check
+    this.checkAvailability().catch((err) => {
+      log.warn('Initial ClamAV availability check failed', { error: err.message });
+    });
+
+    // Periodic health check
     setInterval(() => this.checkAvailability(), this.CHECK_INTERVAL_MS);
   }
 
+  private async withRetry<T>(fn: () => Promise<T>): Promise<T> {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error as Error;
+        if (attempt < this.MAX_RETRIES) {
+          await new Promise(resolve => setTimeout(resolve, this.RETRY_DELAY * attempt));
+        }
+      }
+    }
+    
+    throw lastError || new Error('Unknown error occurred');
+  }
+
   async isAvailable(): Promise<boolean> {
-    // Utiliser le cache si la vérification a eu lieu récemment
-    if (Date.now() - this.lastChecked.getTime() < this.CHECK_INTERVAL_MS / 2) {
+    // Use cached value if checked recently
+    const now = Date.now();
+    if (now - this.lastChecked.getTime() < this.CHECK_INTERVAL_MS / 2) {
       return this.isServiceAvailable;
     }
 
@@ -32,15 +57,23 @@ export class ClamAVScanner implements Scanner {
 
   private async checkAvailability(): Promise<boolean> {
     try {
-      // Vérification simple avec une commande PING
-      const clamdjs = this.getClamdClient();
-      await clamdjs.ping(this.host, this.port);
+      await this.withRetry(async () => {
+        const clamdjs = this.getClamdClient();
+        await clamdjs.ping(this.host, this.port);
+      });
+      
+      if (!this.isServiceAvailable) {
+        log.info('ClamAV service is now available');
+      }
+      
       this.isServiceAvailable = true;
       this.lastError = undefined;
     } catch (error) {
+      if (this.isServiceAvailable) {
+        log.error('ClamAV service became unavailable', { error });
+      }
       this.isServiceAvailable = false;
       this.lastError = error as Error;
-      log.error('ClamAV service is not available', { error });
     }
 
     this.lastChecked = new Date();

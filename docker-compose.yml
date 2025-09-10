@@ -148,10 +148,11 @@ services:
       - CLAMAV_NO_CLAMD=false
       - CLAMAV_NO_FRESHCLAMD=false
       - CLAMD_STARTUP_TIMEOUT=900
-      - CLAMD_STARTUP_SLEEP=5
+      - CLAMD_STARTUP_SLEEP=30
       - CLAMD_CONNECT_TIMEOUT=30
       - CLAMD_STREAM_MAX_LENGTH=100M
       - FRESHCLAM_CHECKS=4
+      - CLAMD_HOST=0.0.0.0 
     volumes:
       - clamav_data:/var/lib/clamav
       - ./monitoring/clamav/clamd.conf:/etc/clamav/clamd.conf
