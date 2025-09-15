@@ -11,38 +11,52 @@ export class ClamAVScanner implements Scanner {
   private lastError?: Error;
   private lastChecked: Date = new Date(0);
   private readonly CHECK_INTERVAL_MS = 30000; // 30 seconds
-  private readonly MAX_RETRIES = 2;
-  private readonly RETRY_DELAY = 1000; // 1 second
-  private readonly SCAN_TIMEOUT_MS = 30000; // 30 seconds max per scan
+  private readonly MAX_RETRIES = 3; // Augmenté à 3 tentatives
+  private readonly RETRY_DELAY = 2000; // Augmenté à 2 secondes
+  private readonly SCAN_TIMEOUT_MS = 300000; // Augmenté à 5 minutes
+  private readonly SCAN_CHUNK_SIZE = 128 * 1024; // Augmenté à 128KB
+  private readonly MAX_FILE_SIZE_MB = 100;
+  private readonly CONNECTION_TIMEOUT_MS = 60000; // 60 secondes pour la connexion initiale
 
   constructor(opts: { host?: string; port?: number; timeoutMs?: number } = {}) {
     this.host = opts.host ?? process.env.CLAMAV_HOST ?? 'clamav';
-    this.port = opts.port ?? Number(process.env.CLAMAV_PORT) ?? 3310;
-    this.timeoutMs = opts.timeoutMs ?? 15000; // 15 seconds for initial connection
+    this.port = opts.port ?? Number(process.env.CLAMAV_PORT ?? 3310);
+    this.timeoutMs = opts.timeoutMs ?? this.CONNECTION_TIMEOUT_MS;
 
-    // Initial availability check
-    this.checkAvailability().catch((err) => {
-      log.warn('Initial ClamAV availability check failed', { error: err.message });
+    // Initial availability check with retry
+    this.initializeScanner().catch((err) => {
+      log.warn('Initial ClamAV initialization failed', { error: err.message });
     });
 
     // Periodic health check
     setInterval(() => this.checkAvailability(), this.CHECK_INTERVAL_MS);
   }
 
+  private async initializeScanner(): Promise<void> {
+    try {
+      await this.checkAvailability();
+      log.info('ClamAV scanner initialized successfully');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      log.error('Failed to initialize ClamAV scanner', { error: errorMessage });
+      throw error instanceof Error ? error : new Error(errorMessage);
+    }
+  }
+
   private async withRetry<T>(fn: () => Promise<T>): Promise<T> {
     let lastError: Error | null = null;
-    
+
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
       try {
         return await fn();
       } catch (error) {
-        lastError = error as Error;
+        lastError = error instanceof Error ? error : new Error(String(error));
         if (attempt < this.MAX_RETRIES) {
-          await new Promise(resolve => setTimeout(resolve, this.RETRY_DELAY * attempt));
+          await new Promise((resolve) => setTimeout(resolve, this.RETRY_DELAY * attempt));
         }
       }
     }
-    
+
     throw lastError || new Error('Unknown error occurred');
   }
 
@@ -62,19 +76,20 @@ export class ClamAVScanner implements Scanner {
         const clamdjs = this.getClamdClient();
         await clamdjs.ping(this.host, this.port);
       });
-      
+
       if (!this.isServiceAvailable) {
         log.info('ClamAV service is now available');
       }
-      
+
       this.isServiceAvailable = true;
       this.lastError = undefined;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       if (this.isServiceAvailable) {
-        log.error('ClamAV service became unavailable', { error });
+        log.error('ClamAV service became unavailable', { error: errorMessage });
       }
       this.isServiceAvailable = false;
-      this.lastError = error as Error;
+      this.lastError = error instanceof Error ? error : new Error(errorMessage);
     }
 
     this.lastChecked = new Date();
@@ -87,145 +102,170 @@ export class ClamAVScanner implements Scanner {
   ): Promise<ScanResult> {
     const startTime = Date.now();
     const fileSize = Buffer.isBuffer(streamOrBuffer) ? streamOrBuffer.length : 0;
-    const scanId = `${filename}-${Date.now()}`;
+    const scanId = `${filename}-${startTime}`;
+
+    // Vérifier la taille du fichier
+    if (fileSize > this.MAX_FILE_SIZE_MB * 1024 * 1024) {
+      throw new Error(`File size exceeds maximum allowed size of ${this.MAX_FILE_SIZE_MB}MB`);
+    }
 
     log.info('Starting file scan', {
       scanId,
       filename,
       size: fileSize,
+      maxFileSize: `${this.MAX_FILE_SIZE_MB}MB`,
+      timeout: `${this.SCAN_TIMEOUT_MS}ms`,
     });
 
     try {
-      // Check if service is available with a quick ping first
+      // Vérifier la disponibilité du service
       if (!(await this.isAvailable())) {
         throw new Error('ClamAV service is not available');
       }
 
-      const clamdjs = this.getClamdClient();
-      const scanner = clamdjs.createScanner(this.host, this.port);
-
-      const input = Buffer.isBuffer(streamOrBuffer)
-        ? Readable.from([streamOrBuffer])
-        : streamOrBuffer;
-
-      // Wrap the scan in a timeout
-      const scanPromise = new Promise<ScanResult>((resolve, reject) => {
-        scanner.scanStream(input, (err: any, reply: any) => {
-          const scanDuration = Date.now() - startTime;
-          
-          if (err) {
-            log.error('Scan error', { 
-              scanId, 
-              error: err, 
-              duration: scanDuration,
-              filename,
-              size: fileSize
-            });
-            return reject(err);
-          }
-
-          const text = String(reply?.toString?.() ?? reply ?? '').trim();
-
-          if (/OK$/i.test(text)) {
-            log.info('Scan completed - Clean', {
-              scanId,
-              filename,
-              size: fileSize,
-              duration: scanDuration,
-            });
-            return resolve({
-              ok: true,
-              reason: 'clean',
-              scanDuration,
-              scannedAt: new Date(),
-              fileInfo: {
-                name: filename,
-                size: fileSize
-              }
-            });
-          }
-
-          // If we get here, the file might be infected
-          const threat = text.split('FOUND')[0]?.trim() || 'Unknown threat';
-          log.warn('Scan detected threat', {
-            scanId,
-            filename,
-            threat,
-            duration: scanDuration,
-          });
-          
-          resolve({
-            ok: false,
-            reason: 'infected',
-            threat,
-            scanDuration,
-            scannedAt: new Date(),
-            fileInfo: {
-              name: filename,
-              size: fileSize
-            }
-          });
-        });
-      });
-
-      // Add timeout to the scan operation
+      // Créer un timeout pour le scan
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
-          const duration = Date.now() - startTime;
-          log.warn('Scan timed out', { scanId, duration, filename, size: fileSize });
-          reject(new Error(`Scan timed out after ${duration}ms`));
+          reject(new Error(`Scan timed out after ${this.SCAN_TIMEOUT_MS}ms`));
         }, this.SCAN_TIMEOUT_MS);
       });
 
-      // Race between the scan and the timeout
+      // Exécuter le scan avec timeout
+      const scanPromise = (async () => {
+        const clamd = this.getClamdClient();
+
+        // Convertir le buffer en stream si nécessaire
+        const stream = Buffer.isBuffer(streamOrBuffer)
+          ? require('stream').Readable.from(streamOrBuffer)
+          : streamOrBuffer;
+
+        // Exécuter le scan avec retry
+        return this.withRetry(async () => {
+          return new Promise<ScanResult>((resolve, reject) => {
+            const chunks: Buffer[] = [];
+            const writeStream = require('net').connect({
+              host: this.host,
+              port: this.port,
+              timeout: this.timeoutMs,
+            });
+
+            writeStream.on('connect', () => {
+              writeStream.write('zINSTREAM\0');
+
+              stream.on('data', (chunk: Buffer) => {
+                const size = Buffer.alloc(4);
+                size.writeUInt32BE(chunk.length, 0);
+                writeStream.write(Buffer.concat([size, chunk]));
+              });
+
+              stream.on('end', () => {
+                writeStream.write(Buffer.from([0, 0, 0, 0])); // Signal de fin
+              });
+
+              stream.on('error', (err: Error) => {
+                writeStream.destroy();
+                reject(err);
+              });
+            });
+
+            writeStream.on('data', (data: Buffer) => {
+              chunks.push(data);
+            });
+
+            writeStream.on('end', () => {
+              const response = Buffer.concat(chunks).toString('utf8').trim();
+              const isInfected = !response.endsWith('OK');
+              const threat = isInfected ? response.split(' ')[1] : undefined;
+
+              resolve({
+                ok: !isInfected,
+                reason: isInfected ? 'infected' : 'clean',
+                threat,
+                scanDuration: Date.now() - startTime,
+                scannedAt: new Date(),
+                fileInfo: {
+                  name: filename,
+                  size: fileSize,
+                },
+              });
+            });
+
+            writeStream.on('error', (err: Error) => {
+              reject(err);
+            });
+          });
+        });
+      })();
+
       return await Promise.race([scanPromise, timeoutPromise]);
     } catch (error) {
-      const duration = Date.now() - startTime;
-      log.error('Scan failed', { 
-        scanId, 
-        error: error instanceof Error ? error.message : String(error),
-        duration,
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      log.error('Scan failed', {
+        scanId,
+        error: errorMessage,
+        duration: Date.now() - startTime,
         filename,
-        size: fileSize
+        size: fileSize,
       });
-      
-      return {
-        ok: false,
-        reason: error instanceof Error ? 
-          (error.message.includes('timeout') ? 'timeout' : 'error') : 
-          'service_unavailable',
-        scanDuration: duration,
-        threat: 'Scan failed',
-        scannedAt: new Date(),
-        fileInfo: {
-          name: filename,
-          size: fileSize
-        }
-      };
+      throw error instanceof Error ? error : new Error(errorMessage);
     }
   }
 
   private getClamdClient() {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      return require('clamdjs');
-    } catch (e) {
-      log.error('clamdjs module not installed');
-      throw new Error('ClamAV client is not properly configured');
-    }
-  }
+    const net = require('net');
+    const { promisify } = require('util');
 
-  private createErrorResult(
-    reason: 'error' | 'timeout' | 'service_unavailable',
-    message: string,
-    raw?: any,
-  ): ScanResult {
-    return {
-      ok: false,
-      reason,
-      scannedAt: new Date(),
-      scanDuration: 0,
-      raw: raw || message,
+    const socket = new net.Socket();
+
+    // Configure socket timeouts
+    socket.setTimeout(this.timeoutMs);
+    socket.setKeepAlive(true, 60000); // Enable keep-alive with 60s delay
+
+    const clamd = {
+      host: this.host,
+      port: this.port,
+      socket: socket,
+      timeout: this.timeoutMs,
+
+      // Custom promisified methods
+      ping: promisify(function (host: string, port: number, callback: Function) {
+        const socket = new net.Socket();
+        let connected = false;
+
+        const timeout = setTimeout(() => {
+          if (!connected) {
+            socket.destroy();
+            callback(new Error('Connection timeout'));
+          }
+        }, 10000); // 10s timeout for ping
+
+        socket.on('connect', () => {
+          connected = true;
+          clearTimeout(timeout);
+          socket.write('zPING\0');
+        });
+
+        socket.on('data', (data: Buffer) => {
+          if (data.toString().trim() === 'PONG') {
+            socket.end();
+            callback(null, true);
+          } else {
+            socket.destroy();
+            callback(new Error('Invalid response from ClamAV'));
+          }
+        });
+
+        socket.on('error', (err: Error) => {
+          clearTimeout(timeout);
+          callback(err);
+        });
+
+        socket.connect(port, host);
+      }),
+
+      // Other methods...
     };
+
+    return clamd;
   }
 }

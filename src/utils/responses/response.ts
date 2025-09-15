@@ -46,6 +46,7 @@ export function sendResponse<T>(
     userAgent: req.get('user-agent'),
     responseTime,
     timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
     ...extraMeta,
   };
 

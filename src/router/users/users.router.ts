@@ -2,8 +2,8 @@ import { Router } from 'express';
 
 import users_controller from '@/controllers/users/users.controller';
 import { upload } from '@/middlewares/upload';
-
-// import { validator } from '@/services/validator/validator';
+import { validationErrorHandler } from '@/middlewares/validationErrorHandler';
+import { validator } from '@/services/validator/validator';
 
 const users = Router();
 
@@ -11,7 +11,8 @@ const users = Router();
 users.post(
   '/auth/signup',
   upload.single('profile'),
-  // validator.signup,
+  validator.signup,
+  validationErrorHandler,
   users_controller.signup,
 );
 

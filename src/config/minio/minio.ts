@@ -1,7 +1,8 @@
 import { envs } from '@/config/env/env';
 import log from '@/services/logging/logger';
 import { MinioUploader } from '@/services/upload/MinioUploader';
-import { ClamAVScanner } from '@/services/upload/scanner/ClamAVScanner';
+
+// import { ClamAVScanner } from '@/services/upload/scanner/ClamAVScanner';
 
 import { minioClient } from './minioClient';
 
@@ -27,11 +28,11 @@ export const uploader = new MinioUploader({
     },
   },
   maxRetries: 5,
-  scanner: new ClamAVScanner({
-    host: envs.CLAMAV_HOST || 'clamav',
-    port: Number(envs.CLAMAV_PORT) || 3310,
-    timeoutMs: 60000 // Augmenté à 60 secondes
-  }),
+  // scanner: new ClamAVScanner({
+  //   host: envs.CLAMAV_HOST || 'clamav',
+  //   port: Number(envs.CLAMAV_PORT) || 3310,
+  //   timeoutMs: 60000, // Augmenté à 60 secondes
+  // }),
 });
 
 uploader.on('uploaded', (infos) => log.info('uploaded', infos));

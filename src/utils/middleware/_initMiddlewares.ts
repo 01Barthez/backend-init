@@ -13,7 +13,7 @@ import disableLogsInProduction from '@/middlewares/disableLog';
 import errorHandler from '@/middlewares/errorHandler';
 import { errorLog, requestLog } from '@/middlewares/requestLogger';
 import { requestTimeMiddleware } from '@/middlewares/responseTime';
-// import { validationErrorHandler } from '@/middlewares/validationErrorHandler';
+import { validationErrorHandler } from '@/middlewares/validationErrorHandler';
 import { securityRequestLogger } from '@/services/logging/securityLogger';
 
 import setupRoutes from './routes-middleware';
@@ -104,11 +104,11 @@ const initMiddlewares = (app: Express): void => {
       }),
     );
 
+  // 8. Data validation error handler
+  app.use(validationErrorHandler); // Handle validation errors from request data
+
   // 7. Route configuration middleware
   setupRoutes(app); // Register all application routes
-
-  // 8. Data validation error handler
-  // app.use(validationErrorHandler); // Handle validation errors from request data
 
   // 9. Centralized error handling (must be after routes and before not found handler)
   app.use(errorLog); // Log errors

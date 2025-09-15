@@ -17,8 +17,18 @@ const users_controller = {
     const { email, password, first_name, last_name, phone } = req.body;
 
     // Check all information are provided
-    if (!email || !password || !first_name || !last_name || !phone)
-      return response.badRequest(req, res, 'All informations are required !');
+    const missingFields = [];
+
+    if (!email) missingFields.push('email');
+    if (!password) missingFields.push('password');
+    if (!first_name) missingFields.push('first name');
+    if (!last_name) missingFields.push('last name');
+    if (!phone) missingFields.push('phone');
+
+    if (missingFields.length > 0) {
+      const errorMessage = `missing field(s) : ${missingFields.join(', ')}`;
+      return response.badRequest(req, res, errorMessage);
+    }
 
     // make sure email is unique
     const emailAlreadyExist = await prisma.users.findFirst({
