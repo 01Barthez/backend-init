@@ -3,6 +3,8 @@ import type { Request, Response } from 'express';
 import { envs } from '@/config/env/env';
 import { uploader } from '@/config/minio/minio';
 import prisma from '@/config/prisma/prisma';
+import { MAIL } from '@/core/constant/global';
+import send_mail from '@/services/Mail/send-mail';
 import log from '@/services/logging/logger';
 import { get_expire_date } from '@/utils/Otp/OTPExpirationDate';
 import generate_otp from '@/utils/Otp/generateOtp';
@@ -90,17 +92,13 @@ const users_controller = {
     if (!create_employee) return response.unprocessable(req, res, 'failed to create user !');
 
     // Mail to send OTP email to the user
-    // const user_full_name = last_name + ' ' + first_name;
+    const user_full_name = last_name + ' ' + first_name;
 
-    // send_mail(
-    //   email,
-    //   'otp_template'
-    //   {
-    //     date: now,
-    //     name: user_full_name,
-    //     otp: user_otp,
-    //   }
-    // )
+    // await send_mail(email, MAIL.OTP_SUBJECT, 'otp', {
+    //   date: now,
+    //   name: user_full_name,
+    //   otp: user_otp,
+    // });
 
     const user_data = {
       email,

@@ -131,13 +131,35 @@ export class MinioUploader extends EventEmitter {
 
   private async retry<T>(fn: () => Promise<T>): Promise<T> {
     let attempt = 0;
+    let lastError: any;
+
     while (true) {
       try {
+        log.debug(`Retry attempt ${attempt + 1}/${this.maxRetries}`);
         return await fn();
-      } catch (err) {
+      } catch (err: any) {
+        lastError = err;
         attempt++;
-        if (attempt > this.maxRetries) throw new UploadError('max_retries_exceeded', err);
-        await sleep(200 * attempt);
+
+        log.warn('Retry attempt failed', {
+          attempt,
+          maxRetries: this.maxRetries,
+          error: err.message || err,
+          code: err.code,
+        });
+
+        if (attempt > this.maxRetries) {
+          log.error('Max retries exceeded', {
+            attempts: attempt,
+            lastError: lastError.message || lastError,
+            code: lastError.code,
+          });
+          throw new UploadError('max_retries_exceeded', lastError);
+        }
+
+        const delay = 200 * attempt;
+        log.debug(`Waiting ${delay}ms before retry...`);
+        await sleep(delay);
       }
     }
   }

@@ -3,7 +3,7 @@ import { envs } from '@/config/env/env';
 import templateManager from './template-manager';
 import transporter from './transporter-config';
 
-async function sendMail<K extends keyof typeof templateManager>(
+async function send_mail<K extends keyof typeof templateManager>(
   receiver: string,
   subjet: string,
   templateName: K,
@@ -32,4 +32,4 @@ async function sendMail<K extends keyof typeof templateManager>(
   }
 }
 
-export default sendMail;
+export default send_mail;
