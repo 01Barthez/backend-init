@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Réinitialisation de votre mot de passe - GTA</title>
+  <title>Bienvenue chez GTA</title>
   <style>
     body {
       font-family: 'Segoe UI', Roboto, Arial, sans-serif;
@@ -23,11 +23,11 @@
     .header {
       background-color: #8b0000;
       background-image: linear-gradient(120deg, #8b0000, #b22222);
-      padding: 30px;
+      padding: 35px;
       text-align: center;
       color: #fff;
     }
-    .header h1 { margin: 0; font-size: 1.8em; }
+    .header h1 { margin: 0; font-size: 1.9em; }
     .content { padding: 40px 35px; line-height: 1.7; }
     .content h2 { color: #8b0000; margin-bottom: 10px; }
     .content p { font-size: 0.95em; color: #444; }
@@ -57,30 +57,29 @@
 
   <div class="container">
     <div class="header">
-      <h1>Réinitialisation du mot de passe</h1>
-      <p>Global Technologie & Associates</p>
+      <h1>Bienvenue dans la famille GTA</h1>
+      <p>Un monde d’innovation, de formation et de technologie</p>
     </div>
 
     <div class="content">
       <h2>Bonjour <%= name %>,</h2>
-      <p>Nous avons reçu une demande de réinitialisation de votre mot de passe.</p>
-      <p>Pour définir un nouveau mot de passe, veuillez cliquer sur le bouton ci-dessous :</p>
+      <p>Nous sommes ravis de vous compter parmi nos membres !  
+      Votre compte a été créé avec succès et vous pouvez dès à présent accéder à votre espace personnel.</p>
+
+      <p>Chez <strong>Global Technologie & Associates</strong>, nous croyons en la puissance du savoir, de la technologie et de l’action.  
+      Vous faites désormais partie d’une communauté dynamique engagée dans l’innovation et la réussite.</p>
 
       <div class="cta">
-        <a href="<%= resetLink %>">Réinitialiser mon mot de passe</a>
+        <a href="https://www.gta-group.com">Accéder à mon espace</a>
       </div>
 
-      <p>Ce lien est <strong>valable pendant 15 minutes</strong>.  
-      Si vous n’avez pas demandé cette action, ignorez simplement cet email.  
-      Votre mot de passe actuel restera inchangé.</p>
-
-      <p>Chez <strong>GTA</strong>, la sécurité de vos données est notre priorité.  
-      N’hésitez pas à contacter notre équipe support si vous avez la moindre question.</p>
+      <p>Encore une fois, bienvenue dans l’aventure !  
+      Nous avons hâte de collaborer avec vous.</p>
     </div>
 
     <div class="footer">
       <p>© 2025 GTA Group. Tous droits réservés.</p>
-      <p>Contact : <a href="mailto:support@gta-group.com">support@gta-group.com</a> | +237 690 419 336</p>
+      <p>Contact : <a href="mailto:contact@gta-group.com">contact@gta-group.com</a> | +237 690 419 336</p>
     </div>
   </div>
 
@@ -88,4 +87,4 @@
 </html>
 
 <!--* Variables -->
-<!-- <%= name %>, <%= resetLink %> -->
+<!-- <%= name %> -->

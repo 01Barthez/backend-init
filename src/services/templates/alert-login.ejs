@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Réinitialisation de votre mot de passe - GTA</title>
+  <title>Alerte de connexion - GTA</title>
   <style>
     body {
       font-family: 'Segoe UI', Roboto, Arial, sans-serif;
@@ -27,21 +27,18 @@
       text-align: center;
       color: #fff;
     }
-    .header h1 { margin: 0; font-size: 1.8em; }
     .content { padding: 40px 35px; line-height: 1.7; }
     .content h2 { color: #8b0000; margin-bottom: 10px; }
     .content p { font-size: 0.95em; color: #444; }
-    .cta { text-align: center; margin: 35px 0; }
-    .cta a {
-      background-color: #8b0000;
-      color: #fff;
-      padding: 12px 28px;
-      text-decoration: none;
+    .warning {
+      background-color: #fff4f4;
+      border-left: 4px solid #b22222;
+      padding: 15px 20px;
       border-radius: 8px;
-      font-weight: bold;
-      transition: background-color 0.3s ease;
+      margin: 25px 0;
+      font-size: 0.9em;
+      color: #700000;
     }
-    .cta a:hover { background-color: #a71d1d; }
     .footer {
       background-color: #fafafa;
       border-top: 1px solid #eee;
@@ -57,35 +54,38 @@
 
   <div class="container">
     <div class="header">
-      <h1>Réinitialisation du mot de passe</h1>
-      <p>Global Technologie & Associates</p>
+      <h1>Alerte de connexion à votre compte</h1>
     </div>
 
     <div class="content">
       <h2>Bonjour <%= name %>,</h2>
-      <p>Nous avons reçu une demande de réinitialisation de votre mot de passe.</p>
-      <p>Pour définir un nouveau mot de passe, veuillez cliquer sur le bouton ci-dessous :</p>
+      <p>Une nouvelle connexion à votre compte <strong>GTA</strong> a été détectée :</p>
 
-      <div class="cta">
-        <a href="<%= resetLink %>">Réinitialiser mon mot de passe</a>
+      <div class="warning">
+        <p><strong>Adresse IP :</strong> <%= ip %><br>
+        <strong>Localisation :</strong> <%= location %><br>
+        <strong>Date :</strong> <%= date %><br>
+        <strong>Appareil :</strong> <%= device %></p>
       </div>
 
-      <p>Ce lien est <strong>valable pendant 15 minutes</strong>.  
-      Si vous n’avez pas demandé cette action, ignorez simplement cet email.  
-      Votre mot de passe actuel restera inchangé.</p>
+      <p>Si vous êtes bien à l’origine de cette connexion, vous pouvez ignorer ce message.  
+      Sinon, nous vous conseillons de <strong>réinitialiser immédiatement votre mot de passe</strong>.</p>
 
-      <p>Chez <strong>GTA</strong>, la sécurité de vos données est notre priorité.  
-      N’hésitez pas à contacter notre équipe support si vous avez la moindre question.</p>
+      <p>La sécurité de votre compte est notre priorité.  
+      Pour toute assistance, contactez <a href="mailto:support@gta-group.com">notre support technique</a>.</p>
     </div>
 
     <div class="footer">
       <p>© 2025 GTA Group. Tous droits réservés.</p>
-      <p>Contact : <a href="mailto:support@gta-group.com">support@gta-group.com</a> | +237 690 419 336</p>
+      <p>Support : +237 690 419 336 | <a href="mailto:support@gta-group.com">support@gta-group.com</a></p>
     </div>
   </div>
 
 </body>
 </html>
 
+
 <!--* Variables -->
-<!-- <%= name %>, <%= resetLink %> -->
+<!-- 
+  <%= name %>, <%= ip %>, <%= location %>, <%= date %>, <%= device %> 
+-->

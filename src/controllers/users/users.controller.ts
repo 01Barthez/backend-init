@@ -91,14 +91,25 @@ const users_controller = {
     });
     if (!create_employee) return response.unprocessable(req, res, 'failed to create user !');
 
-    // Mail to send OTP email to the user
+    // Mail to send OTP email to the user (non-blocking)
     const user_full_name = last_name + ' ' + first_name;
+    let emailSent = false;
 
-    // await send_mail(email, MAIL.OTP_SUBJECT, 'otp', {
-    //   date: now,
-    //   name: user_full_name,
-    //   otp: user_otp,
-    // });
+    try {
+      await send_mail(email, MAIL.OTP_SUBJECT, 'otp', {
+        date: now,
+        name: user_full_name,
+        otp: user_otp,
+      });
+      emailSent = true;
+      log.info('OTP email sent successfully', { email });
+    } catch (mailError: any) {
+      // Log error but don't fail the signup process
+      log.warn('Failed to send OTP email, but user was created successfully', {
+        email,
+        error: mailError.message,
+      });
+    }
 
     const user_data = {
       email,
@@ -110,6 +121,7 @@ const users_controller = {
         user_otp,
         otp_expire_date,
       },
+      email_sent: emailSent,
     };
 
     response.created(req, res, user_data, 'user_successfully creadted');

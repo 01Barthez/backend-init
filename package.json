@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "build": "rimraf dist/ && tsc --noEmitOnError --pretty  --extendedDiagnostics",
+    "build": "rimraf dist/ && tsc --noEmitOnError --pretty  --extendedDiagnostics && npm run copy:templates",
+    "copy:templates": "mkdir -p dist/services/templates && cp -r src/services/templates/*.ejs dist/services/templates/",
     "dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/index.ts",
     "start": "node -r module-alias/register dist/index.js",
     "test": "echo \"test run\"",

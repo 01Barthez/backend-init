@@ -1,16 +1,189 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <title>Votre code de vérification</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bienvenue chez GTA - Code de vérification</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      background-color: #f8f9fb;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      background-color: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+      background-color: #8b0000;
+      background-image: linear-gradient(120deg, #8b0000, #b22222);
+      padding: 30px;
+      text-align: center;
+      color: #fff;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.8em;
+      letter-spacing: 1px;
+    }
+
+    .header p {
+      margin-top: 8px;
+      font-size: 0.95em;
+      opacity: 0.9;
+    }
+
+    .content {
+      padding: 40px 35px;
+      text-align: left;
+      line-height: 1.7;
+    }
+
+    .content h2 {
+      color: #8b0000;
+      font-size: 1.4em;
+      margin-bottom: 15px;
+    }
+
+    .otp-box {
+      background-color: #f4eaea;
+      border: 2px dashed #8b0000;
+      color: #8b0000;
+      font-weight: bold;
+      font-size: 2.2em;
+      letter-spacing: 8px;
+      text-align: center;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 25px 0;
+    }
+
+    .content p {
+      font-size: 0.95em;
+      color: #444;
+    }
+
+    .highlight {
+      color: #b22222;
+      font-weight: 600;
+    }
+
+    .cta {
+      text-align: center;
+      margin: 40px 0 10px 0;
+    }
+
+    .cta a {
+      background-color: #8b0000;
+      color: #fff;
+      padding: 12px 28px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.95em;
+      transition: background-color 0.3s ease;
+    }
+
+    .cta a:hover {
+      background-color: #a71d1d;
+    }
+
+    .footer {
+      background-color: #fafafa;
+      border-top: 1px solid #eee;
+      padding: 25px 30px;
+      text-align: center;
+      font-size: 0.85em;
+      color: #777;
+    }
+
+    .footer a {
+      color: #b22222;
+      text-decoration: none;
+    }
+
+    .social {
+      margin-top: 15px;
+    }
+
+    .social a {
+      margin: 0 8px;
+      display: inline-block;
+      text-decoration: none;
+      color: #8b0000;
+      font-weight: 500;
+    }
+
+    .social a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
+      .content {
+        padding: 25px 20px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <h2>Bonjour <%= name %>,</h2>
-    <p>Voici votre code de vérification :</p>
-    <h1 style="font-size: 2.5em; letter-spacing: 5px; color: #4a90e2;">
+
+  <div class="container">
+    <div class="header">
+      <h1>Bienvenue chez Global Technologie & Associates</h1>
+      <p>Innovation • Expertise • Excellence</p>
+    </div>
+
+    <div class="content">
+      <h2>Bonjour <%= name %>,</h2>
+      <p>Nous sommes ravis de vous accueillir dans la grande famille <strong>GTA</strong> !  
+      Pour finaliser la vérification de votre compte, veuillez utiliser le code ci-dessous.</p>
+
+      <div class="otp-box">
         <%= otp %>
-    </h1>
-    <p>Ce code expirera dans 10 minutes.</p>
-    <p>Si vous n'avez pas demandé ce code, veuillez ignorer cet email.</p>
-    <p>Cordialement,<br>L'équipe GTA</p>
+      </div>
+
+      <p>Ce code est <span class="highlight">valable pendant 10 minutes</span>.  
+      Si vous n’êtes pas à l’origine de cette demande, ignorez simplement ce message.</p>
+
+      <p>Chez <strong>GTA</strong>, nous accompagnons les particuliers et les entreprises dans leur transformation digitale, leur formation et leurs projets techniques.  
+      Explorez nos pôles d’expertise :</p>
+      <ul>
+        <li><strong>GTA IT</strong> – Solutions numériques & développement d’applications</li>
+        <li><strong>GTA-Academy</strong> – Formations certifiantes, techniques et professionnelles</li>
+        <li><strong>GTA Visite Technique</strong> – Sécurité et conformité automobile</li>
+      </ul>
+
+      <div class="cta">
+        <a href="https://www.gta-it.com/services">Découvrir nos services</a>
+      </div>
+
+      <p>Merci de faire confiance à <span class="highlight">GTA</span>.  
+      Ensemble, façonnons l’avenir avec technologie et passion.</p>
+    </div>
+
+    <div class="footer">
+      <p>© 2025 GTA Group. Tous droits réservés.</p>
+      <p>Contact : <a href="mailto:academy@gta-it.com">contact@gta-it.com</a> | +237 690 419 336</p>
+      <div class="social">
+        <a href="https://www.facebook.com/academyGTA">Facebook</a> |
+        <a href="https://www.instagram.com/ifp_gta_academy/">Instagram</a> |
+        <a href="https://www.linkedin.com/company/gta-it">LinkedIn</a> |
+        <a href="https://www.youtube.com/@IFP-GTA-ACADEMY">YouTube</a>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
+
+<!--* Variables -->
+<!-- <%= name %>, <%= otp %> -->
