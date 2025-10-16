@@ -3,4 +3,5 @@ export const passwordRegex: RegExp = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{
 export const MAIL = {
   OTP_SUBJECT: 'OTP Validation',
   RESET_PWD_SUBJECT: 'Reset Password',
+  WELCOME_SUBJECT: 'Welcome to Our Service',
 } as const;

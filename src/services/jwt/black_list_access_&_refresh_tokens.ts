@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 import log from '../logging/logger';
 import blackListToken from './black_list';

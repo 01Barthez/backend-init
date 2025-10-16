@@ -47,6 +47,52 @@ const templateManager = {
     }
   },
 
+  welcome: async (templateData: ITemplateResetPassword): Promise<string> => {
+    try {
+      const templatePath = path.join(__dirname, '../templates/welcome.ejs');
+      log.debug('Loading welcome template', {
+        templatePath,
+        exists: fs.existsSync(templatePath),
+      });
+
+      if (!fs.existsSync(templatePath)) {
+        throw new Error(`Template file not found: ${templatePath}`);
+      }
+
+      const template = fs.readFileSync(templatePath, 'utf8');
+      return ejs.render(template, templateData);
+    } catch (error: any) {
+      log.error('Failed to render reset password template', {
+        error: error.message,
+        stack: error.stack,
+      });
+      throw error;
+    }
+  },
+
+  alert_login: async (templateData: ITemplateResetPassword): Promise<string> => {
+    try {
+      const templatePath = path.join(__dirname, '../templates/alert-login.ejs');
+      log.debug('Loading alert_login template', {
+        templatePath,
+        exists: fs.existsSync(templatePath),
+      });
+
+      if (!fs.existsSync(templatePath)) {
+        throw new Error(`Template file not found: ${templatePath}`);
+      }
+
+      const template = fs.readFileSync(templatePath, 'utf8');
+      return ejs.render(template, templateData);
+    } catch (error: any) {
+      log.error('Failed to render reset password template', {
+        error: error.message,
+        stack: error.stack,
+      });
+      throw error;
+    }
+  },
+
   // Other templates here ......
 };
 

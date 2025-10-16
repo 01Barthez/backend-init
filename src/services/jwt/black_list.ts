@@ -7,7 +7,7 @@ const blackListToken = {
   AddToblackList: async (token: string) => {
     try {
       // Decoder le token pour recuperer sa date d'expiration
-      const decodeToken = userToken.decodeToken(token);
+      const decodeToken = userToken.decodeToken(token) as any;
       if (!decodeToken) {
         log.error('Invalid or expired tokens');
         throw new Error('Invalid or expired tokens');
@@ -56,8 +56,8 @@ const blackListToken = {
     }
   },
 
-  // Retirer tous les tokns qui ont expiré
-  removeExpiredTpken: async (): Promise<void | undefined> => {
+  // Retirer tous les tokens qui ont expiré
+  removeExpiredToken: async (): Promise<void | undefined> => {
     try {
       await prisma.blacklist.deleteMany({
         where: {
@@ -66,15 +66,11 @@ const blackListToken = {
           },
         },
       });
-      log.info('expired token successfull deleted !');
+      log.info('expired token successfully deleted !');
     } catch (error) {
-      throw new Error(`Failed to deleted expired token: ${error}`);
+      throw new Error(`Failed to delete expired token: ${error}`);
     }
   },
-
-  generatePasswordResetToken: async (userId: string): Promise<string> => {
-
-  }
 };
 
 export default blackListToken;
