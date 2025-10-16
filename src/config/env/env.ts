@@ -36,6 +36,8 @@ export const envs = {
   // Redis
   REDIS_HOST: env.get('REDIS_HOST').required().asString(),
   REDIS_PORT: env.get('REDIS_PORT').required().asPortNumber(),
+  REDIS_USERNAME: env.get('REDIS_USERNAME').default('').asString(),
+  REDIS_PASSWORD: env.get('REDIS_PASSWORD').default('').asString(),
 
   // MailHog SMTP
   SMTP_HOST: env.get('SMTP_HOST').required().asString(),
@@ -120,6 +122,10 @@ export const envs = {
   SWAGGER_USER: env.get('SWAGGER_USER').default('admin').asString(),
   SWAGGER_PASSWORD: env.get('SWAGGER_PASSWORD').default('admin').asString(),
 
+  // Local Cache
+  LOCAL_CACHE_MAX_ITEMS: env.get('LOCAL_CACHE_MAX_ITEMS').default(100).asInt(),
+  COMPRESSION_THRESHOLD: env.get('COMPRESSION_THRESHOLD').default(1024).asInt(),
+
   // Otp delay
   OTP_DELAY: env.get('OTP_DELAY').default(900000).asInt(),
 
@@ -146,7 +152,3 @@ export const envs = {
 
   // OAUTH_GITHUB_ADMIN: env.get('OAUTH_GITHUB_ADMIN').required().asString(),
 };
-
-// CLAMAV_HOST=BACKEND_CLAMAV
-// CLAMAV_PORT=3310
-// CLAMAV_TIMEOUT=20000

@@ -177,7 +177,7 @@ const users_controller = {
       });
     }
 
-    return response.success(req, res, null, 'user successfully verified !');
+    return response.ok(req, res, null, 'user successfully verified !');
   },
 
   //*& Resend OTP-Code
@@ -229,7 +229,7 @@ const users_controller = {
       });
     }
 
-    return response.success(req, res, null, 'otp successfully resent !');
+    return response.ok(req, res, null, 'otp successfully resent !');
   },
 
   //*& Connexion (Login)
@@ -292,7 +292,7 @@ const users_controller = {
       profile_url: user.avatar_url,
     };
 
-    return response.success(req, res, user_data, 'login successful !');
+    return response.ok(req, res, user_data, 'login successful !');
   },
 
   //*& Deconnexion Logout
@@ -317,7 +317,7 @@ const users_controller = {
         sameSite: envs.COOKIE_SAME_SITE as 'strict' | 'lax' | 'none',
       });
 
-      return response.success(req, res, null, 'logout successful !');
+      return response.ok(req, res, null, 'logout successful !');
     } catch (error: any) {
       log.error('Logout error', { error: error.message });
       return response.unprocessable(req, res, 'Failed to logout');
@@ -358,7 +358,7 @@ const users_controller = {
       });
     }
 
-    return response.success(
+    return response.ok(
       req,
       res,
       { email_sent: emailSent },
@@ -397,7 +397,7 @@ const users_controller = {
 
       log.info('Password reset successfully', { userId });
 
-      return response.success(req, res, null, 'Password reset successfully');
+      return response.ok(req, res, null, 'Password reset successfully');
     } catch (error: any) {
       log.error('Password reset failed', { error: error.message });
       return response.unprocessable(req, res, 'Invalid or expired reset token');
@@ -437,7 +437,7 @@ const users_controller = {
 
     log.info('Password changed successfully', { userId: user.id });
 
-    return response.success(req, res, null, 'Password changed successfully');
+    return response.ok(req, res, null, 'Password changed successfully');
   },
 
   //* ADMIN MANAGEMENT **********************************************************************************************************************************************************
@@ -480,7 +480,7 @@ const users_controller = {
       prisma.users.count({ where: filter }),
     ]);
 
-    return response.success(
+    return response.ok(
       req,
       res,
       {
@@ -520,7 +520,7 @@ const users_controller = {
 
     log.info('User soft deleted', { userId: user_id });
 
-    return response.success(req, res, null, 'User deleted successfully');
+    return response.ok(req, res, null, 'User deleted successfully');
   },
 
   //& Update User Info: first_name, last_name, phone, profile_url, ...
@@ -569,7 +569,7 @@ const users_controller = {
 
     log.info('User info updated', { userId: user.id });
 
-    return response.success(req, res, updatedUser, 'User info updated successfully');
+    return response.ok(req, res, updatedUser, 'User info updated successfully');
   },
 
   //& Search User: search by: email, téléphone, nom
@@ -605,7 +605,7 @@ const users_controller = {
       take: 20,
     });
 
-    return response.success(req, res, users, `Found ${users.length} users`);
+    return response.ok(req, res, users, `Found ${users.length} users`);
   },
 
   //& Export Users: export as CSV/Excel
@@ -655,7 +655,7 @@ const users_controller = {
 
     log.warn('All users cleared from database');
 
-    return response.success(req, res, null, 'All users cleared successfully');
+    return response.ok(req, res, null, 'All users cleared successfully');
   },
 
   //& Update User Role
@@ -681,7 +681,7 @@ const users_controller = {
 
     log.info('User role updated', { userId: user_id, newRole: role });
 
-    return response.success(req, res, null, 'User role updated successfully');
+    return response.ok(req, res, null, 'User role updated successfully');
   },
 
   //& Others
