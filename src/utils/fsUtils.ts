@@ -31,3 +31,15 @@ export function ensureDirectoryExists(dirPath: string): void {
     throw error; // Propagate the error for custom handling
   }
 }
+
+// Function to read a file synchronously with error handling
+
+export function readFileSync(filePath: string): string {
+  try {
+    const pathResolv = path.resolve(filePath);
+    return fs.readFileSync(pathResolv, 'utf8');
+  } catch (error) {
+    console.error(`Error reading file at ${filePath}:`, error);
+    throw new Error(`Failed to read file at ${filePath}: ${error}`);
+  }
+}

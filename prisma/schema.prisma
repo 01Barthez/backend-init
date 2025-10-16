@@ -33,8 +33,19 @@ model users {
   deleted_at DateTime?
 
   @@index([email, is_verified])
-  @@index([phone])
-  @@index([deleted_at])
+  @@index([email, deleted_at])
+}
+
+model Blacklist {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  token String @unique // Token a blacklisté
+
+  createAt DateTime @default(now())
+  expireAt DateTime
+
+  @@index([token, expireAt])
+  @@index([expireAt])
 }
 
 // Item model: Use to define one item to manage crud information

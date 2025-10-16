@@ -60,10 +60,29 @@ export const envs = {
   MAX_UNIQ_QUERY_WINDOW: env.get('MAX_UNIQ_QUERY_WINDOW').default(900000).asInt(),
 
   // JWT
-  JWT_SECRET: env.get('JWT_SECRET').required().asString(),
+  JWT_SECRET: env.get('JWT_SECRET').default('refresh_key').asString(),
   JWT_EXPIRES_IN: env.get('JWT_EXPIRES_IN').default('1h').asString(),
   JWT_COOKIE_SECURITY: env.get('JWT_COOKIE_SECURITY').default('true').asBool(),
   JWT_COOKIE_HTTP_STATUS: env.get('JWT_COOKIE_HTTP_STATUS').default('true').asBool(),
+  JWT_ACCESS_EXPIRES_IN: env.get('JWT_ACCESS_EXPIRES_IN').default('15m').asString(),
+  JWT_REFRESH_EXPIRES_IN: env.get('JWT_REFRESH_EXPIRES_IN').default('7d').asString(),
+  JWT_ALGORITHM: env.get('JWT_ALGORITHM').default('RS256').asString(),
+  JWT_PRIVATE_KEY_PATH: env
+    .get('JWT_PRIVATE_KEY_PATH')
+    .default('src/config/keys/private.key')
+    .asString(),
+  JWT_PUBLIC_KEY_PATH: env
+    .get('JWT_PUBLIC_KEY_PATH')
+    .default('src/config/keys/public.key')
+    .asString(),
+  JWT_REFRESH_PRIVATE_KEY_PATH: env
+    .get('JWT_REFRESH_PRIVATE_KEY_PATH')
+    .default('src/config/keys/refreshPrivate.key')
+    .asString(),
+  JWT_REFRESH_PUBLIC_KEY_PATH: env
+    .get('JWT_REFRESH_PUBLIC_KEY_PATH')
+    .default('src/config/keys/refreshPublic.key')
+    .asString(),
 
   // ClamAV
   CLAMAV_HOST: env.get('CLAMAV_HOST').default('BACKEND_CLAMAV').asString(),
