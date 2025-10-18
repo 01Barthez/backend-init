@@ -10,7 +10,7 @@ clear
 
 echo ""
 echo ""
-echo "---------------------STARTINT THE MAIN APPLICATION---------------------"
+echo "---------------------STARTING THE MAIN APPLICATION---------------------"
 echo ""
 echo ""
 

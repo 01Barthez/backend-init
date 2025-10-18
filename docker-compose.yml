@@ -14,6 +14,7 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
+    restart: unless-stopped
     environment:
       DATABASE_URL: 'mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/${MONGO_DB}?replicaSet=rs0&authSource=admin'
     ports:
@@ -28,7 +29,7 @@ services:
   mongo:
     image: mongo:6.0-jammy
     container_name: ${MONGO_NAME:-mongo_db}
-    restart: always
+    restart: unless-stopped
     entrypoint: ['/scripts/start-mongo.sh']
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
@@ -67,7 +68,7 @@ services:
   redis:
     image: redis:8-alpine
     container_name: ${REDIS_NAME:-redis_cache}
-    restart: always
+    restart: unless-stopped
     command: ['redis-server', '--appendonly', 'yes']
     ports:
       - '${REDIS_PORT:-6379}:6379'
@@ -82,10 +83,21 @@ services:
       - 'prometheus.scrape=true'
       - 'prometheus.port=9121'
 
+  redisinsight:
+    image: redislabs/redisinsight:latest
+    container_name: ${REDISINSIGHT_NAME:-redisinsight}
+    ports:
+      - '${REDISINSIGHT_PORT:-8001}:8001'
+    restart: unless-stopped
+    depends_on:
+      - redis
+    networks:
+      - backend_network
+
   minio:
     image: minio/minio:RELEASE.2023-10-25T06-33-25Z
     container_name: ${MINIO_NAME:-minio_storage}
-    restart: always
+    restart: unless-stopped
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
@@ -110,6 +122,7 @@ services:
       minio:
         condition: service_healthy
     entrypoint: ['/bin/sh', '/scripts/init-minio.sh']
+    restart: unless-stopped
     environment:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
@@ -122,6 +135,7 @@ services:
   mailhog:
     image: mailhog/mailhog
     container_name: ${SMTP_NAME:-mail}
+    restart: unless-stopped
     ports:
       - '${SMTP_PORT:-1025}:1025' # SMTP
       - '${SMTP_WEB_UI:-8025}:8025' # Web UI
@@ -131,6 +145,7 @@ services:
   nginx:
     image: nginx:stable-alpine
     container_name: ${NGINX_NAME:-nginx}
+    restart: unless-stopped
     depends_on:
       - backend
     volumes:
@@ -156,7 +171,6 @@ services:
       - CLAMD_EXTRA_ARGS=--foreground --stream-max-ratio=300 --max-queue=100 --max-threads=8
       - FRESHCLAM_MOD=3600
       - FRESHCLAM_ONLYREQUIRED=1
-
     volumes:
       - clamav_data:/var/lib/clamav
       - ./monitoring/clamav/clamd.conf:/etc/clamav/clamd.conf

@@ -51,7 +51,7 @@ const itemsControllers = {
   getOneItem: async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const item = await prisma.item.findUnique({
-      where: { id },
+      where: { item_id: id },
     });
     if (item) {
       res.status(200).json(item);
@@ -66,7 +66,7 @@ const itemsControllers = {
     const { name, value } = req.body;
 
     const updatedItem = await prisma.item.update({
-      where: { id },
+      where: { item_id: id },
       data: { name, value },
     });
 
@@ -77,7 +77,7 @@ const itemsControllers = {
   deleteItem: async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     await prisma.item.delete({
-      where: { id },
+      where: { item_id: id },
     });
     res.status(204).send();
   },

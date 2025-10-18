@@ -1,13 +1,13 @@
 import type { Request, Response } from 'express';
 
 import { envs } from '@/config/env/env';
-import { uploader } from '@/config/minio/minio';
 import prisma from '@/config/prisma/prisma';
 import { MAIL } from '@/core/constant/global';
 import send_mail from '@/services/Mail/send-mail';
 import blackListAccessAndRefresToken from '@/services/jwt/black_list_access_&_refresh_tokens';
 import userToken from '@/services/jwt/functions-jwt';
 import log from '@/services/logging/logger';
+import { uploader } from '@/services/upload/_config/minio';
 import { get_expire_date } from '@/utils/Otp/OTPExpirationDate';
 import generate_otp from '@/utils/Otp/generateOtp';
 import { compare_password, hash_password } from '@/utils/password/hashPassword';

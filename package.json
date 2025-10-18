@@ -4,7 +4,7 @@
   "main": "index.ts",
   "scripts": {
     "build": "rimraf dist/ && tsc --noEmitOnError --pretty  --extendedDiagnostics && npm run copy:templates",
-    "copy:templates": "mkdir -p dist/services/templates && cp -r src/services/templates/*.ejs dist/services/templates/",
+    "copy:templates": "mkdir -p dist/services/Mail/templates && cp -r src/services/templates/*.ejs dist/services/Mail/templates/",
     "dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/index.ts",
     "start": "node -r module-alias/register dist/index.js",
     "test": "echo \"test run\"",

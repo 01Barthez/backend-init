@@ -4,7 +4,7 @@ import users_controller from '@/controllers/users/users.controller';
 import { isActive, isAdmin, isAuthenticated, isVerified } from '@/middlewares/auth';
 import { upload } from '@/middlewares/upload';
 import { validationErrorHandler } from '@/middlewares/validationErrorHandler';
-import { validator } from '@/services/validator/validator';
+import { validate_user } from '@/services/validator/validate/users';
 
 const users = Router();
 
@@ -16,7 +16,7 @@ const users = Router();
 users.post(
   '/auth/signup',
   upload.single('profile'),
-  validator.signup,
+  validate_user.signup,
   validationErrorHandler,
   users_controller.signup,
 );
@@ -24,7 +24,7 @@ users.post(
 // Verify account with OTP
 users.post(
   '/auth/verify',
-  validator.verifyAccount,
+  validate_user.verifyAccount,
   validationErrorHandler,
   users_controller.verify_account,
 );
@@ -32,18 +32,18 @@ users.post(
 // Resend OTP
 users.post(
   '/auth/resend-otp',
-  validator.resendOtp,
+  validate_user.resendOtp,
   validationErrorHandler,
   users_controller.resend_otp,
 );
 
 // Login
-users.post('/auth/login', validator.login, validationErrorHandler, users_controller.login);
+users.post('/auth/login', validate_user.login, validationErrorHandler, users_controller.login);
 
 // Forgot password
 users.post(
   '/auth/forgot-password',
-  validator.forgotPassword,
+  validate_user.forgotPassword,
   validationErrorHandler,
   users_controller.forgot_password,
 );
@@ -51,7 +51,7 @@ users.post(
 // Reset password
 users.post(
   '/auth/reset-password/:resetToken',
-  validator.resetPassword,
+  validate_user.resetPassword,
   validationErrorHandler,
   users_controller.reset_password,
 );
@@ -67,7 +67,7 @@ users.post('/auth/logout', isAuthenticated, users_controller.logout);
 users.post(
   '/auth/change-password',
   isAuthenticated,
-  validator.changePassword,
+  validate_user.changePassword,
   validationErrorHandler,
   users_controller.change_password,
 );
@@ -79,7 +79,7 @@ users.put(
   isVerified,
   isActive,
   upload.single('profile'),
-  validator.updateUserInfo,
+  validate_user.updateUserInfo,
   validationErrorHandler,
   users_controller.update_user_info,
 );
@@ -93,7 +93,7 @@ users.get(
   '/users',
   // isAuthenticated,
   // isAdmin,
-  validator.listUsers,
+  validate_user.listUsers,
   validationErrorHandler,
   users_controller.list_users,
 );
@@ -103,7 +103,7 @@ users.get(
   '/users/search',
   isAuthenticated,
   isAdmin,
-  validator.searchUser,
+  validate_user.searchUser,
   validationErrorHandler,
   users_controller.search_user,
 );
@@ -116,7 +116,7 @@ users.put(
   '/users/:user_id/role',
   isAuthenticated,
   isAdmin,
-  validator.updateUserRole,
+  validate_user.updateUserRole,
   validationErrorHandler,
   users_controller.update_user_role,
 );
@@ -126,7 +126,7 @@ users.delete(
   '/users/:user_id',
   isAuthenticated,
   isAdmin,
-  validator.deleteUser,
+  validate_user.deleteUser,
   validationErrorHandler,
   users_controller.delete_user,
 );

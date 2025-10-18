@@ -20,9 +20,9 @@ export const getCachedUser = async (userId: string) => {
     async () => {
       log.debug(`Fetching user from DB: ${userId}`);
       return prisma.users.findUnique({
-        where: { id: userId, is_deleted: false },
+        where: { user_id: userId, is_deleted: false },
         select: {
-          id: true,
+          user_id: true,
           email: true,
           first_name: true,
           last_name: true,
@@ -90,7 +90,7 @@ export const getCachedUsersList = async (filters: {
           skip,
           take: limit,
           select: {
-            id: true,
+            user_id: true,
             email: true,
             first_name: true,
             last_name: true,
@@ -134,7 +134,7 @@ export const getCachedUsersSearch = async (searchTerm: string) => {
           ],
         },
         select: {
-          id: true,
+          user_id: true,
           email: true,
           first_name: true,
           last_name: true,

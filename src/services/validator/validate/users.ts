@@ -1,8 +1,8 @@
 import { body, param, query } from 'express-validator';
 
-import { emailValidation, nameValidation, passwordValidation } from './utils/utils';
+import { emailValidation, nameValidation, passwordValidation } from '../utils/utils';
 
-export const validator = {
+export const validate_user = {
   signup: [
     emailValidation('email'),
     passwordValidation(),

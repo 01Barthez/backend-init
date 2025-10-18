@@ -54,7 +54,7 @@ model users {
 // =====================================================================================================
 // BLACKLIST MODEL (Invalidated JWT Tokens)
 // =====================================================================================================
-model Blacklist {
+model blacklist {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
   token      String   @unique // JWT token to blacklist
   created_at DateTime @default(now())

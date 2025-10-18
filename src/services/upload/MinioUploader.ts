@@ -136,7 +136,7 @@ export class MinioUploader extends EventEmitter {
     while (true) {
       try {
         log.debug(`Retry attempt ${attempt + 1}/${this.maxRetries}`);
-        return await fn();
+        return fn();
       } catch (err: any) {
         lastError = err;
         attempt++;

@@ -48,7 +48,7 @@ export class ClamAVScanner implements Scanner {
 
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
       try {
-        return await fn();
+        return fn();
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         if (attempt < this.MAX_RETRIES) {

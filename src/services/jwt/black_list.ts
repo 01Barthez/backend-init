@@ -26,7 +26,7 @@ const blackListToken = {
       await prisma.blacklist.create({
         data: {
           token: token,
-          expireAt: tokenExpiredDate,
+          expire_at: tokenExpiredDate,
         },
       });
 
@@ -43,7 +43,7 @@ const blackListToken = {
       const isBlackListed = await prisma.blacklist.findFirst({
         where: {
           token: token,
-          expireAt: {
+          expire_at: {
             gt: new Date(),
           },
         },
@@ -61,7 +61,7 @@ const blackListToken = {
     try {
       await prisma.blacklist.deleteMany({
         where: {
-          expireAt: {
+          expire_at: {
             lte: new Date(),
           },
         },
