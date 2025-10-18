@@ -99,6 +99,7 @@ const users_controller = {
           },
         },
       });
+      if (!newUser) return response.badRequest(req, res, 'failed to create user');
 
       // Send OTP email (non-blocking)
       const user_full_name = `${last_name} ${first_name}`;
@@ -120,7 +121,7 @@ const users_controller = {
           });
         });
 
-      log.info('User created successfully', { userId: newUser.id, email });
+      log.info('User created successfully', { email });
 
       return response.created(
         req,
@@ -183,12 +184,12 @@ const users_controller = {
 
         // Verify user
         await prisma.users.update({
-          where: { id: user.id },
+          where: { user_id: user.user_id },
           data: { is_verified: true, otp: null, email_verified_at: now },
         });
 
         // Invalidate cache
-        await invalidateUserCache(user.id, email);
+        await invalidateUserCache(user.user_id, email);
 
         // Send welcome email (non-blocking)
         const user_full_name = `${user.last_name} ${user.first_name}`;
@@ -199,7 +200,7 @@ const users_controller = {
           log.warn('Failed to send welcome email', { email, error: error.message });
         });
 
-        log.info('User verified successfully', { userId: user.id, email });
+        log.info('User verified successfully', { userId: user.user_id, email });
 
         return response.ok(req, res, { email }, 'Account verified successfully');
       } catch (error: any) {
@@ -235,7 +236,7 @@ const users_controller = {
 
       // Update user with new OTP
       await prisma.users.update({
-        where: { id: user.id },
+        where: { user_id: user.user_id },
         data: {
           otp: {
             code: user_otp,
@@ -245,7 +246,7 @@ const users_controller = {
       });
 
       // Invalidate cache
-      await invalidateUserCache(user.id, email);
+      await invalidateUserCache(user.user_id, email);
 
       // Send OTP email
       const user_full_name = `${user.last_name} ${user.first_name}`;
@@ -321,7 +322,7 @@ const users_controller = {
         sameSite: envs.COOKIE_SAME_SITE as 'strict' | 'lax' | 'none',
       });
 
-      log.info('User logged in successfully', { userId: user.id, email });
+      log.info('User logged in successfully', { email });
 
       // Send login alert email (non-blocking)
       const user_full_name = `${user.last_name} ${user.first_name}`;
@@ -336,7 +337,7 @@ const users_controller = {
         req,
         res,
         {
-          id: user.id,
+          id: user.user_id,
           email: user.email,
           first_name: user.first_name,
           last_name: user.last_name,
@@ -371,7 +372,7 @@ const users_controller = {
         sameSite: envs.COOKIE_SAME_SITE as 'strict' | 'lax' | 'none',
       });
 
-      log.info('User logged out successfully', { userId: user.id });
+      log.info('User logged out successfully', { userId: user.user_id });
 
       return response.ok(req, res, null, 'Logout successful');
     } catch (error: any) {
@@ -405,7 +406,7 @@ const users_controller = {
         }
 
         // Generate password reset token
-        const resetToken = userToken.generatePasswordResetToken(user.id);
+        const resetToken = userToken.generatePasswordResetToken(user.user_id);
         const resetLink = `${envs.CLIENT_URL}/reset-password?token=${resetToken}`;
 
         // Send password reset email
@@ -462,7 +463,7 @@ const users_controller = {
 
         // Get user
         const user = await prisma.users.findFirst({
-          where: { id: userId, is_deleted: false },
+          where: { user_id: userId, is_deleted: false },
         });
 
         if (!user) {
@@ -474,7 +475,7 @@ const users_controller = {
 
         // Update password
         await prisma.users.update({
-          where: { id: userId },
+          where: { user_id: userId },
           data: { password: hashedPassword },
         });
 
@@ -516,7 +517,7 @@ const users_controller = {
       try {
         // Get user with password
         const dbUser = await prisma.users.findFirst({
-          where: { id: user.id, is_deleted: false },
+          where: { user_id: user.user_id, is_deleted: false },
         });
 
         if (!dbUser) {
@@ -534,18 +535,18 @@ const users_controller = {
 
         // Update password
         await prisma.users.update({
-          where: { id: user.id },
+          where: { user_id: user.user_id },
           data: { password: hashedPassword },
         });
 
         // Invalidate cache
-        await invalidateUserCache(user.id, dbUser.email);
+        await invalidateUserCache(user.user_id, dbUser.email);
 
-        log.info('Password changed successfully', { userId: user.id });
+        log.info('Password changed successfully', { userId: user.user_id });
 
         return response.ok(req, res, null, 'Password changed successfully');
       } catch (error: any) {
-        log.error('Change password failed', { error: error.message, userId: user.id });
+        log.error('Change password failed', { error: error.message, userId: user.user_id });
         return response.serverError(req, res, 'Failed to change password', error);
       }
     },
@@ -590,10 +591,10 @@ const users_controller = {
 
         // Update user
         const updatedUser = await prisma.users.update({
-          where: { id: user.id },
+          where: { user_id: user.user_id },
           data: updateData,
           select: {
-            id: true,
+            user_id: true,
             email: true,
             first_name: true,
             last_name: true,
@@ -603,13 +604,13 @@ const users_controller = {
         });
 
         // Invalidate cache
-        await invalidateUserCache(user.id, updatedUser.email);
+        await invalidateUserCache(user.user_id, updatedUser.email);
 
-        log.info('User info updated', { userId: user.id });
+        log.info('User info updated', { userId: user.user_id });
 
         return response.ok(req, res, updatedUser, 'User info updated successfully');
       } catch (error: any) {
-        log.error('Update user info failed', { error: error.message, userId: user.id });
+        log.error('Update user info failed', { error: error.message, userId: user.user_id });
         return response.serverError(req, res, 'Failed to update user info', error);
       }
     },
@@ -681,7 +682,7 @@ const users_controller = {
       const users = await prisma.users.findMany({
         where: { is_deleted: false },
         select: {
-          id: true,
+          user_id: true,
           email: true,
           first_name: true,
           last_name: true,
@@ -698,7 +699,7 @@ const users_controller = {
       const csvRows = users
         .map(
           (user) =>
-            `${user.id},${user.email},${user.first_name},${user.last_name},${user.phone},${user.is_active},${user.is_verified},${user.created_at}`,
+            `${user.user_id},${user.email},${user.first_name},${user.last_name},${user.phone},${user.is_active},${user.is_verified},${user.created_at}`,
         )
         .join('\n');
       const csv = csvHeader + csvRows;
@@ -727,7 +728,7 @@ const users_controller = {
     try {
       // Get user
       const user = await prisma.users.findFirst({
-        where: { id: user_id },
+        where: { user_id: user_id },
       });
 
       if (!user) {
@@ -736,7 +737,7 @@ const users_controller = {
 
       // Soft delete
       await prisma.users.update({
-        where: { id: user_id },
+        where: { user_id: user_id },
         data: {
           is_deleted: true,
           is_active: false,
@@ -773,7 +774,7 @@ const users_controller = {
       try {
         // Get user
         const user = await prisma.users.findFirst({
-          where: { id: user_id, is_deleted: false },
+          where: { user_id: user_id, is_deleted: false },
         });
 
         if (!user) {
@@ -782,7 +783,7 @@ const users_controller = {
 
         // Update role (commented out until role field is added to Prisma schema)
         await prisma.users.update({
-          where: { id: user_id },
+          where: { user_id: user_id },
           data: { role },
         });
 
