@@ -36,8 +36,8 @@ export const envs = {
   // Redis
   REDIS_HOST: env.get('REDIS_HOST').required().asString(),
   REDIS_PORT: env.get('REDIS_PORT').required().asPortNumber(),
-  REDIS_USERNAME: env.get('REDIS_USERNAME').default('').asString(),
-  REDIS_PASSWORD: env.get('REDIS_PASSWORD').default('').asString(),
+  REDIS_USERNAME: env.get('REDIS_USERNAME').default('redis_username').asString(),
+  REDIS_PASSWORD: env.get('REDIS_PASSWORD').default('redis_password').asString(),
 
   // MailHog SMTP
   SMTP_HOST: env.get('SMTP_HOST').required().asString(),
@@ -124,6 +124,7 @@ export const envs = {
 
   // Local Cache
   LOCAL_CACHE_MAX_ITEMS: env.get('LOCAL_CACHE_MAX_ITEMS').default(100).asInt(),
+  LOCAL_CACHE_TTL: env.get('LOCAL_CACHE_TTL').default(12000).asInt(),
   COMPRESSION_THRESHOLD: env.get('COMPRESSION_THRESHOLD').default(1024).asInt(),
 
   // Otp delay

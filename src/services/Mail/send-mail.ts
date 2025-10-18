@@ -1,8 +1,8 @@
 import { envs } from '@/config/env/env';
 import log from '@/services/logging/logger';
 
-import templateManager from './template-manager';
-import transporter from './transporter-config';
+import transporter from './_config/transporter';
+import templateManager from './templates/template-manager';
 
 async function send_mail<K extends keyof typeof templateManager>(
   receiver: string,

@@ -1,22 +1,13 @@
 import prisma from '@/config/prisma/prisma';
+import { CacheTTL } from '@/services/caching/Interface/caching.types';
+import {
+  cacheData,
+  invalidateCache,
+  invalidateCachePattern,
+} from '@/services/caching/cache-functions';
+import log from '@/services/logging/logger';
 
-import log from '../logging/logger';
-import cacheData, { CacheTTL, invalidateCache, invalidateCachePattern } from './cache-data';
-
-/**
- * User-specific cache service with optimized cache keys and invalidation strategies
- */
-
-export const UserCacheKeys = {
-  user: (userId: string) => `user:${userId}`,
-  userByEmail: (email: string) => `user:email:${email}`,
-  usersList: (filters: string) => `users:list:${filters}`,
-  usersSearch: (query: string) => `users:search:${query}`,
-  usersCount: (filters: string) => `users:count:${filters}`,
-  userPattern: 'user:*',
-  usersListPattern: 'users:list:*',
-  usersSearchPattern: 'users:search:*',
-};
+import { UserCacheKeys } from './utils/utils';
 
 /**
  * Get user by ID with cache
@@ -28,7 +19,7 @@ export const getCachedUser = async (userId: string) => {
     cacheKey,
     async () => {
       log.debug(`Fetching user from DB: ${userId}`);
-      return await prisma.users.findUnique({
+      return prisma.users.findUnique({
         where: { id: userId, is_deleted: false },
         select: {
           id: true,
@@ -59,7 +50,7 @@ export const getCachedUserByEmail = async (email: string) => {
     cacheKey,
     async () => {
       log.debug(`Fetching user from DB by email: ${email}`);
-      return await prisma.users.findFirst({
+      return prisma.users.findFirst({
         where: { email, is_deleted: false },
       });
     },
@@ -132,7 +123,7 @@ export const getCachedUsersSearch = async (searchTerm: string) => {
     async () => {
       log.debug(`Searching users from DB: ${searchTerm}`);
 
-      return await prisma.users.findMany({
+      return prisma.users.findMany({
         where: {
           is_deleted: false,
           OR: [

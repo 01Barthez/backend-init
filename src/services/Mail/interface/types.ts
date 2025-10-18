@@ -8,3 +8,5 @@ export interface ITemplateResetPassword {
   date: string;
   name: string;
 }
+
+export type TemplateData = Record<string, any>; // Peut être affiné selon tes besoins

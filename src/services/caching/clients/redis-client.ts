@@ -1,8 +1,7 @@
 import Redis from 'ioredis';
 
 import { envs } from '@/config/env/env';
-
-import log from '../logging/logger';
+import log from '@/services/logging/logger';
 
 // Create instance of redis
 const redisClient = new Redis({

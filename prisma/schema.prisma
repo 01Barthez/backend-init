@@ -1,3 +1,6 @@
+// =====================================================================================================
+// PRISMA CLIENT CONFIGURATION
+// =====================================================================================================
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,58 +10,164 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model: Use to manage all users
+//* ========================================================================================================================================================================================================
+
+// =====================================================================================================
+// USERS MODEL
+// =====================================================================================================
 model users {
-  id         String  @id @default(auto()) @map("_id") @db.ObjectId
+  user_id    String  @id @default(auto()) @map("_id") @db.ObjectId
   email      String  @unique
   password   String
   first_name String
   last_name  String
-  avatar_url String
-  phone      String
+  avatar_url String?
+  phone      String?
   is_active  Boolean @default(false)
 
-  // verifier indicator
+  // --- Verification ---
   otp         Otp?
   is_verified Boolean @default(false)
 
+  // --- Activity tracking ---
   email_verified_at    DateTime?
   last_login_at        DateTime?
   last_password_change DateTime?
-  // tracing
-  created_at           DateTime  @default(now())
-  updated_at           DateTime  @updatedAt
-  is_deleted           Boolean   @default(false)
-  deleted_at           DateTime?
 
-  // role: USER, ADMIN
+  // --- Audit fields ---
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  is_deleted Boolean   @default(false)
+  deleted_at DateTime?
+
+  // --- Role: USER / ADMIN ---
   role String @default("USER")
 
+  // --- Relations ---
+  blogs blog[]
+
+  // --- Indexes ---
   @@index([email, is_verified])
   @@index([email, deleted_at])
 }
 
+// =====================================================================================================
+// BLACKLIST MODEL (Invalidated JWT Tokens)
+// =====================================================================================================
 model Blacklist {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  token      String   @unique // JWT token to blacklist
+  created_at DateTime @default(now())
+  expire_at  DateTime // Expiration date of the token
 
-  token String @unique // Token a blacklisté
-
-  createAt DateTime @default(now())
-  expireAt DateTime
-
-  @@index([token, expireAt])
-  @@index([expireAt])
+  // --- Indexes ---
+  @@index([token, expire_at])
+  @@index([expire_at])
 }
 
-// Item model: Use to define one item to manage crud information
-model Item {
-  id    String @id @default(auto()) @map("_id") @db.ObjectId
-  name  String
-  value Int
-}
-
-// Types & Enums
+// =====================================================================================================
+// TYPE: OTP (Used for email / phone verification)
+// =====================================================================================================
 type Otp {
   code      String
   expire_at DateTime
 }
+
+//* ========================================================================================================================================================================================================
+
+// =====================================================================================================
+// BLOG MODEL
+// =====================================================================================================
+model blog {
+  blog_id     String  @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  slug        String  @unique
+  excerpt     String? // Short summary
+  content     String // Main content (HTML or Markdown)
+  cover_image String? // Cover image URL
+
+  // --- Publication state ---
+  status     articleStatus @default(DRAFT) // DRAFT, REVIEW, PUBLISHED, ARCHIVED
+  visibility visibility    @default(PUBLIC) // PUBLIC, PRIVATE, MEMBERS_ONLY
+
+  // --- Relations ---
+  authorId String @db.ObjectId
+  author   users  @relation(fields: [authorId], references: [user_id])
+
+  categoryId String?   @db.ObjectId
+  category   category? @relation(fields: [categoryId], references: [category_id])
+
+  tagIds String[] @db.ObjectId
+
+  // --- Analytics ---
+  views  Int @default(0)
+  likes  Int @default(0)
+  shares Int @default(0)
+
+  // --- Audit fields ---
+  published_at DateTime?
+  scheduled_at DateTime?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  deleted_at   DateTime?
+
+  // --- Indexes ---
+  @@index([status])
+  @@index([created_at, published_at])
+}
+
+// =====================================================================================================
+// CATEGORY MODEL
+// =====================================================================================================
+model category {
+  category_id String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  slug        String   @unique
+  description String?
+  articles    blog[]
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+// =====================================================================================================
+// TAG MODEL
+// =====================================================================================================
+model tag {
+  tag_id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  slug        String   @unique
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+// =====================================================================================================
+// ENUMS
+// =====================================================================================================
+enum articleStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum visibility {
+  PUBLIC
+  PRIVATE
+  MEMBERS_ONLY
+}
+
+//* ========================================================================================================================================================================================================
+
+// =====================================================================================================
+// ITEM MODEL (Generic CRUD Example)
+// =====================================================================================================
+model item {
+  item_id    String   @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  value      Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+//* ========================================================================================================================================================================================================

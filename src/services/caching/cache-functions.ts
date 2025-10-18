@@ -3,8 +3,10 @@ import zlib from 'zlib';
 import { envs } from '@/config/env/env';
 
 import log from '../logging/logger';
-import localCache from './local-cache';
-import redisClient from './redis-client';
+import type { CacheableData } from './Interface/caching.types';
+import { CacheTTL } from './Interface/caching.types';
+import localCache from './clients/local-cache';
+import redisClient from './clients/redis-client';
 
 /**
  * generic function to help saving and fetch data from cache redis and lru-cache to optimize performance
@@ -14,17 +16,7 @@ import redisClient from './redis-client';
  * @returns Données récupérées depuis le cache ou après exécution de `fetchFn`
  */
 
-type CacheableData = string | number | object | null;
-
-export enum CacheTTL {
-  SHORT = 60, // 1 minute
-  MEDIUM = 300, // 5 minutes
-  LONG = 900, // 15 minutes
-  VERY_LONG = 3600, // 1 hour
-  DAY = 86400, // 24 hours
-}
-
-const cacheData = async <T extends CacheableData>(
+export const cacheData = async <T extends CacheableData>(
   cacheKey: string,
   fetchFn: () => Promise<T>,
   ttl: number = CacheTTL.LONG,
@@ -33,7 +25,7 @@ const cacheData = async <T extends CacheableData>(
   if (typeof fetchFn !== 'function') throw new Error('fetchFn must be a function.');
   if (!Number.isInteger(ttl) || ttl <= 0) throw new Error('TTL must be a positive integer.');
 
-  //? Fetch data from a localcash
+  //? Fetch data from a local cache
   const cachedDataLocal = localCache.get(cacheKey);
   if (cachedDataLocal) {
     log.info(`data fetching from localCache at the key: ${cacheKey}`);
@@ -48,8 +40,6 @@ const cacheData = async <T extends CacheableData>(
     // & check if redis has data and return it
     if (cachedDataRedis) {
       try {
-        log.info(`data fetching from redis at the key: ${cacheKey}`);
-
         // Decompress dcachedDataRedisata if necessary
         let data: T;
         if (cachedDataRedis.startsWith('c')) {
@@ -62,9 +52,11 @@ const cacheData = async <T extends CacheableData>(
         }
 
         if (data !== null) localCache.set(cacheKey, data); // Updating local cache
+
+        log.info(`data fetching from redis at the key: ${cacheKey}`);
         return data;
       } catch (error) {
-        log.warn(`Failed to decompress or parse Redis data: ${error} !, fetching new data...`);
+        log.warn(`Failed to decompress or parse Redis data: ${error} ! Fetching new data...`);
         await redisClient.del(cacheKey);
       }
     }
@@ -102,6 +94,7 @@ const cacheData = async <T extends CacheableData>(
     const messageError = `Failed to manage cache for key: ${cacheKey}. Error: ${error instanceof Error ? error.message : JSON.stringify(error)}`;
 
     log.error(messageError, { cacheKey, error });
+
     // Graceful degradation: return fresh data instead of failing
     try {
       log.warn(`Attempting to fetch fresh data after cache error for key: ${cacheKey}`);
@@ -136,6 +129,7 @@ export const invalidateCachePattern = async (pattern: string): Promise<void> => 
     const keys = await redisClient.keys(pattern);
     if (keys.length > 0) {
       await redisClient.del(...keys);
+
       // Clear from local cache as well
       keys.forEach((key) => localCache.delete(key));
       log.info(`Cache invalidated for pattern: ${pattern}, ${keys.length} keys deleted`);
@@ -171,5 +165,3 @@ export const clearAllCache = async (): Promise<void> => {
     throw error;
   }
 };
-
-export default cacheData;
