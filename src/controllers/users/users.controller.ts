@@ -666,7 +666,11 @@ const users_controller = {
       }
 
       return response.ok(req, res, user, `User Found`);
-    }),
+    } catch (error: any) {
+      log.error('Failed to get user informations');
+      return response.serverError(req, res, 'Failed to get user user info', error);
+    }
+  }),
 
   //*& Search Users
   search_user: asyncHandler(async (req: Request, res: Response): Promise<void | Response<any>> => {
