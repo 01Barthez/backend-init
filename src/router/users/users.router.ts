@@ -98,24 +98,38 @@ users.get(
   users_controller.list_users,
 );
 
+// Get One User
+users.get(
+  '/users/user_id',
+  // isAuthenticated,
+  // validate_user.listUsers,
+  // validationErrorHandler,
+  users_controller.get_user,
+);
+
 // Search users
 users.get(
   '/users/search',
-  isAuthenticated,
-  isAdmin,
+  // isAuthenticated,
+  // isAdmin,
   validate_user.searchUser,
   validationErrorHandler,
   users_controller.search_user,
 );
 
 // Export users to CSV
-users.get('/users/export', isAuthenticated, isAdmin, users_controller.export_users);
+users.get(
+  '/users/export',
+  // isAuthenticated,
+  // isAdmin,
+  users_controller.export_users,
+);
 
 // Update user role
 users.put(
   '/users/:user_id/role',
-  isAuthenticated,
-  isAdmin,
+  // isAuthenticated,
+  // isAdmin,
   validate_user.updateUserRole,
   validationErrorHandler,
   users_controller.update_user_role,
@@ -124,14 +138,29 @@ users.put(
 // Delete user (soft delete)
 users.delete(
   '/users/:user_id',
-  isAuthenticated,
-  isAdmin,
+  // isAuthenticated,
+  // isAdmin,
   validate_user.deleteUser,
   validationErrorHandler,
   users_controller.delete_user,
 );
 
+// Delete user (hard delete)
+users.delete(
+  '/users/:user_id',
+  // isAuthenticated,
+  // isAdmin,
+  validate_user.deleteUser,
+  validationErrorHandler,
+  users_controller.delete_user_permently,
+);
+
 // Clear all users (development only)
-users.delete('/users/clear-all', isAuthenticated, isAdmin, users_controller.clear_all_users);
+users.delete(
+  '/users/clear-all',
+  // isAuthenticated,
+  // isAdmin,
+  users_controller.clear_all_users,
+);
 
 export default users;

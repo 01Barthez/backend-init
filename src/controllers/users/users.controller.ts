@@ -21,13 +21,14 @@ import {
   invalidateAllUserCaches,
   invalidateUserCache,
 } from './caching/user-cache';
+import { uploadAvatar } from './utils/avatarUploader';
 
 const users_controller = {
   //* AUTH SETUP **********************************************************************************************************************************************************
 
   //*& Inscription (Sign up)
   signup: asyncHandler(async (req: Request, res: Response): Promise<void | Response<any>> => {
-    const { email, password, first_name, last_name, phone } = req.body;
+    const { email, password, first_name, last_name, phone, role } = req.body;
 
     // Validate required fields
     const validation = validateRequiredFields(req.body, [
@@ -48,33 +49,16 @@ const users_controller = {
 
     try {
       // Check if email already exists (use cache for performance)
-      const existingUser = await getCachedUserByEmail(email);
+      const existingUser = await prisma.users.findFirst({
+        where: { email, is_deleted: false },
+      });
+
       if (existingUser) {
         return response.conflict(req, res, 'Email already exists');
       }
 
       // Upload avatar if provided
-      let profile_url = '';
-      if (req.file) {
-        try {
-          const profile = await uploader.uploadBuffer(req.file.buffer, {
-            filename: req.file.originalname,
-            contentType: req.file.mimetype,
-            size: req.file.size,
-          });
-
-          if (profile?.key) {
-            profile_url = `http${envs.MINIO_USE_SSL ? 's' : ''}://localhost${[80, 443].includes(Number(envs.MINIO_PORT)) ? '' : `:${envs.MINIO_PORT}`}/${envs.MINIO_APP_BUCKET}/${profile.key}`;
-          }
-        } catch (uploadError: any) {
-          log.error('Avatar upload failed', { error: uploadError.message });
-          return response.unprocessable(
-            req,
-            res,
-            `Failed to upload avatar: ${uploadError.message}`,
-          );
-        }
-      }
+      const profile_url = await uploadAvatar(req.file);
 
       // Hash password
       const hashedPassword = await hash_password(password);
@@ -93,6 +77,7 @@ const users_controller = {
           last_name,
           phone,
           avatar_url: profile_url,
+          role,
           otp: {
             code: user_otp || '000000',
             expire_at: otp_expire_date,
@@ -297,10 +282,6 @@ const users_controller = {
         return response.forbidden(req, res, 'Please verify your account first');
       }
 
-      if (!user.is_active) {
-        return response.forbidden(req, res, 'Your account has been deactivated');
-      }
-
       // Verify password
       const isPasswordValid = await compare_password(password, user.password);
       if (!isPasswordValid) {
@@ -396,7 +377,6 @@ const users_controller = {
         });
 
         if (!user) {
-          // Security: Don't reveal whether email exists
           return response.ok(
             req,
             res,
@@ -654,6 +634,40 @@ const users_controller = {
     }
   }),
 
+  // GEt One User Informations
+  get_user: asyncHandler(async (req: Request, res: Response): Promise<void | Response<any>> => {
+    const { user_id } = req.params;
+
+    if (!user_id) {
+      return response.badRequest(req, res, 'User ID is required');
+    }
+
+    try {
+      // Get user
+      const user = await prisma.users.findFirst({
+        where: { user_id, is_deleted: false },
+        select: {
+          user_id: true,
+          email: true,
+          first_name: true,
+          last_name: true,
+          phone: true,
+          avatar_url: true,
+          is_active: true,
+          is_verified: true,
+          email_verified_at: true,
+          created_at: true,
+          updated_at: true,
+        },
+      });
+
+      if (!user) {
+        return response.notFound(req, res, 'User not found');
+      }
+
+      return response.ok(req, res, user, `User Found`);
+    }),
+
   //*& Search Users
   search_user: asyncHandler(async (req: Request, res: Response): Promise<void | Response<any>> => {
     const { search } = req.query;
@@ -717,7 +731,7 @@ const users_controller = {
     }
   }),
 
-  //*& Delete User
+  //*& Soft Delete User
   delete_user: asyncHandler(async (req: Request, res: Response): Promise<void | Response<any>> => {
     const { user_id } = req.params;
 
@@ -755,6 +769,43 @@ const users_controller = {
       return response.serverError(req, res, 'Failed to delete user', error);
     }
   }),
+
+  //*& Hard Delete User
+  delete_user_permently: asyncHandler(
+    async (req: Request, res: Response): Promise<void | Response<any>> => {
+      const { user_id } = req.params;
+
+      if (!user_id) {
+        return response.badRequest(req, res, 'User ID is required');
+      }
+
+      try {
+        // Get user
+        const user = await prisma.users.findFirst({
+          where: { user_id: user_id },
+        });
+
+        if (!user) {
+          return response.notFound(req, res, 'User not found');
+        }
+
+        // Soft delete
+        await prisma.users.delete({
+          where: { user_id: user_id },
+        });
+
+        // Invalidate cache
+        await invalidateUserCache(user_id, user.email);
+
+        log.info('User soft deleted', { userId: user_id });
+
+        return response.ok(req, res, null, 'User deleted successfully');
+      } catch (error: any) {
+        log.error('Delete user failed', { error: error.message, userId: user_id });
+        return response.serverError(req, res, 'Failed to delete user', error);
+      }
+    },
+  ),
 
   //*& Update User Role
   update_user_role: asyncHandler(

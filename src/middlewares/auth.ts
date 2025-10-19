@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 
 import blackListToken from '@/services/jwt/black_list';
-import fetchAccessToken from '@/services/jwt/fetch_access_token';
 import userToken from '@/services/jwt/functions-jwt';
 import log from '@/services/logging/logger';
 import { response } from '@/utils/responses/helpers';

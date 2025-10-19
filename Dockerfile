@@ -60,6 +60,9 @@ COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/prisma ./prisma
 COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
 
+# Copy JWT keys from source
+COPY --from=builder /usr/src/app/src/config/keys ./src/config/keys
+
 # Expose port
 EXPOSE 3000
 
