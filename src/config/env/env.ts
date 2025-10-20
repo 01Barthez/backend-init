@@ -130,26 +130,71 @@ export const envs = {
   // Otp delay
   OTP_DELAY: env.get('OTP_DELAY').default(900000).asInt(),
 
-  // OAuth
-  // OAUTH_GOOGLE_CLIENT_ID: env.get('OAUTH_GOOGLE_CLIENT_ID').required().asString(),
-  // OAUTH_GOOGLE_CLIENT_SECRET: env.get('OAUTH_GOOGLE_CLIENT_SECRET').required().asString(),
-  // OAUTH_GOOGLE_CALLBACK_URL: env.get('OAUTH_GOOGLE_CALLBACK_URL').required().asString(),
+  // ============================================
+  // OAuth2.0 Configuration
+  // ============================================
 
-  // OAUTH_GITHUB_CLIENT_ID: env.get('OAUTH_GITHUB_CLIENT_ID').required().asString(),
-  // OAUTH_GITHUB_CLIENT_SECRET: env.get('OAUTH_GITHUB_CLIENT_SECRET').required().asString(),
-  // OAUTH_GITHUB_CALLBACK_URL: env.get('OAUTH_GITHUB_CALLBACK_URL').required().asString(),
+  // Google OAuth
+  GOOGLE_CLIENT_ID: env.get('GOOGLE_CLIENT_ID').default('').asString(),
+  GOOGLE_CLIENT_SECRET: env.get('GOOGLE_CLIENT_SECRET').default('').asString(),
+  GOOGLE_REDIRECT_URI: env
+    .get('GOOGLE_REDIRECT_URI')
+    .default(
+      `${env.get('SERVER_URL').default('http://localhost:3000').asString()}/api/v1/auth/oauth/google/callback`,
+    )
+    .asString(),
 
-  // OAUTH_FACEBOOK_CLIENT_ID: env.get('OAUTH_FACEBOOK_CLIENT_ID').required().asString(),
-  // OAUTH_FACEBOOK_CLIENT_SECRET: env.get('OAUTH_FACEBOOK_CLIENT_SECRET').required().asString(),
-  // OAUTH_FACEBOOK_CALLBACK_URL: env.get('OAUTH_FACEBOOK_CALLBACK_URL').required().asString(),
+  // GitHub OAuth
+  GITHUB_CLIENT_ID: env.get('GITHUB_CLIENT_ID').default('').asString(),
+  GITHUB_CLIENT_SECRET: env.get('GITHUB_CLIENT_SECRET').default('').asString(),
+  GITHUB_REDIRECT_URI: env
+    .get('GITHUB_REDIRECT_URI')
+    .default(
+      `${env.get('SERVER_URL').default('http://localhost:3000').asString()}/api/v1/auth/oauth/github/callback`,
+    )
+    .asString(),
 
-  // OAUTH_LINKEDIN_CLIENT_ID: env.get('OAUTH_LINKEDIN_CLIENT_ID').required().asString(),
-  // OAUTH_LINKEDIN_CLIENT_SECRET: env.get('OAUTH_LINKEDIN_CLIENT_SECRET').required().asString(),
-  // OAUTH_LINKEDIN_CALLBACK_URL: env.get('OAUTH_LINKEDIN_CALLBACK_URL').required().asString(),
+  // Facebook OAuth
+  FACEBOOK_CLIENT_ID: env.get('FACEBOOK_CLIENT_ID').default('').asString(),
+  FACEBOOK_CLIENT_SECRET: env.get('FACEBOOK_CLIENT_SECRET').default('').asString(),
+  FACEBOOK_REDIRECT_URI: env
+    .get('FACEBOOK_REDIRECT_URI')
+    .default(
+      `${env.get('SERVER_URL').default('http://localhost:3000').asString()}/api/v1/auth/oauth/facebook/callback`,
+    )
+    .asString(),
 
-  // OAUTH_TWITTER_CLIENT_ID: env.get('OAUTH_TWITTER_CLIENT_ID').required().asString(),
-  // OAUTH_TWITTER_CLIENT_SECRET: env.get('OAUTH_TWITTER_CLIENT_SECRET').required().asString(),
-  // OAUTH_TWITTER_CALLBACK_URL: env.get('OAUTH_TWITTER_CALLBACK_URL').required().asString(),
+  // Instagram OAuth
+  INSTAGRAM_CLIENT_ID: env.get('INSTAGRAM_CLIENT_ID').default('').asString(),
+  INSTAGRAM_CLIENT_SECRET: env.get('INSTAGRAM_CLIENT_SECRET').default('').asString(),
+  INSTAGRAM_REDIRECT_URI: env
+    .get('INSTAGRAM_REDIRECT_URI')
+    .default(
+      `${env.get('SERVER_URL').default('http://localhost:3000').asString()}/api/v1/auth/oauth/instagram/callback`,
+    )
+    .asString(),
 
-  // OAUTH_GITHUB_ADMIN: env.get('OAUTH_GITHUB_ADMIN').required().asString(),
+  // Twitter OAuth
+  TWITTER_CLIENT_ID: env.get('TWITTER_CLIENT_ID').default('').asString(),
+  TWITTER_CLIENT_SECRET: env.get('TWITTER_CLIENT_SECRET').default('').asString(),
+  TWITTER_REDIRECT_URI: env
+    .get('TWITTER_REDIRECT_URI')
+    .default(
+      `${env.get('SERVER_URL').default('http://localhost:3000').asString()}/api/v1/auth/oauth/twitter/callback`,
+    )
+    .asString(),
+
+  // LinkedIn OAuth
+  LINKEDIN_CLIENT_ID: env.get('LINKEDIN_CLIENT_ID').default('').asString(),
+  LINKEDIN_CLIENT_SECRET: env.get('LINKEDIN_CLIENT_SECRET').default('').asString(),
+  LINKEDIN_REDIRECT_URI: env
+    .get('LINKEDIN_REDIRECT_URI')
+    .default(
+      `${env.get('SERVER_URL').default('http://localhost:3000').asString()}/api/v1/auth/oauth/linkedin/callback`,
+    )
+    .asString(),
+
+  // Telegram OAuth (Bot-based)
+  TELEGRAM_BOT_TOKEN: env.get('TELEGRAM_BOT_TOKEN').default('').asString(),
+  TELEGRAM_BOT_USERNAME: env.get('TELEGRAM_BOT_USERNAME').default('').asString(),
 };

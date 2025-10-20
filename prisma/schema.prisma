@@ -18,7 +18,7 @@ datasource db {
 model users {
   user_id    String  @id @default(auto()) @map("_id") @db.ObjectId
   email      String  @unique
-  password   String
+  password   String? // Optional for OAuth users
   first_name String
   last_name  String
   avatar_url String?
@@ -43,12 +43,62 @@ model users {
   // --- Role: USER / ADMIN ---
   role String @default("USER")
 
+  // --- OAuth2.0 Integration ---
+  oauth_accounts oauth_account[]
+
   // --- Relations ---
   blogs blog[]
 
   // --- Indexes ---
   @@index([email, is_verified])
   @@index([email, deleted_at])
+}
+
+// =====================================================================================================
+// OAUTH ACCOUNT MODEL (OAuth2.0 Provider Accounts)
+// =====================================================================================================
+model oauth_account {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // --- User relation ---
+  user_id String @db.ObjectId
+  user    users  @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  // --- Provider information ---
+  provider         oauth_provider // GOOGLE, GITHUB, FACEBOOK, etc.
+  provider_user_id String // User ID from the OAuth provider
+  provider_email   String? // Email from provider (may differ from user.email)
+
+  // --- OAuth tokens ---
+  access_token  String? // OAuth access token
+  refresh_token String? // OAuth refresh token
+  token_type    String? // Usually "Bearer"
+  expires_at    DateTime? // Token expiration timestamp
+  scope         String? // OAuth scopes granted
+
+  // --- Provider profile data ---
+  provider_profile_data Json? // Raw profile data from provider
+
+  // --- Audit fields ---
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // --- Unique constraint: one account per provider per user ---
+  @@unique([provider, provider_user_id])
+  @@unique([user_id, provider])
+}
+
+// =====================================================================================================
+// OAUTH PROVIDER ENUM
+// =====================================================================================================
+enum oauth_provider {
+  GOOGLE
+  GITHUB
+  FACEBOOK
+  INSTAGRAM
+  TWITTER
+  LINKEDIN
+  TELEGRAM
 }
 
 // =====================================================================================================

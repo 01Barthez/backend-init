@@ -120,4 +120,6 @@ export const validate_user = {
       .isInt({ min: 1, max: 100 })
       .withMessage('limit must be between 1 and 100'),
   ],
+
+  get_user_by_id: [param('user_id').notEmpty().withMessage('User ID is required')],
 };
