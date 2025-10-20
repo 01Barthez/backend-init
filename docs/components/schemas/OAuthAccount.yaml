@@ -1,0 +1,62 @@
+# OAuth Account Schema
+type: object
+properties:
+  id:
+    type: string
+    format: uuid
+    description: Unique identifier for the OAuth account
+    example: '650e8400-e29b-41d4-a716-446655440000'
+  provider:
+    type: string
+    enum: [google, github, facebook, instagram, twitter, linkedin, telegram]
+    description: The OAuth provider
+    example: 'google'
+  providerUserId:
+    type: string
+    description: The user's ID from the OAuth provider
+    example: '1234567890'
+  email:
+    type: string
+    format: email
+    description: The email associated with the OAuth account (may differ from user's primary email)
+    example: 'user@gmail.com'
+  accessToken:
+    type: string
+    description: OAuth access token (encrypted)
+    example: 'ya29.a0ARrdaM...'
+  refreshToken:
+    type: string
+    description: OAuth refresh token (encrypted)
+    example: '1//03e...'
+  tokenType:
+    type: string
+    description: Type of the OAuth token
+    example: 'Bearer'
+  expiresAt:
+    type: string
+    format: date-time
+    description: When the access token expires
+    example: '2023-12-31T23:59:59Z'
+  scope:
+    type: string
+    description: The OAuth scopes granted
+    example: 'profile email'
+  profileData:
+    type: object
+    description: Raw profile data from the OAuth provider
+    additionalProperties: true
+    example:
+      name: 'John Doe'
+      given_name: 'John'
+      family_name: 'Doe'
+      picture: 'https://lh3.googleusercontent.com/...'
+  createdAt:
+    type: string
+    format: date-time
+    description: When the OAuth account was linked
+    example: '2023-01-01T00:00:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the OAuth account was last updated
+    example: '2023-01-01T00:00:00Z'

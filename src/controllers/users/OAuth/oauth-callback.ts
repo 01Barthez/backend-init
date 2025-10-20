@@ -145,7 +145,7 @@ const oauth_callback = asyncHandler(
         error: error.message,
       });
 
-      return response.internalError(req, res, error.message || 'OAuth authentication failed');
+      return response.serverError(req, res, error.message || 'OAuth authentication failed');
     }
   },
 );

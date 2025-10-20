@@ -1,0 +1,98 @@
+# System Endpoints
+/health:
+  get:
+    tags:
+      - System
+    summary: Health check
+    description: Check if the API is running and healthy
+    responses:
+      '200':
+        description: API is healthy
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  example: 'UP'
+                timestamp:
+                  type: string
+                  format: date-time
+                  example: '2023-01-01T00:00:00Z'
+                uptime:
+                  type: number
+                  example: 123.456
+                database:
+                  type: string
+                  example: 'CONNECTED'
+                memoryUsage:
+                  type: object
+                  properties:
+                    rss:
+                      type: string
+                      example: '123.45 MB'
+                    heapTotal:
+                      type: string
+                      example: '45.67 MB'
+                    heapUsed:
+                      type: string
+                      example: '23.45 MB'
+                    external:
+                      type: string
+                      example: '12.34 MB'
+
+/csrf-token:
+  get:
+    tags:
+      - System
+    summary: Get CSRF token
+    description: Get a CSRF token for form submissions
+    responses:
+      '200':
+        description: CSRF token generated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                csrfToken:
+                  type: string
+                  example: 'abcd1234efgh5678'
+
+/_csp-reports:
+  post:
+    tags:
+      - System
+    summary: Content Security Policy Reports
+    description: Endpoint for receiving Content Security Policy violation reports
+    requestBody:
+      required: true
+      content:
+        application/csp-report:
+          schema:
+            type: object
+            properties:
+              'csp-report':
+                type: object
+                properties:
+                  document-uri:
+                    type: string
+                    example: 'https://example.com/page'
+                  referrer:
+                    type: string
+                    example: 'https://example.com/'
+                  blocked-uri:
+                    type: string
+                    example: 'https://malicious.com/script.js'
+                  violated-directive:
+                    type: string
+                    example: "script-src 'self'"
+                  original-policy:
+                    type: string
+                    example: "default-src 'self'; script-src 'self'"
+    responses:
+      '204':
+        description: Report received successfully
+      '400':
+        $ref: '../components/responses/BadRequest.yaml'

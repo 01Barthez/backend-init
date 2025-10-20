@@ -1,0 +1,52 @@
+# Item Schema
+type: object
+properties:
+  id:
+    type: string
+    format: uuid
+    description: Unique identifier for the item
+    example: '123e4567-e89b-12d3-a456-426614174000'
+  name:
+    type: string
+    description: Name of the item
+    example: 'Premium T-Shirt'
+  description:
+    type: string
+    description: Detailed description of the item
+    example: 'High-quality cotton t-shirt with premium finish'
+  price:
+    type: number
+    format: float
+    minimum: 0
+    description: Price of the item
+    example: 29.99
+  quantity:
+    type: integer
+    minimum: 0
+    description: Available quantity in stock
+    example: 100
+  category:
+    type: string
+    description: Category of the item
+    example: 'clothing'
+  images:
+    type: array
+    items:
+      type: string
+      format: uri
+    description: List of image URLs for the item
+    example: ['https://example.com/images/tshirt-1.jpg']
+  isActive:
+    type: boolean
+    default: true
+    description: Whether the item is active and visible to customers
+  createdAt:
+    type: string
+    format: date-time
+    description: When the item was created
+    example: '2023-01-01T00:00:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the item was last updated
+    example: '2023-01-01T00:00:00Z'

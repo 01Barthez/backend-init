@@ -1,0 +1,38 @@
+# OAuth Token Request Schema
+type: object
+required:
+  - provider
+  - code
+  - redirect_uri
+properties:
+  provider:
+    type: string
+    enum: [google, github, facebook, instagram, twitter, linkedin, telegram]
+    description: The OAuth provider that issued the authorization code
+    example: google
+  code:
+    type: string
+    description: The authorization code received from the OAuth provider
+    example: '4/0AX4XfWg...'
+  redirect_uri:
+    type: string
+    format: uri
+    description: The redirect URI that was used in the initial authorization request
+    example: https://yourapp.com/auth/callback
+  client_id:
+    type: string
+    description: The client ID for your OAuth application (optional if using server-side configuration)
+    example: your-client-id.apps.googleusercontent.com
+  client_secret:
+    type: string
+    description: The client secret for your OAuth application (only for server-side use, never expose in client-side code)
+    example: your-client-secret
+  grant_type:
+    type: string
+    enum: [authorization_code, refresh_token]
+    default: authorization_code
+    description: The OAuth grant type
+  code_verifier:
+    type: string
+    description: The PKCE code verifier (required if PKCE was used in the authorization request)
+    example: S256_CODE_VERIFIER_STRING

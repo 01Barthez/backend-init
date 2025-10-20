@@ -55,7 +55,7 @@ const oauth_authorize = asyncHandler(
         error: error.message,
       });
 
-      return response.internalError(
+      return response.serverError(
         req,
         res,
         error.message || 'Failed to initiate OAuth authorization',

@@ -1,0 +1,34 @@
+# User Request Schema
+type: object
+properties:
+  firstName:
+    type: string
+    minLength: 2
+    maxLength: 50
+    description: User's first name
+    example: 'John'
+  lastName:
+    type: string
+    minLength: 2
+    maxLength: 50
+    description: User's last name
+    example: 'Doe'
+  email:
+    type: string
+    format: email
+    description: User's email address (must be unique)
+    example: 'john.doe@example.com'
+  password:
+    type: string
+    minLength: 8
+    description: User's password (min 8 characters)
+    example: 'securePassword123!'
+  role:
+    type: string
+    enum: [user, admin, moderator]
+    default: 'user'
+    description: User's role in the system
+  isActive:
+    type: boolean
+    default: true
+    description: Whether the user account is active

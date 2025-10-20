@@ -1,0 +1,70 @@
+# OAuth2.0 Authentication Endpoints
+/oauth/{provider}:
+  get:
+    tags:
+      - OAuth
+    summary: Initiate OAuth2.0 authentication with a provider
+    description: |
+      Redirects the user to the OAuth provider's login page.
+      After successful authentication, the user will be redirected to the specified redirect_uri.
+    parameters:
+      - $ref: '../components/parameters/oauthProvider.yaml'
+      - $ref: '../components/parameters/redirectUri.yaml'
+    responses:
+      '302':
+        description: Redirect to OAuth provider's login page
+      '400':
+        $ref: '../components/responses/BadRequest.yaml'
+      '500':
+        $ref: '../components/responses/ServerError.yaml'
+
+/oauth/{provider}/callback:
+  get:
+    tags:
+      - OAuth
+    summary: OAuth2.0 callback endpoint
+    description: |
+      Callback endpoint that handles the OAuth2.0 response from the provider.
+      Exchanges the authorization code for tokens and authenticates the user.
+    parameters:
+      - $ref: '../components/parameters/oauthProvider.yaml'
+      - $ref: '../components/parameters/oauthCode.yaml'
+      - $ref: '../components/parameters/oauthState.yaml'
+      - $ref: '../components/parameters/oauthError.yaml'
+    responses:
+      '302':
+        description: Redirect to success or failure URL based on authentication result
+      '400':
+        $ref: '../components/responses/BadRequest.yaml'
+      '401':
+        $ref: '../components/responses/Unauthorized.yaml'
+      '500':
+        $ref: '../components/responses/ServerError.yaml'
+
+/oauth/token:
+  post:
+    tags:
+      - OAuth
+    summary: Exchange OAuth code for access token
+    description: |
+      Exchanges an OAuth authorization code for an access token.
+      This is typically used by the frontend to complete the OAuth flow.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/OAuthTokenRequest.yaml'
+    responses:
+      '200':
+        description: Successful token exchange
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/OAuthTokenResponse.yaml'
+      '400':
+        $ref: '../components/responses/BadRequest.yaml'
+      '401':
+        $ref: '../components/responses/Unauthorized.yaml'
+      '500':
+        $ref: '../components/responses/ServerError.yaml'

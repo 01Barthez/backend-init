@@ -1,0 +1,120 @@
+# Schéma pour l'inscription
+UserSignup:
+  type: object
+  required:
+    - email
+    - password
+    - firstName
+    - lastName
+  properties:
+    email:
+      type: string
+      format: email
+      example: 'user@example.com'
+    password:
+      type: string
+      format: password
+      minLength: 8
+      example: 'SecurePassword123!'
+    firstName:
+      type: string
+      example: 'John'
+    lastName:
+      type: string
+      example: 'Doe'
+    profile:
+      type: string
+      format: binary
+      description: 'Profile picture (optional)'
+
+# Schéma pour la connexion
+UserLogin:
+  type: object
+  required:
+    - email
+    - password
+  properties:
+    email:
+      type: string
+      format: email
+      example: 'user@example.com'
+    password:
+      type: string
+      format: password
+      example: 'SecurePassword123!'
+
+# Schéma pour la vérification OTP
+VerifyOTP:
+  type: object
+  required:
+    - email
+    - otp
+  properties:
+    email:
+      type: string
+      format: email
+      example: 'user@example.com'
+    otp:
+      type: string
+      example: '123456'
+
+# Schéma pour la demande de renvoi d'OTP
+ResendOTP:
+  type: object
+  required:
+    - email
+  properties:
+    email:
+      type: string
+      format: email
+      example: 'user@example.com'
+
+# Schéma pour la réinitialisation de mot de passe
+ForgotPassword:
+  type: object
+  required:
+    - email
+  properties:
+    email:
+      type: string
+      format: email
+      example: 'user@example.com'
+
+# Schéma pour la réinitialisation de mot de passe
+ResetPassword:
+  type: object
+  required:
+    - password
+    - confirmPassword
+  properties:
+    password:
+      type: string
+      format: password
+      minLength: 8
+      example: 'NewSecurePassword123!'
+    confirmPassword:
+      type: string
+      format: password
+      example: 'NewSecurePassword123!'
+
+# Schéma pour le changement de mot de passe
+ChangePassword:
+  type: object
+  required:
+    - currentPassword
+    - newPassword
+    - confirmNewPassword
+  properties:
+    currentPassword:
+      type: string
+      format: password
+      example: 'CurrentPassword123!'
+    newPassword:
+      type: string
+      format: password
+      minLength: 8
+      example: 'NewSecurePassword123!'
+    confirmNewPassword:
+      type: string
+      format: password
+      example: 'NewSecurePassword123!'

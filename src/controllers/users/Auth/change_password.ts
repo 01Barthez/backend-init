@@ -36,7 +36,7 @@ const change_password = asyncHandler(
     }
 
     // Verify current password
-    const isPasswordValid = await compare_password(current_password, dbUser.password);
+    const isPasswordValid = await compare_password(current_password, dbUser.password || '');
     if (!isPasswordValid) {
       return response.forbidden(req, res, 'Current password is incorrect');
     }

@@ -28,7 +28,7 @@ const oauth_accounts = asyncHandler(
       const sanitizedAccounts = accounts.map((account) => ({
         provider: account.provider,
         provider_email: account.provider_email,
-        linked_at: account.created_at,
+        linked_at: account.expires_at,
       }));
 
       log.info('OAuth accounts retrieved', { userId });

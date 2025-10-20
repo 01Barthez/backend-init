@@ -1,0 +1,50 @@
+# docs/components/parameters/oauth.yaml
+
+# Paramètre pour le fournisseur OAuth
+oauthProvider:
+  name: provider
+  in: path
+  required: true
+  schema:
+    type: string
+    enum: [google, github, facebook, instagram, twitter, linkedin, telegram]
+  description: The OAuth provider to authenticate with
+  example: google
+
+# Paramètre pour le code d'autorisation
+oauthCode:
+  name: code
+  in: query
+  required: false
+  schema:
+    type: string
+  description: The authorization code returned by the OAuth provider
+
+# Paramètre pour l'état OAuth
+oauthState:
+  name: state
+  in: query
+  required: false
+  schema:
+    type: string
+  description: The state parameter for CSRF protection
+
+# Paramètre pour l'erreur OAuth
+oauthError:
+  name: error
+  in: query
+  required: false
+  schema:
+    type: string
+  description: Error code if OAuth flow failed
+
+# Paramètre pour l'URI de redirection
+redirectUri:
+  name: redirect_uri
+  in: query
+  required: false
+  schema:
+    type: string
+    format: uri
+  description: The URI to redirect to after successful authentication
+  example: 'https://yourapp.com/auth/callback'

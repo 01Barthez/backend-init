@@ -46,7 +46,7 @@ const oauth_unlink = asyncHandler(
         error: error.message,
       });
 
-      return response.internalError(req, res, 'Failed to unlink OAuth account');
+      return response.serverError(req, res, 'Failed to unlink OAuth account');
     }
   },
 );

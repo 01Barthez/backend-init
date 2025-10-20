@@ -1,0 +1,49 @@
+# OAuth Token Response Schema
+type: object
+properties:
+  access_token:
+    type: string
+    description: The access token that can be used to make authenticated requests
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  token_type:
+    type: string
+    enum: [Bearer]
+    default: Bearer
+    description: The type of token
+  expires_in:
+    type: integer
+    description: The number of seconds until the access token expires
+    example: 3600
+  refresh_token:
+    type: string
+    description: A token that can be used to obtain a new access token
+    example: '1//03e...'
+  id_token:
+    type: string
+    description: JWT containing identity information about the user (if supported by the provider)
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  scope:
+    type: string
+    description: The scopes that were granted by the user
+    example: 'profile email'
+  user:
+    $ref: './User.yaml'
+    description: User information (if requested and available)
+
+# OAuth Error Response Schema
+OAuthError:
+  type: object
+  properties:
+    error:
+      type: string
+      description: Error code
+      example: 'invalid_grant'
+    error_description:
+      type: string
+      description: Human-readable error description
+      example: 'The provided authorization grant is invalid, expired, revoked, or does not match the redirection URI used in the authorization request.'
+    error_uri:
+      type: string
+      format: uri
+      description: A URI identifying the error
+      example: 'https://tools.ietf.org/html/rfc6749#section-5.2'

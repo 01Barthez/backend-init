@@ -1,0 +1,193 @@
+# ============================================
+# AUTHENTICATION ROUTES
+# ============================================
+
+/auth/signup:
+  post:
+    tags:
+      - Authentication
+    summary: Register a new user
+    description: Create a new user account with email and password
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: '../components/schemas/UserAuth.yaml#/UserSignup'
+    responses:
+      '201':
+        description: User registered successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'User registered successfully. Please check your email for verification.'
+                data:
+                  $ref: '../components/schemas/User.yaml'
+      '400':
+        $ref: '../components/responses/BadRequest.yaml'
+      '409':
+        description: Email already exists
+      '500':
+        $ref: '../components/responses/ServerError.yaml'
+
+/auth/verify:
+  post:
+    tags:
+      - Authentication
+    summary: Verify account with OTP
+    description: Verify user's email address using the OTP sent to their email
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/UserAuth.yaml#/VerifyOTP'
+    responses:
+      '200':
+        description: Account verified successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Account verified successfully'
+                data:
+                  $ref: '../components/schemas/AuthResponse.yaml'
+      '400':
+        $ref: '../components/responses/BadRequest.yaml'
+      '401':
+        $ref: '../components/responses/Unauthorized.yaml'
+      '500':
+        $ref: '../components/responses/ServerError.yaml'
+
+# ... (autres routes d'authentification)
+
+# ============================================
+# OAUTH ROUTES
+# ============================================
+
+/oauth/{provider}:
+  get:
+    tags:
+      - OAuth
+    summary: Initiate OAuth authentication
+    description: Redirects to the OAuth provider's login page
+    parameters:
+      - $ref: '../components/parameters/oauthProvider.yaml'
+      - $ref: '../components/parameters/redirectUri.yaml'
+    responses:
+      '302':
+        description: Redirect to OAuth provider
+      '400':
+        $ref: '../components/responses/BadRequest.yaml'
+      '500':
+        $ref: '../components/responses/ServerError.yaml'
+
+/oauth/{provider}/callback:
+  get:
+    tags:
+      - OAuth
+    summary: OAuth callback
+    description: Callback URL that handles the OAuth response
+    parameters:
+      - $ref: '../components/parameters/oauthProvider.yaml'
+      - $ref: '../components/parameters/oauthCode.yaml'
+      - $ref: '../components/parameters/oauthState.yaml'
+    responses:
+      '302':
+        description: Redirect to success or error URL
+      '400':
+        $ref: '../components/responses/BadRequest.yaml'
+      '401':
+        $ref: '../components/responses/Unauthorized.yaml'
+      '500':
+        $ref: '../components/responses/ServerError.yaml'
+
+# ============================================
+# PASSWORD MANAGEMENT ROUTES
+# ============================================
+
+/auth/forgot-password:
+  post:
+    tags:
+      - Authentication
+    summary: Request password reset
+    description: Send a password reset link to the user's email
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/UserAuth.yaml#/ForgotPassword'
+    responses:
+      '200':
+        description: Password reset email sent
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Password reset link sent to your email'
+      '400':
+        $ref: '../components/responses/BadRequest.yaml'
+      '404':
+        description: User not found
+      '500':
+        $ref: '../components/responses/ServerError.yaml'
+
+/auth/reset-password/{resetToken}:
+  post:
+    tags:
+      - Authentication
+    summary: Reset password
+    description: Reset user's password using the token sent to their email
+    parameters:
+      - name: resetToken
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The reset token sent to the user's email
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/UserAuth.yaml#/ResetPassword'
+    responses:
+      '200':
+        description: Password reset successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: 'Password has been reset successfully'
+      '400':
+        $ref: '../components/responses/BadRequest.yaml'
+      '401':
+        $ref: '../components/responses/Unauthorized.yaml'
+      '500':
+        $ref: '../components/responses/ServerError.yaml'

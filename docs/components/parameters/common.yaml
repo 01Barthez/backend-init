@@ -1,0 +1,50 @@
+# Common Parameters
+page:
+  name: page
+  in: query
+  description: Page number for pagination
+  required: false
+  schema:
+    type: integer
+    minimum: 1
+    default: 1
+
+limit:
+  name: limit
+  in: query
+  description: Number of items per page
+  required: false
+  schema:
+    type: integer
+    minimum: 1
+    maximum: 100
+    default: 10
+
+sortBy:
+  name: sortBy
+  in: query
+  description: Field to sort by
+  required: false
+  schema:
+    type: string
+    default: 'createdAt'
+
+order:
+  name: order
+  in: query
+  description: Sort order (asc or desc)
+  required: false
+  schema:
+    type: string
+    enum: [asc, desc]
+    default: 'desc'
+
+userId:
+  name: user_id
+  in: path
+  required: true
+  description: User ID (UUID)
+  schema:
+    type: string
+    format: uuid
+    example: '123e4567-e89b-12d3-a456-426614174000'

@@ -36,7 +36,7 @@ const login = asyncHandler(async (req: Request, res: Response): Promise<void | R
   }
 
   // Verify password
-  const isPasswordValid = await compare_password(password, user.password);
+  const isPasswordValid = await compare_password(password, user.password || '');
   if (!isPasswordValid) {
     return response.unauthorized(req, res, 'Invalid email or password');
   }

@@ -2,7 +2,8 @@
  * Base OAuth Service
  * Abstract class that provides common OAuth2.0 functionality
  */
-import axios, { AxiosInstance } from 'axios';
+import axios from 'axios';
+import type { AxiosInstance } from 'axios';
 
 import type {
   IOAuthProviderConfig,
@@ -113,7 +114,7 @@ export abstract class BaseOAuthService implements IOAuthService {
   /**
    * Revoke OAuth token
    */
-  async revokeToken(token: string): Promise<void> {
+  async revokeToken(_token: string): Promise<void> {
     // Override in specific providers if they support revocation
     log.warn('Token revocation not implemented for this provider');
   }

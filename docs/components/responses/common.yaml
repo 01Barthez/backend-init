@@ -1,0 +1,56 @@
+# Common Response Schemas
+SuccessResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: 'Operation completed successfully'
+    data:
+      type: object
+      description: Response data
+
+ErrorResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: false
+    error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: 'VALIDATION_ERROR'
+        message:
+          type: string
+          example: 'Validation failed'
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: 'email'
+              message:
+                type: string
+                example: 'Email is required'
+
+Pagination:
+  type: object
+  properties:
+    total:
+      type: integer
+      example: 100
+    page:
+      type: integer
+      example: 1
+    limit:
+      type: integer
+      example: 10
+    totalPages:
+      type: integer
+      example: 10

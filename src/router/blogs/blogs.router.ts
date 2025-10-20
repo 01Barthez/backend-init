@@ -1,8 +1,6 @@
 import { Router } from 'express';
 
-import { upload } from '@/middlewares/upload';
-import { validationErrorHandler } from '@/middlewares/validationErrorHandler';
-import { validate_blog } from '@/services/validator/validate/users';
+import { validate_blog } from '@/services/validator/validate/blogs';
 
 const blog = Router();
 

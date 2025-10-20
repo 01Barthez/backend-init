@@ -104,7 +104,7 @@ const telegram_auth = asyncHandler(
         error: error.message,
       });
 
-      return response.internalError(req, res, 'Telegram authentication failed');
+      return response.serverError(req, res, 'Telegram authentication failed');
     }
   },
 );

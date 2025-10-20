@@ -1,0 +1,76 @@
+# Users Endpoints
+/users:
+  get:
+    tags:
+      - Users
+    summary: List all users
+    description: Retrieve a paginated list of users with optional filtering and sorting
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../components/parameters/page.yaml'
+      - $ref: '../components/parameters/limit.yaml'
+      - $ref: '../components/parameters/sortBy.yaml'
+      - $ref: '../components/parameters/order.yaml'
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search term to filter users by name or email
+    responses:
+      '200':
+        description: A list of users
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: array
+                  items:
+                    $ref: '../components/schemas/User.yaml'
+                pagination:
+                  $ref: '../components/schemas/Pagination.yaml'
+      '401':
+        $ref: '../components/responses/Unauthorized.yaml'
+      '403':
+        $ref: '../components/responses/Forbidden.yaml'
+      '500':
+        $ref: '../components/responses/ServerError.yaml'
+
+  post:
+    tags:
+      - Users
+    summary: Create a new user
+    description: Create a new user account (Admin only)
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/UserRequest.yaml'
+    responses:
+      '201':
+        description: User created successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/responses/SuccessResponse.yaml'
+              properties:
+                data:
+                  $ref: '../components/schemas/User.yaml'
+      '400':
+        $ref: '../components/responses/BadRequest.yaml'
+      '401':
+        $ref: '../components/responses/Unauthorized.yaml'
+      '403':
+        $ref: '../components/responses/Forbidden.yaml'
+      '409':
+        $ref: '../components/responses/Conflict.yaml'
+      '500':
+        $ref: '../components/responses/ServerError.yaml'

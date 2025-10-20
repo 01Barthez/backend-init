@@ -1,0 +1,23 @@
+# Authentication Response Schema
+type: object
+properties:
+  accessToken:
+    type: string
+    description: JWT access token for authenticating API requests
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  refreshToken:
+    type: string
+    description: Refresh token that can be used to obtain a new access token
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  expiresIn:
+    type: integer
+    description: Time in seconds until the access token expires
+    example: 3600
+  tokenType:
+    type: string
+    enum: [Bearer]
+    default: Bearer
+    description: Type of the token
+  user:
+    $ref: './User.yaml'
+    description: Authenticated user information

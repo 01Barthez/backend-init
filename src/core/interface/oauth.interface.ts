@@ -23,7 +23,7 @@ export interface IOAuthProviderConfig {
   authorizationUrl: string;
   tokenUrl: string;
   userInfoUrl: string;
-  scope: string[];
+  scope: readonly string[];
 }
 
 /**

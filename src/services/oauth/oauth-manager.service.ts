@@ -4,7 +4,7 @@
  */
 import crypto from 'crypto';
 
-import { prisma } from '@/config/prisma/prisma';
+import prisma from '@/config/prisma/prisma';
 import { OAUTH_ERRORS, OAUTH_STATE_TTL } from '@/core/constant/oauth.constant';
 import type {
   IOAuthAccountData,
@@ -98,7 +98,7 @@ export class OAuthManager {
    */
   async exchangeCodeForToken(provider: OAuthProvider, code: string): Promise<IOAuthTokenResponse> {
     const service = this.getProvider(provider);
-    return await service.exchangeCodeForToken(code);
+    return service.exchangeCodeForToken(code);
   }
 
   /**
@@ -106,7 +106,7 @@ export class OAuthManager {
    */
   async getUserProfile(provider: OAuthProvider, accessToken: string): Promise<IOAuthUserProfile> {
     const service = this.getProvider(provider);
-    return await service.getUserProfile(accessToken);
+    return service.getUserProfile(accessToken);
   }
 
   /**
