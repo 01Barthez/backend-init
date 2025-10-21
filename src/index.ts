@@ -3,8 +3,12 @@ import log from '@services/logging/logger';
 import chalk from 'chalk';
 
 import app from './server';
+import { scheduler } from './services/scheduler';
 import { bottomBorder, displayStartupMessage, topBorder } from './utils/startupMessage';
 
+/**
+ * *************************************************************************************************************************************
+ **/
 // Start server
 const server = app
   .listen(envs.PORT, () => {
@@ -28,6 +32,10 @@ const server = app
     console.log(bottomBorder);
     console.log('\n');
   })
+
+  /**
+   * *************************************************************************************************************************************
+   **/
   // Handle server errors
   .on('error', (err) => {
     log.error(`Error while starting the server: ${err.message}`);
@@ -46,7 +54,11 @@ const server = app
   })
   .on('SIGINT', () => {
     log.info('SIGINT received. Shutting down gracefully');
+    scheduler.stopAll();
     server.close(() => {
       log.info('Process terminated');
     });
   });
+/**
+ * *************************************************************************************************************************************
+ **/

@@ -6,6 +6,8 @@ import express from 'express';
 import health from '@/router/_config/healtcheck/health.router';
 import metricsRouter from '@/services/metrics/metrics';
 
+import { scheduler } from './services/scheduler';
+
 const app = express();
 
 // Setup Swagger for API documentation
@@ -18,6 +20,9 @@ app.use('/metrics', metricsRouter);
 
 // Health check endpoint
 app.use('/health', health);
+
+// launch Jobs
+scheduler.init();
 
 // Global error handling for unhandled promise rejections and uncaught exceptions
 process.on('unhandledRejection', (reason, promise) => {
