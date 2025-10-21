@@ -2,33 +2,47 @@
 import log from '@services/logging/logger';
 import { schedule } from 'node-cron';
 
-import { UserCleanupJob } from './jobs/userCleanupJob';
+import * as jobs from './jobs';
 
+/**
+ * Scheduler class to manage scheduled jobs
+ */
 class Scheduler {
-  private jobs: { [key: string]: any } = {};
+  private jobInstances: any[] = [];
 
+  // Initialize and start all scheduled jobs
   init() {
     try {
-      // Initialiser et démarrer les jobs
-      this.jobs.userCleanup = new UserCleanupJob();
-      this.jobs.userCleanup.start();
+      // Loop through all exported jobs and start them
+      Object.values(jobs).forEach((JobClass) => {
+        if (typeof JobClass === 'function') {
+          const job = new (JobClass as any)();
+          if (typeof job.start === 'function') {
+            job.start();
+            this.jobInstances.push(job);
+            log.info(`Job ${job.constructor.name} démarré avec succès`);
+          }
+        }
+      });
 
-      log.info('Scheduler initialized successfully');
+      log.info(`Scheduler initialisé avec ${this.jobInstances.length} jobs`);
     } catch (error) {
-      log.error('Failed to initialize scheduler:', error);
+      log.error("Erreur lors de l'initialisation du scheduler:", error);
       throw error;
     }
   }
 
+  // Stop all scheduled jobs
   stopAll() {
-    Object.values(this.jobs).forEach((job) => {
+    this.jobInstances.forEach((job) => {
       if (typeof job.stop === 'function') {
         job.stop();
       }
     });
-    log.info('All scheduled jobs stopped');
+    log.info('Tous les jobs ont été arrêtés');
   }
 
+  // schedule a new task
   schedule(cronExpression: string, task: () => Promise<void>, options?: any) {
     return schedule(cronExpression, task, options);
   }

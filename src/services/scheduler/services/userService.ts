@@ -3,6 +3,9 @@ import log from '@/services/logging/logger';
 
 import { DELAY } from '../_types/global';
 
+/**
+ * Service to manage user-related operations
+ */
 export class UserService {
   static async deleteUnverifiedUsers(): Promise<{ deletedCount: number }> {
     try {
@@ -10,7 +13,7 @@ export class UserService {
         where: {
           is_verified: false,
           created_at: {
-            // Supprimer les comptes non vérifiés de plus de 48h
+            // Delete users created more than 2 days ago
             lt: new Date(Date.now() - DELAY.TWO_DAY),
           },
         },
@@ -18,9 +21,9 @@ export class UserService {
 
       log.info(`Deleted ${result.count} unverified users`);
       return { deletedCount: result.count };
-    } catch (error) {
-      log.error('Error deleting unverified users:', error);
-      throw error;
+    } catch (service_error) {
+      log.error('Error deleting unverified users:', service_error);
+      throw service_error;
     }
   }
 }

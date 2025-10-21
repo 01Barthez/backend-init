@@ -6,9 +6,13 @@ import { scheduler } from '..';
 import { schedulerConfig } from '../_config';
 import { UserService } from '../services/userService';
 
+/**
+ * Job to clean up unverified users
+ */
 export class UserCleanupJob {
   private task: ScheduledTask | null = null;
 
+  // Execute the cleanup job
   async execute(): Promise<void> {
     try {
       await UserService.deleteUnverifiedUsers();
@@ -17,6 +21,7 @@ export class UserCleanupJob {
     }
   }
 
+  // Start the cleanup job
   start(): void {
     if (this.task) {
       this.task.stop();
@@ -28,6 +33,7 @@ export class UserCleanupJob {
     log.info('********************UserCleanupJob started********************');
   }
 
+  // Stop the cleanup job
   stop(): void {
     if (this.task) {
       this.task.stop();
