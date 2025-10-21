@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,6 +13,7 @@
       padding: 0;
       color: #333;
     }
+
     .container {
       max-width: 700px;
       margin: 40px auto;
@@ -20,6 +22,7 @@
       overflow: hidden;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
     }
+
     .header {
       background-color: #8b0000;
       background-image: linear-gradient(120deg, #8b0000, #b22222);
@@ -27,9 +30,22 @@
       text-align: center;
       color: #fff;
     }
-    .content { padding: 40px 35px; line-height: 1.7; }
-    .content h2 { color: #8b0000; margin-bottom: 10px; }
-    .content p { font-size: 0.95em; color: #444; }
+
+    .content {
+      padding: 40px 35px;
+      line-height: 1.7;
+    }
+
+    .content h2 {
+      color: #8b0000;
+      margin-bottom: 10px;
+    }
+
+    .content p {
+      font-size: 0.95em;
+      color: #444;
+    }
+
     .warning {
       background-color: #fff4f4;
       border-left: 4px solid #b22222;
@@ -39,6 +55,7 @@
       font-size: 0.9em;
       color: #700000;
     }
+
     .footer {
       background-color: #fafafa;
       border-top: 1px solid #eee;
@@ -47,9 +64,14 @@
       font-size: 0.85em;
       color: #777;
     }
-    .footer a { color: #b22222; text-decoration: none; }
+
+    .footer a {
+      color: #b22222;
+      text-decoration: none;
+    }
   </style>
 </head>
+
 <body>
 
   <div class="container">
@@ -62,26 +84,38 @@
       <p>Une nouvelle connexion à votre compte <strong>GTA</strong> a été détectée :</p>
 
       <div class="warning">
-        <p><strong>Adresse IP :</strong> <%= ip %><br>
-        <strong>Localisation :</strong> <%= location %><br>
-        <strong>Date :</strong> <%= date %><br>
-        <strong>Appareil :</strong> <%= device %></p>
+        <p><strong>Adresse IP :</strong>
+          <%= ip %><br>
+            <strong>Localisation :</strong>
+            <%= location %><br>
+              <strong>Date :</strong>
+              <%= date %><br>
+                <strong>Appareil :</strong>
+                <%= device %>
+        </p>
       </div>
 
-      <p>Si vous êtes bien à l’origine de cette connexion, vous pouvez ignorer ce message.  
-      Sinon, nous vous conseillons de <strong>réinitialiser immédiatement votre mot de passe</strong>.</p>
+      <p>Si vous êtes bien à l’origine de cette connexion, vous pouvez ignorer ce message.
+        Sinon, nous vous conseillons de <strong>réinitialiser immédiatement votre mot de passe</strong>.</p>
 
-      <p>La sécurité de votre compte est notre priorité.  
-      Pour toute assistance, contactez <a href="mailto:support@gta-group.com">notre support technique</a>.</p>
+      <p>La sécurité de votre compte est notre priorité.
+        Pour toute assistance, contactez <a href="mailto:support@gta-group.com">notre support technique</a>.</p>
     </div>
 
     <div class="footer">
       <p>© 2025 GTA Group. Tous droits réservés.</p>
-      <p>Support : +237 690 419 336 | <a href="mailto:support@gta-group.com">support@gta-group.com</a></p>
+      <p>Contact : <a href="mailto:academy@gta-it.com">contact@gta-it.com</a> | +237 690 419 336</p>
+      <div class="social">
+        <a href="https://www.facebook.com/academyGTA">Facebook</a> |
+        <a href="https://www.instagram.com/ifp_gta_academy/">Instagram</a> |
+        <a href="https://www.linkedin.com/company/gta-it">LinkedIn</a> |
+        <a href="https://www.youtube.com/@IFP-GTA-ACADEMY">YouTube</a>
+      </div>
     </div>
   </div>
 
 </body>
+
 </html>
 
 
