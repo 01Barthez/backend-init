@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 
 import { envs } from '@/config/env/env';
+import prisma from '@/config/prisma/prisma';
 import blackListAccessAndRefresToken from '@/services/jwt/black_list_access_&_refresh_tokens';
 import log from '@/services/logging/logger';
 import { asyncHandler, response } from '@/utils/responses/helpers';
@@ -12,6 +13,12 @@ const logout = asyncHandler(async (req: Request, res: Response): Promise<void | 
   if (!user) {
     return response.unauthorized(req, res, 'User not authenticated');
   }
+
+  // Update user status to active
+  await prisma.users.update({
+    where: { user_id: user.user_id },
+    data: { is_active: false },
+  });
 
   // Blacklist tokens
   await blackListAccessAndRefresToken(req, res);

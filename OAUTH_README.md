@@ -1,23 +1,25 @@
-# 🔐 OAuth2.0 Authentication System
+# OAuth2.0 Authentication System
 
 ## Vue d'ensemble
 
 Ce backend implémente un système d'authentification OAuth2.0 complet et
 professionnel avec support pour **7 providers** majeurs:
 
-- ✅ **Google** - OAuth 2.0 avec OpenID Connect
-- ✅ **GitHub** - OAuth 2.0
-- ✅ **Facebook** - OAuth 2.0
-- ✅ **Instagram** - Basic Display API
-- ✅ **Twitter (X)** - OAuth 2.0 avec PKCE
-- ✅ **LinkedIn** - OpenID Connect
-- ✅ **Telegram** - Login Widget
+| Provider    | Type               | Email fourni     |
+| ----------- | ------------------ | ---------------- |
+| Google      | OAuth 2.0 + OpenID | Oui              |
+| GitHub      | OAuth 2.0          | Oui              |
+| Facebook    | OAuth 2.0          | Oui              |
+| Instagram   | Basic Display API  | Non              |
+| Twitter (X) | OAuth 2.0 + PKCE   | Non (par défaut) |
+| LinkedIn    | OpenID Connect     | Oui              |
+| Telegram    | Login Widget       | Non              |
 
-## 🏗️ Architecture
+## Architecture
 
 ### Structure des fichiers
 
-```
+```bash
 src/
 ├── controllers/users/OAuth/
 │   ├── oauth-authorize.ts      # Initie le flow OAuth
@@ -45,77 +47,51 @@ src/
 └── router/users/auth.router.ts       # Routes OAuth
 ```
 
-### Base de données
-
-Le schéma Prisma a été mis à jour avec:
-
-```prisma
-model users {
-  password       String? // Optionnel pour OAuth
-  oauth_accounts oauth_account[]
-  // ...
-}
-
-model oauth_account {
-  provider              oauth_provider
-  provider_user_id      String
-  access_token          String?
-  refresh_token         String?
-  expires_at            DateTime?
-  provider_profile_data Json?
-  // ...
-}
-
-enum oauth_provider {
-  GOOGLE | GITHUB | FACEBOOK | INSTAGRAM | TWITTER | LINKEDIN | TELEGRAM
-}
-```
-
-## 🚀 Installation
-
-### 1. Installer les dépendances
+### Pattern utilisé: Service Layer + Manager Pattern
 
 ```bash
-npm install
+┌─────────────────────────────────────────────────┐
+│              OAuth Manager                       │
+│  (Singleton - Gestion centralisée)              │
+└─────────────────┬───────────────────────────────┘
+                  │
+        ┌─────────┴─────────┐
+        │                   │
+┌───────▼────────┐  ┌──────▼──────────┐
+│ Base Service   │  │  Telegram       │
+│  (Abstract)    │  │  Service        │
+└───────┬────────┘  └─────────────────┘
+        │
+        ├─── Google Service
+        ├─── GitHub Service
+        ├─── Facebook Service
+        ├─── Instagram Service
+        ├─── Twitter Service
+        └─── LinkedIn Service
 ```
 
-La dépendance `axios` a été ajoutée pour les requêtes HTTP OAuth.
-
-### 2. Mettre à jour la base de données
+## Architecture Overview
 
 ```bash
-# Générer le client Prisma
-npx prisma generate
-
-# Appliquer les changements au schéma
-npx prisma db push
+┌─────────────┐      ┌──────────────┐      ┌─────────────┐
+│   Client    │─────▶│  Backend API │─────▶│  OAuth      │
+│ Application │      │   (Express)  │      │  Provider   │
+└─────────────┘      └──────────────┘      └─────────────┘
+       ▲                     │                      │
+       │                     │                      │
+       └─────────────────────┴──────────────────────┘
+              Callback with tokens
 ```
 
-### 3. Configurer les variables d'environnement
-
-Copiez `.env.example` vers `.env` et configurez vos credentials OAuth:
-
-```env
-# Google OAuth
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_REDIRECT_URI=http://localhost:3000/api/v1/auth/oauth/google/callback
-
-# GitHub OAuth
-GITHUB_CLIENT_ID=your_github_client_id
-GITHUB_CLIENT_SECRET=your_github_client_secret
-GITHUB_REDIRECT_URI=http://localhost:3000/api/v1/auth/oauth/github/callback
-
-# ... (voir .env.example pour tous les providers)
-```
-
-### 4. Obtenir les credentials OAuth
-
-Consultez le guide détaillé: [`docs/OAUTH_SETUP.md`](docs/OAUTH_SETUP.md)
-
-## 📡 API Endpoints
+## API Endpoints
 
 ### Routes publiques
+
+| Méthode | Endpoint                         | Description          |
+| ------- | -------------------------------- | -------------------- |
+| GET     | `/auth/oauth/:provider`          | Initie le flow OAuth |
+| GET     | `/auth/oauth/:provider/callback` | Callback du provider |
+| POST    | `/auth/oauth/telegram`           | Auth Telegram        |
 
 #### Initier l'authentification OAuth
 
@@ -159,6 +135,11 @@ Content-Type: application/json
 
 ### Routes protégées (authentification requise)
 
+| Méthode | Endpoint                       | Description            |
+| ------- | ------------------------------ | ---------------------- |
+| GET     | `/auth/oauth/accounts`         | Liste les comptes liés |
+| DELETE  | `/auth/oauth/:provider/unlink` | Délie un compte        |
+
 #### Lister les comptes OAuth liés
 
 ```http
@@ -189,7 +170,7 @@ DELETE /api/v1/auth/oauth/:provider/unlink
 Authorization: Bearer <token>
 ```
 
-## 🔒 Sécurité
+## Sécurité
 
 ### Mesures implémentées
 
@@ -202,7 +183,7 @@ Authorization: Bearer <token>
 
 ### Flow de sécurité
 
-```
+```bash
 1. Client → Backend: GET /oauth/google
 2. Backend génère state + cookie sécurisé
 3. Backend → Google: Redirection avec state
@@ -299,7 +280,7 @@ const unlinkAccount = async (provider: string) => {
 </html>
 ```
 
-## 🧪 Tests
+## Tests
 
 ### Test manuel avec cURL
 
@@ -316,7 +297,7 @@ curl -X DELETE "http://localhost:3000/api/v1/auth/oauth/google/unlink" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
-## 🔧 Configuration avancée
+## Configuration avancée
 
 ### Personnaliser les scopes OAuth
 
@@ -343,7 +324,7 @@ export const OAUTH_SCOPES = {
 5. Ajouter les variables d'environnement
 6. Mettre à jour l'enum `oauth_provider` dans Prisma
 
-## 📊 Monitoring
+## Monitoring
 
 Les logs OAuth sont automatiquement enregistrés:
 
@@ -355,7 +336,7 @@ log.info('OAuth login successful', {
 });
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Erreur: "Invalid OAuth state parameter"
 
@@ -373,30 +354,9 @@ log.info('OAuth login successful', {
 - L'utilisateur peut se connecter avec son mot de passe
 - Ou lier le compte OAuth après connexion
 
-## 📚 Documentation complète
+## Documentation complète
 
 - [Guide de configuration détaillé](docs/OAUTH_SETUP.md)
 - [Documentation Prisma](https://www.prisma.io/docs/)
 - [OAuth 2.0 RFC](https://tools.ietf.org/html/rfc6749)
-
-## 🎯 Fonctionnalités
-
-- ✅ Multi-provider OAuth (7 providers)
-- ✅ Linking/Unlinking de comptes
-- ✅ Gestion automatique des tokens
-- ✅ Refresh token support
-- ✅ Protection CSRF
-- ✅ Cookies sécurisés
-- ✅ TypeScript strict
-- ✅ Clean Code architecture
-- ✅ Logs détaillés
-- ✅ Gestion d'erreurs complète
-- ✅ Documentation exhaustive
-
-## 📝 License
-
-MIT
-
----
-
-**Développé avec ❤️ en suivant les meilleures pratiques OAuth2.0 et Clean Code**
+- [OpenID Connect](https://openid.net/connect/)

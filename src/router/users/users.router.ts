@@ -1,12 +1,7 @@
 import { Router } from 'express';
 
 import users_controller from '@/controllers/users/users.controller';
-import {
-  isActive,
-  // isAdmin,
-  isAuthenticated,
-  isVerified,
-} from '@/middlewares/auth';
+import { isActive, isAdmin, isAuthenticated, isVerified } from '@/middlewares/auth';
 import { upload } from '@/middlewares/upload';
 import { validationErrorHandler } from '@/middlewares/validationErrorHandler';
 import { validate_user } from '@/services/validator/validate/users';
@@ -16,15 +11,6 @@ const users = Router();
 // ============================================
 // PUBLIC ROUTES - Authentication
 // ============================================
-
-// Get One User
-users.get(
-  '/:user_id',
-  // isAuthenticated,
-  validate_user.get_user_by_id,
-  validationErrorHandler,
-  users_controller.get_user_by_id,
-);
 
 // Update user info
 users.put(
@@ -68,6 +54,15 @@ users.get(
   users_controller.export_users,
 );
 
+// Get One User
+users.get(
+  '/:user_id',
+  // isAuthenticated,
+  validate_user.get_user_by_id,
+  validationErrorHandler,
+  users_controller.get_user_by_id,
+);
+
 // Update user role
 users.put(
   '/:user_id/role',
@@ -101,8 +96,8 @@ users.delete(
 // Restore deleted user,
 users.post(
   '/:user_id/restore',
-  // isAuthenticated,
-  // isAdmin
+  isAuthenticated,
+  isAdmin,
   validate_user.deleteUser,
   validationErrorHandler,
   users_controller.restore_deleted_user,

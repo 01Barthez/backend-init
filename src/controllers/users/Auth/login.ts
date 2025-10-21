@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 
 import { envs } from '@/config/env/env';
+import prisma from '@/config/prisma/prisma';
 import { MAIL } from '@/core/constant/global';
 import send_mail from '@/services/Mail/send-mail';
 import userToken from '@/services/jwt/functions-jwt';
@@ -28,7 +29,7 @@ const login = asyncHandler(async (req: Request, res: Response): Promise<void | R
   const user = await getCachedUserByEmail(email);
 
   if (!user) {
-    return response.unauthorized(req, res, 'Invalid email or password');
+    return response.unauthorized(req, res, 'Invalid login credentials');
   }
 
   if (!user.is_verified) {
@@ -38,7 +39,7 @@ const login = asyncHandler(async (req: Request, res: Response): Promise<void | R
   // Verify password
   const isPasswordValid = await compare_password(password, user.password || '');
   if (!isPasswordValid) {
-    return response.unauthorized(req, res, 'Invalid email or password');
+    return response.unauthorized(req, res, 'Invalid login credentials');
   }
 
   user.password = '';
@@ -48,15 +49,23 @@ const login = asyncHandler(async (req: Request, res: Response): Promise<void | R
   const accessToken = userToken.accessToken(user);
   const refreshToken = userToken.refreshToken(user);
 
-  // Set cookies
-  res.setHeader('authorization', `Bearer ${accessToken}`);
-  setSafeCookie(res, envs.JWT_SECRET, refreshToken, {
-    secure: envs.COOKIE_SECURE as boolean,
-    httpOnly: envs.JWT_COOKIE_SECURITY as boolean,
-    sameSite: envs.COOKIE_SAME_SITE as 'strict' | 'lax' | 'none',
-  });
+  await prisma.$transaction(async (tx) => {
+    // Set cookies
+    res.setHeader('authorization', `Bearer ${accessToken}`);
+    setSafeCookie(res, envs.JWT_SECRET, refreshToken, {
+      secure: envs.COOKIE_SECURE as boolean,
+      httpOnly: envs.JWT_COOKIE_SECURITY as boolean,
+      sameSite: envs.COOKIE_SAME_SITE as 'strict' | 'lax' | 'none',
+    });
+    log.info('Set authorization header and refresh token cookie', { email });
 
-  log.info('User logged in successfully', { email });
+    // Update last login
+    await tx.users.update({
+      where: { user_id: user.user_id },
+      data: { is_active: true },
+    });
+    log.info('User marked as active', { email: user.email });
+  });
 
   // Send login alert email (non-blocking)
   const user_full_name = `${user.last_name} ${user.first_name}`;
@@ -67,6 +76,7 @@ const login = asyncHandler(async (req: Request, res: Response): Promise<void | R
     log.warn('Failed to send login alert email', { email, error: error.message });
   });
 
+  // Return response
   return response.ok(
     req,
     res,

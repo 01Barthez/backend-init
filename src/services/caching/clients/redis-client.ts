@@ -7,8 +7,6 @@ import log from '@/services/logging/logger';
 const redisClient = new Redis({
   host: envs.REDIS_HOST,
   port: envs.REDIS_PORT,
-  username: envs.REDIS_USERNAME,
-  password: envs.REDIS_PASSWORD,
   db: 0,
   lazyConnect: true,
   connectTimeout: 10000,

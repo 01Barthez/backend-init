@@ -15,44 +15,38 @@ const update_user_info = asyncHandler(
     if (!user) {
       return response.unauthorized(req, res, 'User not authenticated');
     }
+    // Build update data
+    const updateData: any = {};
+    if (first_name) updateData.first_name = first_name;
+    if (last_name) updateData.last_name = last_name;
+    if (phone) updateData.phone = phone;
 
-    try {
-      // Build update data
-      const updateData: any = {};
-      if (first_name) updateData.first_name = first_name;
-      if (last_name) updateData.last_name = last_name;
-      if (phone) updateData.phone = phone;
-
-      // Handle avatar upload
-      if (req.file) {
-        const profile_url = await uploadAvatar(req.file);
-        updateData.avatar_url = profile_url;
-      }
-
-      // Update user
-      const updatedUser = await prisma.users.update({
-        where: { user_id: user.user_id },
-        data: updateData,
-        select: {
-          user_id: true,
-          email: true,
-          first_name: true,
-          last_name: true,
-          phone: true,
-          avatar_url: true,
-        },
-      });
-
-      // Invalidate cache
-      await invalidateUserCache(user.user_id, updatedUser.email);
-
-      log.info('User info updated', { userId: user.user_id });
-
-      return response.ok(req, res, updatedUser, 'User info updated successfully');
-    } catch (error: any) {
-      log.error('Update user info failed', { error: error.message, userId: user.user_id });
-      return response.serverError(req, res, 'Failed to update user info', error);
+    // Handle avatar upload
+    if (req.file) {
+      const profile_url = await uploadAvatar(req.file);
+      updateData.avatar_url = profile_url;
     }
+
+    // Update user
+    const updatedUser = await prisma.users.update({
+      where: { user_id: user.user_id },
+      data: updateData,
+      select: {
+        user_id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        phone: true,
+        avatar_url: true,
+      },
+    });
+
+    // Invalidate cache
+    await invalidateUserCache(user.user_id, updatedUser.email);
+
+    log.info('User info updated', { userId: user.user_id });
+
+    return response.ok(req, res, updatedUser, 'User info updated successfully');
   },
 );
 

@@ -6,7 +6,6 @@ import type { Request, Response } from 'express';
 
 import { envs } from '@/config/env/env';
 import { MAIL } from '@/core/constant/global';
-import { OAuthProvider } from '@/core/interface/oauth.interface';
 import send_mail from '@/services/Mail/send-mail';
 import userToken from '@/services/jwt/functions-jwt';
 import log from '@/services/logging/logger';

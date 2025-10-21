@@ -15,11 +15,11 @@ const search_user = asyncHandler(
     }
 
     // Get cached search results
-    const users = await getCachedUsersSearch(search as string);
+    const users = (await getCachedUsersSearch(search as string)) || [];
 
-    log.info('User search completed', { query: search, results: users.length });
+    log.info('User search completed', { query: search, results: users });
 
-    return response.ok(req, res, users, `Found ${users.length} users`);
+    return response.ok(req, res, users, `Found users`);
   },
 );
 

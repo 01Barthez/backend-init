@@ -1,4 +1,4 @@
-import type { Express } from 'express';
+import { type Express, Router } from 'express';
 
 import { envs } from '@/config/env/env';
 import CSP from '@/router/_config/CSP/csp.router';
@@ -6,11 +6,14 @@ import CSRF from '@/router/_config/CSRF-token/csrf.router';
 import health from '@/router/_config/healtcheck/health.router';
 import items from '@/router/items/items.router';
 import auth from '@/router/users/auth.router';
+import oauth from '@/router/users/oauth.router';
 import users from '@/router/users/users.router';
 
 import { rateLimitingSubRoute } from './securityConfig';
 
-const _api_version = envs.API_PREFIX || '/api/v1';
+const api_version = envs.API_PREFIX || '/api/v1';
+
+const api = Router();
 
 //? program routes
 const setupRoutes = (app: Express): void => {
@@ -20,15 +23,16 @@ const setupRoutes = (app: Express): void => {
   // CSRF token route
   app.use('/csrf-token', rateLimitingSubRoute, CSRF);
 
-  // Items routes
-  app.use('/items', rateLimitingSubRoute, items);
-
   // Health check routes
   app.use('/health', rateLimitingSubRoute, health);
 
-  // Users check routes
-  app.use('/auth', rateLimitingSubRoute, auth);
-  app.use('/users', rateLimitingSubRoute, users);
+  // Application routes with rate limiting
+  api.use('/items', rateLimitingSubRoute, items);
+  api.use('/auth', rateLimitingSubRoute, auth);
+  api.use('/auth/oauth', rateLimitingSubRoute, oauth);
+  api.use('/users', rateLimitingSubRoute, users);
+
+  app.use(api_version, api);
 };
 
 export default setupRoutes;

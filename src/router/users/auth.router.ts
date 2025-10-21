@@ -57,20 +57,6 @@ auth.post(
 );
 
 // ============================================
-// OAUTH2.0 ROUTES - Social Authentication
-// ============================================
-
-// Initiate OAuth flow (redirects to provider)
-// Supported providers: google, github, facebook, instagram, twitter, linkedin
-auth.get('/oauth/:provider', users_controller.oauth_authorize);
-
-// OAuth callback (provider redirects here after authorization)
-auth.get('/oauth/:provider/callback', users_controller.oauth_callback);
-
-// Telegram authentication (widget-based)
-auth.post('/oauth/telegram', users_controller.telegram_auth);
-
-// ============================================
 // PROTECTED ROUTES - Require Authentication
 // ============================================
 
@@ -88,24 +74,6 @@ auth.post(
   validate_user.changePassword,
   validationErrorHandler,
   users_controller.change_password,
-);
-
-// ============================================
-// OAUTH2.0 PROTECTED ROUTES
-// ============================================
-
-// Get user's linked OAuth accounts
-auth.get(
-  '/oauth/accounts',
-  // isAuthenticated,
-  users_controller.oauth_accounts,
-);
-
-// Unlink OAuth provider from account
-auth.delete(
-  '/oauth/:provider/unlink',
-  // isAuthenticated,
-  users_controller.oauth_unlink,
 );
 
 export default auth;

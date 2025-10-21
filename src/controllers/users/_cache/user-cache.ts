@@ -1,3 +1,5 @@
+import { ObjectId } from 'mongodb';
+
 import prisma from '@/config/prisma/prisma';
 import { CacheTTL } from '@/services/caching/Interface/caching.types';
 import {
@@ -123,14 +125,58 @@ export const getCachedUsersSearch = async (searchTerm: string) => {
     async () => {
       log.debug(`Searching users from DB: ${searchTerm}`);
 
+      if (typeof searchTerm === 'string' && searchTerm.includes('@'))
+        return prisma.users.findMany({
+          where: {
+            is_deleted: false,
+            OR: [
+              { email: { contains: searchTerm, mode: 'insensitive' } },
+              { first_name: { contains: searchTerm, mode: 'insensitive' } },
+              { last_name: { contains: searchTerm, mode: 'insensitive' } },
+              { phone: { contains: searchTerm } },
+            ],
+          },
+          select: {
+            user_id: true,
+            email: true,
+            first_name: true,
+            last_name: true,
+            phone: true,
+            avatar_url: true,
+            is_active: true,
+            is_verified: true,
+          },
+          take: 20,
+        });
+
+      // Si c'est un ObjectID valide
+      if (ObjectId.isValid(searchTerm as string)) {
+        return prisma.users.findFirst({
+          where: {
+            user_id: searchTerm as string,
+            is_deleted: false,
+          },
+          select: {
+            user_id: true,
+            email: true,
+            first_name: true,
+            last_name: true,
+            avatar_url: true,
+            is_active: true,
+            is_verified: true,
+            created_at: true,
+            updated_at: true,
+          },
+        });
+      }
+
+      // Recherche par nom/prénom
       return prisma.users.findMany({
         where: {
           is_deleted: false,
           OR: [
-            { email: { contains: searchTerm, mode: 'insensitive' } },
-            { first_name: { contains: searchTerm, mode: 'insensitive' } },
-            { last_name: { contains: searchTerm, mode: 'insensitive' } },
-            { phone: { contains: searchTerm } },
+            { first_name: { contains: searchTerm as string, mode: 'insensitive' } },
+            { last_name: { contains: searchTerm as string, mode: 'insensitive' } },
           ],
         },
         select: {
@@ -138,10 +184,11 @@ export const getCachedUsersSearch = async (searchTerm: string) => {
           email: true,
           first_name: true,
           last_name: true,
-          phone: true,
           avatar_url: true,
           is_active: true,
           is_verified: true,
+          created_at: true,
+          updated_at: true,
         },
         take: 20,
       });

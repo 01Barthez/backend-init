@@ -62,7 +62,7 @@ export const envs = {
   MAX_UNIQ_QUERY_WINDOW: env.get('MAX_UNIQ_QUERY_WINDOW').default(900000).asInt(),
 
   // JWT
-  JWT_SECRET: env.get('JWT_SECRET').default('refresh_key').asString(),
+  JWT_SECRET: env.get('JWT_SECRET').default('jwt_refresh_key').asString(),
   JWT_EXPIRES_IN: env.get('JWT_EXPIRES_IN').default('1h').asString(),
   JWT_COOKIE_SECURITY: env.get('JWT_COOKIE_SECURITY').default('true').asBool(),
   JWT_COOKIE_HTTP_STATUS: env.get('JWT_COOKIE_HTTP_STATUS').default('true').asBool(),
