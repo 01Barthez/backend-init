@@ -2,7 +2,6 @@ import { exec } from 'child_process';
 import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import fs from 'fs-extra';
-import { schedule } from 'node-cron';
 import path from 'path';
 import { promisify } from 'util';
 import { v4 as uuidv4 } from 'uuid';
@@ -143,15 +142,21 @@ export class MongodbBackupJob {
           : '';
 
       const command = `mongodump \
-        --uri="${backupConfig.mongo.uri}" \
-        --db=${backupConfig.mongo.dbName} \
-        ${collections} \
-        --out=${outputDir} \
-        --gzip`;
+      --uri="${backupConfig.mongo.uri}" \
+      --db=${backupConfig.mongo.dbName} \
+      ${collections} \
+      --out=${outputDir} \
+      --gzip`;
 
       log.debug(`Exécution de la commande: ${command}`);
 
-      const { stdout, stderr } = await execAsync(command, { maxBuffer: 1024 * 1024 * 50 });
+      const { stdout, stderr } = await execAsync(command, {
+        maxBuffer: 1024 * 1024 * 50,
+        env: {
+          ...process.env,
+          PATH: `${process.env.PATH}:/usr/bin/mongodump`,
+        },
+      });
 
       if (stderr) {
         log.warn('Avertissements mongodump:', stderr);
