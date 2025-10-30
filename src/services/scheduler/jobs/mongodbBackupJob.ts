@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import log from '@/services/logging/logger';
 import type { Uploader } from '@/services/upload/core/Uploader';
 
+import { scheduler } from '..';
 import { schedulerConfig } from '../_config';
 import backupConfig from '../_config/backup';
 import { getCurrentDatePath, getOldBackupDates } from '../_utils/dateUtils';
@@ -20,18 +21,32 @@ const execAsync = promisify(exec);
 export class MongodbBackupJob {
   private isRunning = false;
   private task: any = null;
+  private uploader?: Uploader;
+  private notificationService?: NotificationService;
 
-  constructor(
-    private readonly uploader: Uploader,
-    private readonly notificationService: NotificationService,
-  ) {
-    // Vérifier que les dépendances nécessaires sont disponibles
-    if (!this.uploader) {
-      throw new Error('Uploader is not available');
+  constructor(dependencies?: { uploader?: Uploader; notificationService?: NotificationService }) {
+    if (dependencies) {
+      this.uploader = dependencies.uploader;
+      this.notificationService = dependencies.notificationService;
     }
   }
 
+  // Set uploader (can be called after construction if needed)
+  setUploader(uploader: Uploader) {
+    this.uploader = uploader;
+  }
+
+  // Set notification service (can be called after construction if needed)
+  setNotificationService(notificationService: NotificationService) {
+    this.notificationService = notificationService;
+  }
+
   async execute(): Promise<void> {
+    if (!this.uploader) {
+      log.error('Uploader is not available. Cannot execute backup job.');
+      return;
+    }
+
     if (this.isRunning) {
       log.warn('Une sauvegarde est déjà en cours, annulation...');
       return;
@@ -86,15 +101,27 @@ export class MongodbBackupJob {
       const fileSize = (await fs.stat(archivePath)).size;
       const sizeInMB = (fileSize / (1024 * 1024)).toFixed(2);
 
-      await this.notificationService.sendBackupSuccess({
-        backupPath: objectName,
-        size: `${sizeInMB} MB`,
-        duration: `${duration} secondes`,
-      });
+      if (this.notificationService) {
+        try {
+          await this.notificationService.sendBackupSuccess({
+            backupPath: objectName,
+            size: `${sizeInMB} MB`,
+            duration: `${duration} secondes`,
+          });
+        } catch (error) {
+          log.error('Failed to send backup success notification:', error);
+        }
+      }
 
       log.info(`Sauvegarde terminée avec succès en ${duration} secondes`);
     } catch (error) {
-      await this.notificationService.sendBackupError(error as Error);
+      if (this.notificationService) {
+        try {
+          await this.notificationService.sendBackupError(error as Error);
+        } catch (notifError) {
+          log.error('Failed to send backup error notification:', notifError);
+        }
+      }
       log.error('Erreur lors de la sauvegarde MongoDB:', error);
     } finally {
       // Nettoyage
@@ -161,15 +188,23 @@ export class MongodbBackupJob {
   }
 
   start(): void {
-    // Utilisation directe de schedule de node-cron
-    this.task = schedule(schedulerConfig.backupJob.schedule, this.execute.bind(this));
-    log.info('Job de sauvegarde MongoDB planifié');
+    if (!this.uploader) {
+      log.warn('Uploader is not available. MongoDB backup job will not start.');
+      return;
+    }
+
+    if (this.task) {
+      this.task.stop();
+    }
+
+    const { schedule: cronSchedule, options } = schedulerConfig.backupJob;
+    this.task = scheduler.schedule(cronSchedule, this.execute.bind(this), options);
+    log.info('********************MongoDB Backup Job started********************');
   }
 
   stop(): void {
     if (this.task) {
       this.task.stop();
-      this.task = null;
     }
     log.info('Arrêt du job de sauvegarde MongoDB');
   }

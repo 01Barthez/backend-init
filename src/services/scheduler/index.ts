@@ -11,12 +11,20 @@ class Scheduler {
   private jobInstances: any[] = [];
 
   // Initialize and start all scheduled jobs
-  init() {
+  init(dependencies: any = {}) {
     try {
       // Loop through all exported jobs and start them
       Object.values(jobs).forEach((JobClass) => {
         if (typeof JobClass === 'function') {
-          const job = new (JobClass as any)();
+          // Create job instance with dependencies if it has a constructor that accepts them
+          let job;
+          try {
+            job = new (JobClass as any)(dependencies);
+          } catch (error) {
+            // Fallback to parameterless constructor if the class doesn't accept dependencies
+            job = new (JobClass as any)();
+          }
+
           if (typeof job.start === 'function') {
             job.start();
             this.jobInstances.push(job);

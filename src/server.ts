@@ -7,6 +7,7 @@ import health from '@/router/_config/healtcheck/health.router';
 import metricsRouter from '@/services/metrics/metrics';
 
 import { scheduler } from './services/scheduler';
+import { initNotificationService, initUploader } from './services/scheduler/initDependencies';
 
 const app = express();
 
@@ -21,8 +22,15 @@ app.use('/metrics', metricsRouter);
 // Health check endpoint
 app.use('/health', health);
 
-// launch Jobs
-scheduler.init();
+// Initialize scheduler dependencies
+const uploader = initUploader();
+const notificationService = initNotificationService();
+
+// Initialize jobs with dependencies
+scheduler.init({
+  uploader,
+  notificationService,
+});
 
 // Global error handling for unhandled promise rejections and uncaught exceptions
 process.on('unhandledRejection', (reason, promise) => {

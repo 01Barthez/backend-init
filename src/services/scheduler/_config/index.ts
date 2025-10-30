@@ -15,7 +15,8 @@ export const schedulerConfig: SchedulerConfig = {
   },
 
   backupJob: {
-    schedule: '0 2 * * *', // Every day at 2 AM
+    schedule: '* * * * *', // Every minute (for testing)
+    // schedule: '0 2 * * *', // Every day at 2 AM
     options: {
       timezone: envs.TIMEZONE || 'Africa/Douala',
     },
