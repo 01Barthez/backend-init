@@ -9,4 +9,17 @@ export interface ITemplateResetPassword {
   name: string;
 }
 
-export type TemplateData = Record<string, any>; // Peut être affiné selon tes besoins
+export interface ITemplateNotificationSuccess {
+  date: string;
+  backupPath: string;
+  size: string;
+  duration: string;
+}
+
+export interface ITemplateNotificationError {
+  date: string;
+  errorMessage: string;
+  stackTrace?: string;
+}
+
+export type TemplateData = Record<string, any>; // can be extended as needed

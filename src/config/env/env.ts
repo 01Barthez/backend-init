@@ -8,6 +8,12 @@ export const envs = {
   API_PREFIX: env.get('DEFAULT_API_PREFIX').default('/api/v1').asString(),
   NODE_ENV: env.get('NODE_ENV').default('development').asString(),
 
+  APP_TZ: env.get('APP_TZ').default('UTC').asString(),
+  TIMEZONE: env.get('TIMEZONE').default('UTC').asString(),
+  APP_LOCALE: env.get('APP_LOCALE').default('en-FR').asString(),
+
+  // ============================================
+
   DB_TYPE: env.get('DB_TYPE').default('mongodb').asString(),
   APP_NAME: env.get('APP_NAME').default('My Backend APP').asString(),
   APP_VERSION: env.get('APP_VERSION').default('1.0.0').asString(),
@@ -17,12 +23,17 @@ export const envs = {
 
   DISABLE_CONSOLE_LOGS: env.get('DISABLE_CONSOLE_LOGS').default('true').asBool(),
 
+  // ============================================
+
   // Database
   DATABASE_URL: env.get('DATABASE_URL').required().asString(),
   MONGO_USER: env.get('MONGO_USER').required().asString(),
+  MONGO_URL: env.get('MONGO_URL').default('mongodb://admin:secret123@mongo:27017/').asString(),
   MONGO_PASSWORD: env.get('MONGO_PASSWORD').required().asString(),
   MONGO_DB: env.get('MONGO_DB').required().asString(),
   LOG_TO_MONGODB: env.get('LOG_TO_MONGODB').default('false').asBool(),
+
+  // ============================================
 
   // Redis
   MINIO_ACCESS_KEY: env.get('MINIO_ACCESS_KEY').required().asString(),
@@ -32,6 +43,9 @@ export const envs = {
   MINIO_ENDPOINT: env.get('MINIO_ENDPOINT').default('localhost').asString(),
   MINIO_APP_BUCKET: env.get('MINIO_APP_BUCKET').default('my-app-uploads').asString(),
   MINIO_BASE_PATH: env.get('MINIO_BASE_PATH').default('uploads/').asString(),
+  BACKUP_RETENTION_DAYS: env.get('BACKUP_RETENTION_DAYS').default('30').asString(),
+
+  // ============================================
 
   // Redis
   REDIS_HOST: env.get('REDIS_HOST').required().asString(),
@@ -39,12 +53,23 @@ export const envs = {
   REDIS_USERNAME: env.get('REDIS_USERNAME').default('redis_username').asString(),
   REDIS_PASSWORD: env.get('REDIS_PASSWORD').default('redis_password').asString(),
 
+  // ============================================
+
   // MailHog SMTP
   SMTP_HOST: env.get('SMTP_HOST').required().asString(),
   SMTP_PORT: env.get('SMTP_PORT').required().asPortNumber(),
   SMTP_USER: env.get('SMTP_USER').required().asString(),
   SMTP_PASS: env.get('SMTP_PASS').required().asString(),
   USER_EMAIL: env.get('USER_EMAIL').required().asEmailString(),
+
+  // ============================================
+
+  // # BACKUP Settings
+  BACKUP_NAME: env.get('BACKUP_NAME').default('BACKEND_BACKUP').asString(),
+  BACKUP_SERVICE_EMAIL: env.get('BACKUP_SERVICE_EMAIL').default('backup@example.com').asString(),
+  BACKUP_ADMIN_EMAIL: env.get('BACKUP_ADMIN_EMAIL').default('admin@example.com').asString(),
+
+  // ============================================
 
   // Logging
   LOG_LEVEL: env.get('LOG_LEVEL').default('info').asString(),
@@ -60,6 +85,8 @@ export const envs = {
   MAX_GLOBAL_QUERY_WINDOW: env.get('MAX_GLOBAL_QUERY_WINDOW').default(900000).asInt(),
   MAX_UNIQ_QUERY_NUMBER: env.get('MAX_UNIQ_QUERY_NUMBER').default(50).asInt(),
   MAX_UNIQ_QUERY_WINDOW: env.get('MAX_UNIQ_QUERY_WINDOW').default(900000).asInt(),
+
+  // ============================================
 
   // JWT
   JWT_SECRET: env.get('JWT_SECRET').default('jwt_refresh_key').asString(),
@@ -86,10 +113,14 @@ export const envs = {
     .default('src/config/keys/refreshPublic.key')
     .asString(),
 
+  // ============================================
+
   // ClamAV
   CLAMAV_HOST: env.get('CLAMAV_HOST').default('BACKEND_CLAMAV').asString(),
   CLAMAV_PORT: env.get('CLAMAV_PORT').required().asPortNumber(),
   CLAMAV_TIMEOUT: env.get('CLAMAV_TIMEOUT').default(20000).asInt(),
+
+  // ============================================
 
   // URL
   CLIENT_URL: env.get('CLIENT_URL').default('http://localhost:5173').asString(),
@@ -110,6 +141,8 @@ export const envs = {
   // CSP Reorting
   CSP_REPORT_URI: env.get('CSP_REPORT_URI').default('/security/csp-violation').asString(),
 
+  // ============================================
+
   // Cookie
   COOKIE_DOMAIN: env.get('COOKIE_DOMAIN').default('localhost').asString(),
   COOKIE_SECURE: env.get('COOKIE_SECURE').default('true').asBool(),
@@ -117,15 +150,21 @@ export const envs = {
   COOKIE_SAME_SITE: env.get('COOKIE_SAME_SITE').default('strict').asString(),
   COOKIE_EXPIRES_IN: env.get('COOKIE_EXPIRES_IN').default('2h').asInt(),
 
+  // ============================================
+
   // Swagger
   SWAGGER_ENABLED: env.get('SWAGGER_ENABLED').default('true').asBool(),
   SWAGGER_USER: env.get('SWAGGER_USER').default('admin').asString(),
   SWAGGER_PASSWORD: env.get('SWAGGER_PASSWORD').default('admin').asString(),
 
+  // ============================================
+
   // Local Cache
   LOCAL_CACHE_MAX_ITEMS: env.get('LOCAL_CACHE_MAX_ITEMS').default(100).asInt(),
   LOCAL_CACHE_TTL: env.get('LOCAL_CACHE_TTL').default(12000).asInt(),
   COMPRESSION_THRESHOLD: env.get('COMPRESSION_THRESHOLD').default(1024).asInt(),
+
+  // ============================================
 
   // Otp delay
   OTP_DELAY: env.get('OTP_DELAY').default(900000).asInt(),
@@ -197,4 +236,6 @@ export const envs = {
   // Telegram OAuth (Bot-based)
   TELEGRAM_BOT_TOKEN: env.get('TELEGRAM_BOT_TOKEN').default('').asString(),
   TELEGRAM_BOT_USERNAME: env.get('TELEGRAM_BOT_USERNAME').default('').asString(),
+
+  // ============================================
 };

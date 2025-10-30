@@ -1,4 +1,9 @@
-import type { ITemplateOTP, ITemplateResetPassword } from '../interface/types';
+import type {
+  ITemplateNotificationError,
+  ITemplateNotificationSuccess,
+  ITemplateOTP,
+  ITemplateResetPassword,
+} from '../interface/types';
 import { renderTemplate } from '../utils/utils';
 
 /**
@@ -15,9 +20,11 @@ const templateManager = {
   alert_login: (data: ITemplateResetPassword) =>
     renderTemplate('alert-login.ejs', data, 'Alert Login'),
 
-  // Others tmplates can be added here as needed
-  // someOtherTemplate: (data: SomeTemplateType) =>
-  //   renderTemplate('some-other.ejs', data, 'Some Other'),
+  backup_success_notification: (data: ITemplateNotificationSuccess) =>
+    renderTemplate('db-notification-success.ejs', data, 'DB Notification Success'),
+
+  backup_error_notification: (data: ITemplateNotificationError) =>
+    renderTemplate('db-notification-error.ejs', data, 'DB Notification Error'),
 };
 
 export default templateManager;

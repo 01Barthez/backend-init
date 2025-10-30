@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Échec de Sauvegarde - Notification GTA</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      background-color: #f8f9fb;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      background-color: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+      background-color: #b22222;
+      background-image: linear-gradient(120deg, #a30000, #cc0000);
+      padding: 35px;
+      text-align: center;
+      color: #fff;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.9em;
+    }
+
+    .header p {
+      margin-top: 8px;
+      font-size: 0.95em;
+      opacity: 0.9;
+    }
+
+    .content {
+      padding: 40px 35px;
+      line-height: 1.7;
+    }
+
+    .content h2 {
+      color: #a30000;
+      margin-bottom: 10px;
+    }
+
+    .alert-box {
+      background-color: #fff4f4;
+      border-left: 5px solid #cc0000;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 25px 0;
+      font-size: 0.95em;
+    }
+
+    .alert-item {
+      margin: 10px 0;
+    }
+
+    .alert-item strong {
+      color: #a30000;
+    }
+
+    .stacktrace {
+      background-color: #f7f7f7;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 15px;
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 0.85em;
+      color: #333;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      border: 1px solid #eee;
+    }
+
+    .cta {
+      text-align: center;
+      margin: 35px 0;
+    }
+
+    .cta a {
+      background-color: #a30000;
+      color: #fff;
+      padding: 12px 28px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    .cta a:hover {
+      background-color: #cc1a1a;
+    }
+
+    .footer {
+      background-color: #fafafa;
+      border-top: 1px solid #eee;
+      padding: 25px 30px;
+      text-align: center;
+      font-size: 0.85em;
+      color: #777;
+    }
+
+    .footer a {
+      color: #b22222;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>Échec de la Sauvegarde</h1>
+      <p>Global Technologie & Associates – Notification Système</p>
+    </div>
+
+    <div class="content">
+      <h2>Bonjour,</h2>
+      <p>
+        Une erreur est survenue lors de la tentative de sauvegarde automatique de la base de données.
+        Les détails techniques de l’incident sont présentés ci-dessous :
+      </p>
+
+      <div class="alert-box">
+        <div class="alert-item">
+          <strong>Date de l’incident :</strong><br />
+          <span><%= date %></span>
+        </div>
+
+        <div class="alert-item">
+          <strong>Message d’erreur :</strong><br />
+          <span><%= errorMessage %></span>
+        </div>
+
+        <% if (stackTrace) { %>
+        <div class="alert-item">
+          <strong>Stack Trace :</strong>
+          <div class="stacktrace"><%= stackTrace %></div>
+        </div>
+        <% } %>
+      </div>
+
+      <p>
+        Nous vous recommandons de vérifier les logs du serveur et l’espace disque disponible avant de relancer une
+        nouvelle tentative de sauvegarde.
+        En cas de persistance du problème, contactez immédiatement le support technique.
+      </p>
+
+      <div class="cta">
+        <a href="mailto:it-support@gta-it.com?subject=Erreur%20Backup%20GTA">Contacter le support</a>
+      </div>
+
+      <p>
+        Merci pour votre vigilance et votre réactivité.<br />
+        — L’équipe <strong>GTA IT / Infrastructure & DevOps</strong>
+      </p>
+    </div>
+
+    <div class="footer">
+      <p>© 2025 GTA Group. Tous droits réservés.</p>
+      <p>Contact : <a href="mailto:it-support@gta-it.com">it-support@gta-it.com</a> | +237 690 419 336</p>
+      <div class="social">
+        <a href="https://www.facebook.com/academyGTA">Facebook</a> |
+        <a href="https://www.instagram.com/ifp_gta_academy/">Instagram</a> |
+        <a href="https://www.linkedin.com/company/gta-it">LinkedIn</a> |
+        <a href="https://www.youtube.com/@IFP-GTA-ACADEMY">YouTube</a>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>
+
+<!-- * Variables dynamiques -->
+<!-- 
+  <%= date %>
+  <%= errorMessage %>
+  <%= stackTrace %> (optionnel)
+-->
