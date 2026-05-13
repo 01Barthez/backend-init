@@ -9,6 +9,7 @@ COPY .env ./
 # Install dependencies
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
+RUN npm install -g bun
 
 # Copy source code
 COPY tsconfig.json ./
@@ -30,6 +31,14 @@ RUN npm run build
 FROM node:24-bookworm AS production
 
 WORKDIR /usr/src/app
+
+# Install MongoDB tools (mongodump)
+RUN apt-get update && apt-get install -y wget gnupg && \
+    wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/mongodb-6.0.gpg && \
+    echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/6.0 main" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list && \
+    apt-get update && apt-get install -y mongodb-database-tools && \
+    rm -rf /var/lib/apt/lists/*
+
 
 ENV NODE_ENV=production
 

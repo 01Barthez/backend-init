@@ -1,6 +1,8 @@
 services:
   backend:
-    build: .
+    build:
+      context: .
+      network: host
     container_name: ${APP_NAME:-backend_api}
     env_file: .env
     depends_on:
@@ -36,7 +38,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-securepassword}
       MONGO_INITDB_DATABASE: ${MONGO_DB:-admin}
     volumes:
-      - ./mongo-keyfile:/mongo-keyfile:ro
+      - ./mongo-keyfile:/mongo-keyfile:rw
       - ./scripts/start-mongo.sh:/scripts/start-mongo.sh:ro
       - mongo_data:/data/db
     ports:
@@ -44,23 +46,11 @@ services:
     networks:
       - backend_network
     healthcheck:
-      test:
-        [
-          "CMD",
-          "mongosh",
-          "-u",
-          "${MONGO_USER:-admin}",
-          "-p",
-          "${MONGO_PASSWORD:-securepassword}",
-          "--authenticationDatabase",
-          "admin",
-          "--eval",
-          "rs.status().ok || rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo:27017'}]}).ok",
-        ]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 10s
       retries: 10
-      start_period: 90s
+      start_period: 20s
     labels:
       - "prometheus.scrape=true"
       - "prometheus.port=9216"

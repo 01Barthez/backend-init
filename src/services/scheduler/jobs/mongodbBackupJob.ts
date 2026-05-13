@@ -154,7 +154,7 @@ export class MongodbBackupJob {
         maxBuffer: 1024 * 1024 * 50,
         env: {
           ...process.env,
-          PATH: `${process.env.PATH}:/usr/bin/mongodump`,
+          PATH: `${process.env.PATH}:/usr/bin`,
         },
       });
 

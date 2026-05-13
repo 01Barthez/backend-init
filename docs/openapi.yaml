@@ -1,60 +1,1375 @@
 openapi: 3.0.3
 info:
-  title: AGTA IT API Documentation
-  description: |
-    API complète pour la gestion des items avec authentification, validation des données
-    et pagination. Cette documentation décrit tous les endpoints disponibles pour interagir
-    avec les ressources d'items.
+  title: GTA API Documentation
+  description: |-
+    |
+          # Documentation de l'API GTA
+          
+          API complète pour la gestion des utilisateurs et de l'authentification avec support OAuth2.0.
+          
+          ## Authentification
+          
+          Cette API utilise les méthodes d'authentification suivantes :
+          - JWT (JSON Web Tokens)
+          - OAuth2.0 avec plusieurs fournisseurs (Google, GitHub, Facebook, etc.)
+          - Authentification par email/mot de passe
+          
+          ## Sécurité
+          
+          Toutes les requêtes doivent inclure un token JWT valide dans le header 'Authorization: Bearer <token>',
+          sauf pour les endpoints marqués comme publics.
+        
   version: 1.0.0
   contact:
-    name: Support API
-    email: support@example.com
-    phone: '+237 655 646 688'
-    address:
-      street: ''
-      city: 'Yaounde'
-      state: 'Centre'
-      country: 'Cameroun'
-
+    name: Équipe Support API
+    email: support@gtamarket.com
+    url: 'https://gtamarket.com/support'
   license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-
-servers:
-  - url: http://localhost:3000/
-    description: Serveur de développement local
-  - url: http://localhost:3000/api/v1
-    description: Serveur de développement local avec préfixe API v1
-  - url: https://api.example.com/api/v1
-    description: Serveur de production avec préfixe API v1
-
-tags:
-  - name: Items
-    description: Opérations sur les items
-
-paths:
-  /items:
-    $ref: './paths/items.yaml#/items'
-  /items/{id}:
-    $ref: './paths/items.yaml#/items/{id}'
-
-components:
-  schemas:
-    Item:
-      $ref: './schemas/item.yaml'
-
-  parameters:
-    $ref: './components/parameters.yaml'
-
-  responses:
-    $ref: './components/responses.yaml'
-
-  securitySchemes:
-    $ref: './security/bearerAuth.yaml'
-
-security:
-  - BearerAuth: []
-
+    name: Propriétaire
+    url: 'https://gtamarket.com/terms'
 externalDocs:
-  description: Documentation complète de l'API
-  url: https://docs.example.com/api
+  description: Documentation complète
+  url: 'https://docs.gtamarket.com/api'
+servers:
+  - url: 'http://localhost:3000/api/v1'
+    description: Environnement de développement local
+  - url: 'https://api.staging.gtamarket.com/api/v1'
+    description: Environnement de staging
+  - url: 'https://api.gtamarket.com/api/v1'
+    description: Production
+tags:
+  - name: Authentication
+    description: User authentication and account management
+  - name: Users
+    description: User profile management
+  - name: OAuth
+    description: 'Third-party authentication (Google, GitHub, etc.)'
+  - name: Items
+    description: Items management
+  - name: Blogs
+    description: Blog posts management
+  - name: System
+    description: System health and configuration
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT obtained after authentication
+    OAuth2:
+      type: oauth2
+      description: OAuth2 authentication
+      flows:
+        authorizationCode:
+          authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth'
+          tokenUrl: 'https://oauth2.googleapis.com/token'
+          scopes:
+            openid: OpenID authentication
+            profile: Access to profile information
+            email: Access to email address
+paths:
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account with email and password
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '../components/schemas/UserAuth.yaml#/UserSignup'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: >-
+                      User registered successfully. Please check your email for
+                      verification.
+                  data:
+                    $ref: ../components/schemas/User.yaml
+        '400':
+          $ref: ../components/responses/BadRequest.yaml
+        '409':
+          description: Email already exists
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+  /auth/verify:
+    post:
+      tags:
+        - Authentication
+      summary: Verify account with OTP
+      description: Verify user's email address using the OTP sent to their email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/UserAuth.yaml#/VerifyOTP'
+      responses:
+        '200':
+          description: Account verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Account verified successfully
+                  data:
+                    $ref: ../components/schemas/AuthResponse.yaml
+        '400':
+          $ref: ../components/responses/BadRequest.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+  '/oauth/{provider}':
+    get:
+      tags:
+        - OAuth
+      summary: Initiate OAuth2.0 authentication with a provider
+      description: >
+        Redirects the user to the OAuth provider's login page.
+
+        After successful authentication, the user will be redirected to the
+        specified redirect_uri.
+      parameters:
+        - $ref: ../components/parameters/oauthProvider.yaml
+        - $ref: ../components/parameters/redirectUri.yaml
+      responses:
+        '302':
+          description: Redirect to OAuth provider's login page
+        '400':
+          $ref: ../components/responses/BadRequest.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+  '/oauth/{provider}/callback':
+    get:
+      tags:
+        - OAuth
+      summary: OAuth2.0 callback endpoint
+      description: |
+        Callback endpoint that handles the OAuth2.0 response from the provider.
+        Exchanges the authorization code for tokens and authenticates the user.
+      parameters:
+        - $ref: ../components/parameters/oauthProvider.yaml
+        - $ref: ../components/parameters/oauthCode.yaml
+        - $ref: ../components/parameters/oauthState.yaml
+        - $ref: ../components/parameters/oauthError.yaml
+      responses:
+        '302':
+          description: Redirect to success or failure URL based on authentication result
+        '400':
+          $ref: ../components/responses/BadRequest.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+  /auth/forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Request password reset
+      description: Send a password reset link to the user's email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/UserAuth.yaml#/ForgotPassword'
+      responses:
+        '200':
+          description: Password reset email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Password reset link sent to your email
+        '400':
+          $ref: ../components/responses/BadRequest.yaml
+        '404':
+          description: User not found
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+  '/auth/reset-password/{resetToken}':
+    post:
+      tags:
+        - Authentication
+      summary: Reset password
+      description: Reset user's password using the token sent to their email
+      parameters:
+        - name: resetToken
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The reset token sent to the user's email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/UserAuth.yaml#/ResetPassword'
+      responses:
+        '200':
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Password has been reset successfully
+        '400':
+          $ref: ../components/responses/BadRequest.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+  /blogs:
+    get:
+      tags:
+        - Blogs
+      summary: Get all blog posts
+      description: >-
+        Retrieve a paginated list of published blog posts with optional
+        filtering
+      parameters:
+        - $ref: ../components/parameters/page.yaml
+        - $ref: ../components/parameters/limit.yaml
+        - $ref: ../components/parameters/sortBy.yaml
+        - $ref: ../components/parameters/order.yaml
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: Filter posts by category
+        - in: query
+          name: tag
+          schema:
+            type: string
+          description: Filter posts by tag
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search term to filter posts by title or content
+      responses:
+        '200':
+          description: A list of blog posts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: ../components/schemas/BlogPost.yaml
+                  pagination:
+                    $ref: ../components/schemas/Pagination.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+    post:
+      tags:
+        - Blogs
+      summary: Create a new blog post
+      description: Create a new blog post (Admin/Author only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/BlogPost.yaml
+      responses:
+        '201':
+          description: Blog post created successfully
+          content:
+            application/json:
+              schema:
+                $ref: ../components/responses/SuccessResponse.yaml
+                properties:
+                  data:
+                    $ref: ../components/schemas/BlogPost.yaml
+        '400':
+          $ref: ../components/responses/BadRequest.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '403':
+          $ref: ../components/responses/Forbidden.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+  '/blogs/slug/{slug}':
+    get:
+      tags:
+        - Blogs
+      summary: Get blog post by slug
+      description: Retrieve a single published blog post by its slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: URL-friendly version of the blog post title
+          schema:
+            type: string
+            example: getting-started-with-nodejs
+      responses:
+        '200':
+          description: Blog post details
+          content:
+            application/json:
+              schema:
+                $ref: ../components/responses/SuccessResponse.yaml
+                properties:
+                  data:
+                    $ref: ../components/schemas/BlogPost.yaml
+        '404':
+          $ref: ../components/responses/NotFound.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+  '/blogs/{id}':
+    get:
+      tags:
+        - Blogs
+      summary: Get blog post by ID
+      description: >-
+        Retrieve a single blog post by its ID (Admin/Author only for unpublished
+        posts)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ../components/parameters/id.yaml
+      responses:
+        '200':
+          description: Blog post details
+          content:
+            application/json:
+              schema:
+                $ref: ../components/responses/SuccessResponse.yaml
+                properties:
+                  data:
+                    $ref: ../components/schemas/BlogPost.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '403':
+          $ref: ../components/responses/Forbidden.yaml
+        '404':
+          $ref: ../components/responses/NotFound.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+    put:
+      tags:
+        - Blogs
+      summary: Update a blog post
+      description: Update an existing blog post (Admin/Author only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ../components/parameters/id.yaml
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/BlogPost.yaml
+      responses:
+        '200':
+          description: Blog post updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: ../components/responses/SuccessResponse.yaml
+                properties:
+                  data:
+                    $ref: ../components/schemas/BlogPost.yaml
+        '400':
+          $ref: ../components/responses/BadRequest.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '403':
+          $ref: ../components/responses/Forbidden.yaml
+        '404':
+          $ref: ../components/responses/NotFound.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+    delete:
+      tags:
+        - Blogs
+      summary: Delete a blog post
+      description: Delete a blog post (Admin/Author only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ../components/parameters/id.yaml
+      responses:
+        '200':
+          description: Blog post deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: ../components/responses/SuccessResponse.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '403':
+          $ref: ../components/responses/Forbidden.yaml
+        '404':
+          $ref: ../components/responses/NotFound.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+  /items:
+    $ref: ./items/items.yaml
+    get:
+      tags:
+        - Items
+      summary: Get all items
+      description: Retrieve a paginated list of items with optional filtering and sorting
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ../components/parameters/page.yaml
+        - $ref: ../components/parameters/limit.yaml
+        - $ref: ../components/parameters/sortBy.yaml
+        - $ref: ../components/parameters/order.yaml
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: Filter items by category
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search term to filter items by name or description
+      responses:
+        '200':
+          description: A list of items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: ../components/schemas/Item.yaml
+                  pagination:
+                    $ref: ../components/schemas/Pagination.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+    post:
+      tags:
+        - Items
+      summary: Create a new item
+      description: Create a new item (Admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/Item.yaml
+      responses:
+        '201':
+          description: Item created successfully
+          content:
+            application/json:
+              schema:
+                $ref: ../components/responses/SuccessResponse.yaml
+                properties:
+                  data:
+                    $ref: ../components/schemas/Item.yaml
+        '400':
+          $ref: ../components/responses/BadRequest.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '403':
+          $ref: ../components/responses/Forbidden.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+    delete:
+      tags:
+        - Items
+      summary: Delete all items
+      description: Delete all items (Admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: All items deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: ../components/responses/SuccessResponse.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '403':
+          $ref: ../components/responses/Forbidden.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+  '/items/{id}':
+    $ref: './items/items.yaml#/items/{id}'
+    get:
+      tags:
+        - Items
+      summary: Get item by ID
+      description: Retrieve a single item by its ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ../components/parameters/id.yaml
+      responses:
+        '200':
+          description: Item details
+          content:
+            application/json:
+              schema:
+                $ref: ../components/responses/SuccessResponse.yaml
+                properties:
+                  data:
+                    $ref: ../components/schemas/Item.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '404':
+          $ref: ../components/responses/NotFound.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+    put:
+      tags:
+        - Items
+      summary: Update an item
+      description: Update an existing item by ID (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ../components/parameters/id.yaml
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/Item.yaml
+      responses:
+        '200':
+          description: Item updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: ../components/responses/SuccessResponse.yaml
+                properties:
+                  data:
+                    $ref: ../components/schemas/Item.yaml
+        '400':
+          $ref: ../components/responses/BadRequest.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '403':
+          $ref: ../components/responses/Forbidden.yaml
+        '404':
+          $ref: ../components/responses/NotFound.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+    delete:
+      tags:
+        - Items
+      summary: Delete an item
+      description: Delete an item by ID (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ../components/parameters/id.yaml
+      responses:
+        '200':
+          description: Item deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: ../components/responses/SuccessResponse.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '403':
+          $ref: ../components/responses/Forbidden.yaml
+        '404':
+          $ref: ../components/responses/NotFound.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+  /health:
+    $ref: ./health/health.yaml
+    get:
+      tags:
+        - System
+      summary: Health check
+      description: Check if the API is running and healthy
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: '2023-01-01T00:00:00Z'
+                  uptime:
+                    type: number
+                    example: 123.456
+                  database:
+                    type: string
+                    example: CONNECTED
+                  memoryUsage:
+                    type: object
+                    properties:
+                      rss:
+                        type: string
+                        example: 123.45 MB
+                      heapTotal:
+                        type: string
+                        example: 45.67 MB
+                      heapUsed:
+                        type: string
+                        example: 23.45 MB
+                      external:
+                        type: string
+                        example: 12.34 MB
+  /oauth/token:
+    post:
+      tags:
+        - OAuth
+      summary: Exchange OAuth code for access token
+      description: |
+        Exchanges an OAuth authorization code for an access token.
+        This is typically used by the frontend to complete the OAuth flow.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/OAuthTokenRequest.yaml
+      responses:
+        '200':
+          description: Successful token exchange
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/OAuthTokenResponse.yaml
+        '400':
+          $ref: ../components/responses/BadRequest.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+  /csrf-token:
+    get:
+      tags:
+        - System
+      summary: Get CSRF token
+      description: Get a CSRF token for form submissions
+      responses:
+        '200':
+          description: CSRF token generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  csrfToken:
+                    type: string
+                    example: abcd1234efgh5678
+  /_csp-reports:
+    post:
+      tags:
+        - System
+      summary: Content Security Policy Reports
+      description: Endpoint for receiving Content Security Policy violation reports
+      requestBody:
+        required: true
+        content:
+          application/csp-report:
+            schema:
+              type: object
+              properties:
+                csp-report:
+                  type: object
+                  properties:
+                    document-uri:
+                      type: string
+                      example: 'https://example.com/page'
+                    referrer:
+                      type: string
+                      example: 'https://example.com/'
+                    blocked-uri:
+                      type: string
+                      example: 'https://malicious.com/script.js'
+                    violated-directive:
+                      type: string
+                      example: script-src 'self'
+                    original-policy:
+                      type: string
+                      example: default-src 'self'; script-src 'self'
+      responses:
+        '204':
+          description: Report received successfully
+        '400':
+          $ref: ../components/responses/BadRequest.yaml
+  /users:
+    get:
+      tags:
+        - Users
+      summary: List all users
+      description: Retrieve a paginated list of users with optional filtering and sorting
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ../components/parameters/page.yaml
+        - $ref: ../components/parameters/limit.yaml
+        - $ref: ../components/parameters/sortBy.yaml
+        - $ref: ../components/parameters/order.yaml
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search term to filter users by name or email
+      responses:
+        '200':
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: ../components/schemas/User.yaml
+                  pagination:
+                    $ref: ../components/schemas/Pagination.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '403':
+          $ref: ../components/responses/Forbidden.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+    post:
+      tags:
+        - Users
+      summary: Create a new user
+      description: Create a new user account (Admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/UserRequest.yaml
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: ../components/responses/SuccessResponse.yaml
+                properties:
+                  data:
+                    $ref: ../components/schemas/User.yaml
+        '400':
+          $ref: ../components/responses/BadRequest.yaml
+        '401':
+          $ref: ../components/responses/Unauthorized.yaml
+        '403':
+          $ref: ../components/responses/Forbidden.yaml
+        '409':
+          $ref: ../components/responses/Conflict.yaml
+        '500':
+          $ref: ../components/responses/ServerError.yaml
+  page:
+    name: page
+    in: query
+    description: Page number for pagination
+    required: false
+    schema:
+      type: integer
+      minimum: 1
+      default: 1
+  limit:
+    name: limit
+    in: query
+    description: Number of items per page
+    required: false
+    schema:
+      type: integer
+      minimum: 1
+      maximum: 100
+      default: 10
+  sortBy:
+    name: sortBy
+    in: query
+    description: Field to sort by
+    required: false
+    schema:
+      type: string
+      default: createdAt
+  order:
+    name: order
+    in: query
+    description: Sort order (asc or desc)
+    required: false
+    schema:
+      type: string
+      enum:
+        - asc
+        - desc
+      default: desc
+  userId:
+    name: user_id
+    in: path
+    required: true
+    description: User ID (UUID)
+    schema:
+      type: string
+      format: uuid
+      example: 123e4567-e89b-12d3-a456-426614174000
+  oauthProvider:
+    name: provider
+    in: path
+    required: true
+    schema:
+      type: string
+      enum:
+        - google
+        - github
+        - facebook
+        - instagram
+        - twitter
+        - linkedin
+        - telegram
+    description: The OAuth provider to authenticate with
+    example: google
+  oauthCode:
+    name: code
+    in: query
+    required: false
+    schema:
+      type: string
+    description: The authorization code returned by the OAuth provider
+  oauthState:
+    name: state
+    in: query
+    required: false
+    schema:
+      type: string
+    description: The state parameter for CSRF protection
+  oauthError:
+    name: error
+    in: query
+    required: false
+    schema:
+      type: string
+    description: Error code if OAuth flow failed
+  redirectUri:
+    name: redirect_uri
+    in: query
+    required: false
+    schema:
+      type: string
+      format: uri
+    description: The URI to redirect to after successful authentication
+    example: 'https://yourapp.com/auth/callback'
+  SuccessResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: true
+      message:
+        type: string
+        example: Operation completed successfully
+      data:
+        type: object
+        description: Response data
+  ErrorResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        example: false
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+            example: VALIDATION_ERROR
+          message:
+            type: string
+            example: Validation failed
+          details:
+            type: array
+            items:
+              type: object
+              properties:
+                field:
+                  type: string
+                  example: email
+                message:
+                  type: string
+                  example: Email is required
+  Pagination:
+    type: object
+    properties:
+      total:
+        type: integer
+        example: 100
+      page:
+        type: integer
+        example: 1
+      limit:
+        type: integer
+        example: 10
+      totalPages:
+        type: integer
+        example: 10
+  type:
+    '0': o
+    '1': b
+    '2': j
+    '3': e
+    '4': c
+    '5': t
+  properties:
+    accessToken:
+      type: string
+      description: OAuth access token (encrypted)
+      example: ya29.a0ARrdaM...
+    refreshToken:
+      type: string
+      description: The refresh token previously issued by the server
+      example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    expiresIn:
+      type: integer
+      description: Time in seconds until the access token expires
+      example: 3600
+    tokenType:
+      type: string
+      description: Type of the OAuth token
+      example: Bearer
+    user:
+      $ref: ./User.yaml
+      description: User information (if requested and available)
+    id:
+      type: string
+      format: uuid
+      description: Unique identifier for the user
+      example: 550e8400-e29b-41d4-a716-446655440000
+    title:
+      type: string
+      minLength: 5
+      maxLength: 200
+      description: Title of the blog post
+      example: Getting Started with Node.js and Express
+    slug:
+      type: string
+      description: URL-friendly version of the title
+      example: getting-started-with-nodejs-and-express
+    content:
+      type: string
+      description: The main content of the blog post (can include HTML)
+      example: <p>This is a blog post about Node.js and Express...</p>
+    excerpt:
+      type: string
+      maxLength: 300
+      description: A short excerpt or summary of the blog post
+      example: >-
+        Learn how to get started with Node.js and Express in this comprehensive
+        guide.
+    featuredImage:
+      type: string
+      format: uri
+      description: URL of the featured image
+      example: 'https://example.com/images/nodejs-express.jpg'
+    author:
+      $ref: ./User.yaml
+      description: The author of the blog post
+    categories:
+      type: array
+      items:
+        type: string
+      description: Categories the blog post belongs to
+      example:
+        - Node.js
+        - Backend
+    tags:
+      type: array
+      items:
+        type: string
+      description: Tags for the blog post
+      example:
+        - nodejs
+        - express
+        - tutorial
+    isPublished:
+      type: boolean
+      default: false
+      description: Whether the blog post is published and visible to the public
+    publishedAt:
+      type: string
+      format: date-time
+      description: When the blog post was published
+      example: '2023-01-01T00:00:00Z'
+    createdAt:
+      type: string
+      format: date-time
+      description: When the user account was created
+      example: '2023-01-01T00:00:00Z'
+    updatedAt:
+      type: string
+      format: date-time
+      description: When the user account was last updated
+      example: '2023-01-01T00:00:00Z'
+    name:
+      type: string
+      description: Name of the item
+      example: Premium T-Shirt
+    description:
+      type: string
+      description: Detailed description of the item
+      example: High-quality cotton t-shirt with premium finish
+    price:
+      type: number
+      format: float
+      minimum: 0
+      description: Price of the item
+      example: 29.99
+    quantity:
+      type: integer
+      minimum: 0
+      description: Available quantity in stock
+      example: 100
+    category:
+      type: string
+      description: Category of the item
+      example: clothing
+    images:
+      type: array
+      items:
+        type: string
+        format: uri
+      description: List of image URLs for the item
+      example:
+        - 'https://example.com/images/tshirt-1.jpg'
+    isActive:
+      type: boolean
+      default: true
+      description: Whether the user account is active
+    email:
+      type: string
+      format: email
+      description: User's email address (must be unique)
+      example: john.doe@example.com
+    password:
+      type: string
+      minLength: 8
+      description: User's password (min 8 characters)
+      example: securePassword123!
+    rememberMe:
+      type: boolean
+      description: Whether to issue a long-lived refresh token
+      default: false
+    provider:
+      type: string
+      enum:
+        - google
+        - github
+        - facebook
+        - instagram
+        - twitter
+        - linkedin
+        - telegram
+      description: The OAuth provider that issued the authorization code
+      example: google
+    providerUserId:
+      type: string
+      description: The user's ID from the OAuth provider
+      example: '1234567890'
+    expiresAt:
+      type: string
+      format: date-time
+      description: When the access token expires
+      example: '2023-12-31T23:59:59Z'
+    scope:
+      type: string
+      description: The scopes that were granted by the user
+      example: profile email
+    profileData:
+      type: object
+      description: Raw profile data from the OAuth provider
+      additionalProperties: true
+      example:
+        name: John Doe
+        given_name: John
+        family_name: Doe
+        picture: 'https://lh3.googleusercontent.com/...'
+    code:
+      type: string
+      description: The authorization code received from the OAuth provider
+      example: 4/0AX4XfWg...
+    redirect_uri:
+      type: string
+      format: uri
+      description: The redirect URI that was used in the initial authorization request
+      example: 'https://yourapp.com/auth/callback'
+    client_id:
+      type: string
+      description: >-
+        The client ID for your OAuth application (optional if using server-side
+        configuration)
+      example: your-client-id.apps.googleusercontent.com
+    client_secret:
+      type: string
+      description: >-
+        The client secret for your OAuth application (only for server-side use,
+        never expose in client-side code)
+      example: your-client-secret
+    grant_type:
+      type: string
+      enum:
+        - authorization_code
+        - refresh_token
+      default: authorization_code
+      description: The OAuth grant type
+    code_verifier:
+      type: string
+      description: >-
+        The PKCE code verifier (required if PKCE was used in the authorization
+        request)
+      example: S256_CODE_VERIFIER_STRING
+    access_token:
+      type: string
+      description: The access token that can be used to make authenticated requests
+      example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    token_type:
+      type: string
+      enum:
+        - Bearer
+      default: Bearer
+      description: The type of token
+    expires_in:
+      type: integer
+      description: The number of seconds until the access token expires
+      example: 3600
+    refresh_token:
+      type: string
+      description: A token that can be used to obtain a new access token
+      example: 1//03e...
+    id_token:
+      type: string
+      description: >-
+        JWT containing identity information about the user (if supported by the
+        provider)
+      example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    firstName:
+      type: string
+      minLength: 2
+      maxLength: 50
+      description: User's first name
+      example: John
+    lastName:
+      type: string
+      minLength: 2
+      maxLength: 50
+      description: User's last name
+      example: Doe
+    isEmailVerified:
+      type: boolean
+      description: Whether the user's email has been verified
+      default: false
+    role:
+      type: string
+      enum:
+        - user
+        - admin
+        - moderator
+      default: user
+      description: User's role in the system
+    avatar:
+      type: string
+      format: uri
+      description: URL to the user's avatar image
+      example: 'https://example.com/avatars/john-doe.jpg'
+    oauthAccounts:
+      type: array
+      description: List of OAuth accounts linked to this user
+      items:
+        $ref: ./OAuthAccount.yaml
+  required:
+    '0': refreshToken
+    '1': code
+    '2': redirect_uri
+  OAuthError:
+    type: object
+    properties:
+      error:
+        type: string
+        description: Error code
+        example: invalid_grant
+      error_description:
+        type: string
+        description: Human-readable error description
+        example: >-
+          The provided authorization grant is invalid, expired, revoked, or does
+          not match the redirection URI used in the authorization request.
+      error_uri:
+        type: string
+        format: uri
+        description: A URI identifying the error
+        example: 'https://tools.ietf.org/html/rfc6749#section-5.2'
+  UserSignup:
+    type: object
+    required:
+      - email
+      - password
+      - firstName
+      - lastName
+    properties:
+      email:
+        type: string
+        format: email
+        example: user@example.com
+      password:
+        type: string
+        format: password
+        minLength: 8
+        example: SecurePassword123!
+      firstName:
+        type: string
+        example: John
+      lastName:
+        type: string
+        example: Doe
+      profile:
+        type: string
+        format: binary
+        description: Profile picture (optional)
+  UserLogin:
+    type: object
+    required:
+      - email
+      - password
+    properties:
+      email:
+        type: string
+        format: email
+        example: user@example.com
+      password:
+        type: string
+        format: password
+        example: SecurePassword123!
+  VerifyOTP:
+    type: object
+    required:
+      - email
+      - otp
+    properties:
+      email:
+        type: string
+        format: email
+        example: user@example.com
+      otp:
+        type: string
+        example: '123456'
+  ResendOTP:
+    type: object
+    required:
+      - email
+    properties:
+      email:
+        type: string
+        format: email
+        example: user@example.com
+  ForgotPassword:
+    type: object
+    required:
+      - email
+    properties:
+      email:
+        type: string
+        format: email
+        example: user@example.com
+  ResetPassword:
+    type: object
+    required:
+      - password
+      - confirmPassword
+    properties:
+      password:
+        type: string
+        format: password
+        minLength: 8
+        example: NewSecurePassword123!
+      confirmPassword:
+        type: string
+        format: password
+        example: NewSecurePassword123!
+  ChangePassword:
+    type: object
+    required:
+      - currentPassword
+      - newPassword
+      - confirmNewPassword
+    properties:
+      currentPassword:
+        type: string
+        format: password
+        example: CurrentPassword123!
+      newPassword:
+        type: string
+        format: password
+        minLength: 8
+        example: NewSecurePassword123!
+      confirmNewPassword:
+        type: string
+        format: password
+        example: NewSecurePassword123!
