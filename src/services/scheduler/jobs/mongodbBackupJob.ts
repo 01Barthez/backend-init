@@ -47,7 +47,7 @@ export class MongodbBackupJob {
     }
 
     if (this.isRunning) {
-      log.warn('Une sauvegarde est déjà en cours, annulation...');
+      log.warn('A backup is already in progress, skipping...');
       return;
     }
 
@@ -61,22 +61,17 @@ export class MongodbBackupJob {
     const archivePath = path.join('/tmp', archiveName);
 
     try {
-      log.info(`Début de la sauvegarde MongoDB (ID: ${backupId})`);
+      log.info(`Starting MongoDB backup (ID: ${backupId})`);
 
-      // Créer le répertoire de sauvegarde
       await fs.ensureDir(backupDir);
 
-      // Exécuter mongodump
       await this.runMongoDump(backupDir);
 
-      // Créer une archive compressée
       await this.createBackupArchive(backupDir, archivePath);
 
-      // Téléverser vers le stockage
       const objectName = `mongodb/${datePath}/${backupConfig.mongo.dbName}/${archiveName}`;
 
       const fileContent = await fs.readFile(archivePath);
-      // Envoyer les métadonnées dans le nom du fichier avec un format spécifique
       const metadataString = `backup-type=mongodb;db=${backupConfig.mongo.dbName};created=${new Date().toISOString()}`;
       const filenameWithMetadata = `${path.basename(objectName, '.tar.gz')}_meta_${Buffer.from(metadataString).toString('base64')}.tar.gz`;
 
@@ -92,10 +87,8 @@ export class MongodbBackupJob {
         },
       );
 
-      // Nettoyer les anciennes sauvegardes
       await this.cleanupOldBackups();
 
-      // Envoyer une notification de succès
       const duration = ((Date.now() - startTime) / 1000).toFixed(2);
       const fileSize = (await fs.stat(archivePath)).size;
       const sizeInMB = (fileSize / (1024 * 1024)).toFixed(2);
@@ -105,14 +98,14 @@ export class MongodbBackupJob {
           await this.notificationService.sendBackupSuccess({
             backupPath: objectName,
             size: `${sizeInMB} MB`,
-            duration: `${duration} secondes`,
+            duration: `${duration} seconds`,
           });
         } catch (error) {
           log.error('Failed to send backup success notification:', error);
         }
       }
 
-      log.info(`Sauvegarde terminée avec succès en ${duration} secondes`);
+      log.info(`Backup completed successfully in ${duration} seconds`);
     } catch (error) {
       if (this.notificationService) {
         try {
@@ -121,15 +114,14 @@ export class MongodbBackupJob {
           log.error('Failed to send backup error notification:', notifError);
         }
       }
-      log.error('Erreur lors de la sauvegarde MongoDB:', error);
+      log.error('MongoDB backup error:', error);
     } finally {
-      // Nettoyage
       await fs
         .remove(backupDir)
-        .catch((err) => log.error('Erreur lors du nettoyage du dossier temporaire:', err));
+        .catch((err) => log.error('Error cleaning up temporary directory:', err));
       await fs
         .remove(archivePath)
-        .catch((err) => log.error("Erreur lors de la suppression de l'archive temporaire:", err));
+        .catch((err) => log.error('Error removing temporary archive:', err));
       this.isRunning = false;
     }
   }
@@ -148,7 +140,7 @@ export class MongodbBackupJob {
       --out=${outputDir} \
       --gzip`;
 
-      log.debug(`Exécution de la commande: ${command}`);
+      log.debug(`Running command: ${command}`);
 
       const { stdout, stderr } = await execAsync(command, {
         maxBuffer: 1024 * 1024 * 50,
@@ -159,12 +151,12 @@ export class MongodbBackupJob {
       });
 
       if (stderr) {
-        log.warn('Avertissements mongodump:', stderr);
+        log.warn('mongodump warnings:', stderr);
       }
 
-      log.debug('Sortie mongodump:', stdout);
+      log.debug('mongodump output:', stdout);
     } catch (error) {
-      throw new Error(`Échec de mongodump: ${error}`);
+      throw new Error(`mongodump failed: ${error}`);
     }
   }
 
@@ -172,9 +164,9 @@ export class MongodbBackupJob {
     try {
       const tarCommand = `tar -czf ${outputPath} -C ${path.dirname(sourceDir)} ${path.basename(sourceDir)}`;
       await execAsync(tarCommand);
-      log.debug(`Archive créée: ${outputPath}`);
+      log.debug(`Archive created: ${outputPath}`);
     } catch (error) {
-      throw new Error(`Échec de la création de l'archive: ${error}`);
+      throw new Error(`Failed to create archive: ${error}`);
     }
   }
 
@@ -184,11 +176,10 @@ export class MongodbBackupJob {
 
       for (const date of oldBackupDates) {
         const prefix = `mongodb/${date}/`;
-        // Implémentez la logique de suppression avec storageService
-        // Cela dépend de l'implémentation de votre storageService
+        // Implement deletion logic with storageService when available
       }
     } catch (error) {
-      log.error('Erreur lors du nettoyage des anciennes sauvegardes:', error);
+      log.error('Error cleaning up old backups:', error);
     }
   }
 
@@ -211,6 +202,6 @@ export class MongodbBackupJob {
     if (this.task) {
       this.task.stop();
     }
-    log.info('Arrêt du job de sauvegarde MongoDB');
+    log.info('MongoDB backup job stopped');
   }
 }

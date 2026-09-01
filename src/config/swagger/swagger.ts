@@ -2,48 +2,40 @@ import type { Express } from 'express';
 import fs from 'fs';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
+
+import { envs } from '@/config/env/env';
 
 /**
- * Sets up Swagger UI and OpenAPI documentation routes for the provided Express application.
- *
- * This function loads the OpenAPI configuration from an absolute path, generates the Swagger documentation,
- * and configures the Swagger UI with custom options. It also exposes the raw OpenAPI JSON at `/api-docs.json`.
- *
- * @param app - The Express application instance to which Swagger documentation routes will be attached.
- *
- * @remarks
- * - The OpenAPI configuration file is expected at `../../../docs/openapi.config.js` relative to this file.
- * - If the configuration file is not found, an error is logged and Swagger is not set up.
- * - The Swagger UI is available at `/api-docs`.
- * - The raw OpenAPI JSON is available at `/api-docs.json`.
+ * Mounts Swagger UI and exposes the raw OpenAPI JSON document.
  */
-const setupSwagger = (app: Express) => {
-  // Use absolute path to load the configuration
-  const configPath = path.resolve(__dirname, '../../../docs/openapi.config.js');
-
-  if (!fs.existsSync(configPath)) {
-    console.error(`OpenAPI config file not found at: ${configPath}`);
+const setupSwagger = (app: Express): void => {
+  if (!envs.SWAGGER_ENABLED) {
     return;
   }
 
-  const swaggerDocument = require('swagger-jsdoc')(require(configPath));
+  const specPath = path.resolve(__dirname, '../../../docs/openapi.yaml');
 
-  // Custom Swagger UI options
-  const optionsUI = {
+  if (!fs.existsSync(specPath)) {
+    console.error(`OpenAPI spec not found at: ${specPath}`);
+    return;
+  }
+
+  const swaggerDocument = YAML.load(specPath);
+
+  const uiOptions = {
     explorer: true,
     customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'GTA-API Documentation',
+    customSiteTitle: 'Backend Init API',
     swaggerOptions: {
       defaultModelsExpandDepth: -1,
-      docExpansion: 'none',
+      docExpansion: 'list',
     },
   };
 
-  // Swagger documentation route
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, optionsUI));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, uiOptions));
 
-  // Generate openapi.json file
-  app.get('/api-docs.json', (req, res) => {
+  app.get('/api-docs.json', (_req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(swaggerDocument);
   });

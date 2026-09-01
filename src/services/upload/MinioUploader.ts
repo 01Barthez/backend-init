@@ -83,10 +83,10 @@ export class MinioUploader extends EventEmitter {
         log.debug('Virus scan completed', { uploadId, duration: scanResult.scanDuration });
       }
 
-      // 3. Génération du chemin de fichier
+      // Generate file path
       const { key, path } = generateFilePath(meta.filename);
 
-      // 4. Upload vers MinIO
+      // Upload to MinIO
       await this.retry(async () => {
         await this.provider.ensureBucketExists();
         await this.provider.putObject(key, buffer, buffer.length, meta.contentType);
@@ -122,7 +122,7 @@ export class MinioUploader extends EventEmitter {
       });
 
       if (error instanceof ValidationError) {
-        throw error; // Laissez le gestionnaire d'erreurs global gérer ça
+        throw error;
       }
 
       throw new UploadError(`upload_failed: ${errorMessage}`, error);

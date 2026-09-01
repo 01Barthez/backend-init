@@ -12,9 +12,8 @@ export async function compressFile(inputPath: string, outputPath: string): Promi
 
   try {
     await pipelineAsync(source, gzip, destination);
-    // Supprimer le fichier original après compression
     unlinkSync(inputPath);
   } catch (error) {
-    throw new Error(`Erreur lors de la compression: ${error}`);
+    throw new Error(`Compression failed: ${error}`);
   }
 }

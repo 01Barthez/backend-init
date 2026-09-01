@@ -61,14 +61,14 @@ export class TelegramOAuthService {
   getUserProfile(authData: TelegramAuthData): IOAuthUserProfile {
     return {
       provider: OAuthProvider.TELEGRAM,
-      provider_user_id: authData.id.toString(),
-      email: '', // Telegram doesn't provide email
-      email_verified: false,
-      first_name: authData.first_name,
-      last_name: authData.last_name || '',
-      full_name: `${authData.first_name} ${authData.last_name || ''}`.trim(),
-      avatar_url: authData.photo_url,
-      raw_profile: authData,
+      providerUserId: authData.id.toString(),
+      email: '',
+      emailVerified: false,
+      firstName: authData.first_name,
+      lastName: authData.last_name || '',
+      fullName: `${authData.first_name} ${authData.last_name || ''}`.trim(),
+      avatarUrl: authData.photo_url,
+      rawProfile: authData,
     };
   }
 

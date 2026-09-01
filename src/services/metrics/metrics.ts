@@ -9,8 +9,8 @@ collectDefaultMetrics({
   gcDurationBuckets: [0.1, 0.5, 1, 1.5, 2, 5],
 });
 
-// Endpoint pour exposer les métriques
-metricsRouter.get('/metrics', async (_req, res) => {
+// Endpoint to expose metrics
+metricsRouter.get('/', async (_req, res) => {
   res.set('Content-Type', client.register.contentType);
   res.end(await client.register.metrics());
 });

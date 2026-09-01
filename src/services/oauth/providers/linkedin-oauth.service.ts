@@ -45,15 +45,15 @@ export class LinkedInOAuthService extends BaseOAuthService {
 
       return {
         provider: OAuthProvider.LINKEDIN,
-        provider_user_id: userData.sub,
+        providerUserId: userData.sub,
         email: userData.email,
-        email_verified: userData.email_verified,
-        first_name: userData.given_name,
-        last_name: userData.family_name,
-        full_name: userData.name,
-        avatar_url: userData.picture,
+        emailVerified: userData.email_verified,
+        firstName: userData.given_name,
+        lastName: userData.family_name,
+        fullName: userData.name,
+        avatarUrl: userData.picture,
         locale: userData.locale,
-        raw_profile: userData,
+        rawProfile: userData,
       };
     } catch (error: any) {
       log.error('Failed to fetch LinkedIn user profile', {

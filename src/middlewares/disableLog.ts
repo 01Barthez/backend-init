@@ -2,16 +2,8 @@ import type { NextFunction, Request, Response } from 'express';
 
 import { envs } from '@/config/env/env';
 
-// Liste des méthodes console à éventuellement désactiver
-const consoleMethods: (keyof Console)[] = [
-  'log',
-  'info',
-  'warn',
-  'debug',
-  // "error" volontairement laissé activé par défaut
-];
+const consoleMethods: (keyof Console)[] = ['log', 'info', 'warn', 'debug'];
 
-// On sauvegarde les méthodes originales
 const originalConsole: Partial<Record<keyof Console, Function>> = {};
 
 const disableLogsInProduction = (_req: Request, _res: Response, next: NextFunction) => {
@@ -19,7 +11,6 @@ const disableLogsInProduction = (_req: Request, _res: Response, next: NextFuncti
 
   if (shouldDisable) {
     consoleMethods.forEach((method) => {
-      // Sauvegarde pour potentielle réactivation
       if (!originalConsole[method]) {
         originalConsole[method] = console[method];
       }

@@ -28,14 +28,14 @@ class Scheduler {
           if (typeof job.start === 'function') {
             job.start();
             this.jobInstances.push(job);
-            log.info(`Job ${job.constructor.name} démarré avec succès`);
+            log.info(`Job ${job.constructor.name} started successfully`);
           }
         }
       });
 
-      log.info(`Scheduler initialisé avec ${this.jobInstances.length} jobs`);
+      log.info(`Scheduler initialized with ${this.jobInstances.length} jobs`);
     } catch (error) {
-      log.error("Erreur lors de l'initialisation du scheduler:", error);
+      log.error('Error initializing scheduler:', error);
       throw error;
     }
   }
@@ -47,7 +47,7 @@ class Scheduler {
         job.stop();
       }
     });
-    log.info('Tous les jobs ont été arrêtés');
+    log.info('All jobs stopped');
   }
 
   // schedule a new task

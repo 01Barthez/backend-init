@@ -1,3 +1,3 @@
 export class S3Provider {
-  // Ici tu pourrais mapper les méthodes du SDK AWS S3
+  // Map AWS S3 SDK methods here when implemented
 }

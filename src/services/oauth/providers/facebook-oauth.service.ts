@@ -52,15 +52,15 @@ export class FacebookOAuthService extends BaseOAuthService {
 
       return {
         provider: OAuthProvider.FACEBOOK,
-        provider_user_id: userData.id,
+        providerUserId: userData.id,
         email: userData.email,
-        email_verified: true, // Facebook verifies emails
-        first_name: userData.first_name,
-        last_name: userData.last_name,
-        full_name: userData.name,
-        avatar_url: userData.picture?.data?.url,
+        emailVerified: true,
+        firstName: userData.first_name,
+        lastName: userData.last_name,
+        fullName: userData.name,
+        avatarUrl: userData.picture?.data?.url,
         locale: userData.locale,
-        raw_profile: userData,
+        rawProfile: userData,
       };
     } catch (error: any) {
       log.error('Failed to fetch Facebook user profile', {

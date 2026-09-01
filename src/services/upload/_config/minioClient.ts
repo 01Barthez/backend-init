@@ -3,7 +3,7 @@ import { Client as Minio } from 'minio';
 import { envs } from '@/config/env/env';
 import log from '@/services/logging/logger';
 
-// Configuration du client MinIO avec timeouts appropriés
+// MinIO client configuration with appropriate timeouts
 const minioConfig = {
   endPoint: envs.MINIO_ENDPOINT || 'localhost',
   port: envs.MINIO_PORT ? Number(envs.MINIO_PORT) : 9000,

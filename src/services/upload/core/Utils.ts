@@ -9,26 +9,22 @@ export function sleep(ms: number) {
 }
 
 export function generateSafeFilename(originalName: string): string {
-  // Extraire l'extension du fichier
   const ext = originalName.split('.').pop()?.toLowerCase() || '';
 
-  // Nettoyer le nom du fichier (enlever les caractères spéciaux)
   const cleanName = originalName
-    .replace(/\.[^/.]+$/, '') // Enlever l'extension existante
+    .replace(/\.[^/.]+$/, '')
     .toLowerCase()
-    .replace(/[^a-z0-9-]/g, '-') // Remplacer les caractères spéciaux par des tirets
-    .replace(/-+/g, '-') // Éviter les tirets multiples
-    .replace(/^-+|-+$/g, ''); // Enlever les tirets en début et fin
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
 
-  // Générer un UUID v4
   const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 
-  // Créer le nom de fichier final
-  return `${uuid}-${cleanName}.${ext}`.substring(0, 255); // Limiter la longueur du nom de fichier
+  return `${uuid}-${cleanName}.${ext}`.substring(0, 255);
 }
 
 export function generateFilePath(originalName: string): { key: string; path: string } {

@@ -1,16 +1,12 @@
 import type { NextFunction, Request, Response } from 'express';
 
-import blackListToken from '@/services/jwt/black_list';
-import userToken from '@/services/jwt/functions-jwt';
+import blackListToken from '@/services/jwt/blacklist.service';
+import userToken from '@/services/jwt/jwt.service';
 import log from '@/services/logging/logger';
 import { response } from '@/utils/responses/helpers';
 
-/**
- * Middleware to verify if user is authenticated
- */
 export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Extract access token from request headers
     const authHeader = req.headers['authorization'];
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -24,20 +20,17 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
       return response.unauthorized(req, res, 'Access token is required');
     }
 
-    // Check if token is blacklisted
-    const isBlacklisted = await blackListToken.isBlackListToken(accessToken);
+    const isBlacklisted = await blackListToken.isBlacklistedToken(accessToken);
     if (isBlacklisted) {
       log.warn('Attempted access with blacklisted token');
       return response.unauthorized(req, res, 'Token has been revoked');
     }
 
-    // Verify token validity
     const decoded = userToken.verifyAccessToken(accessToken);
     if (!decoded) {
       return response.unauthorized(req, res, 'Invalid access token');
     }
 
-    // Attach user data to request object
     (req as any).user = decoded;
 
     next();
@@ -47,9 +40,6 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
   }
 };
 
-/**
- * Middleware to verify if user has admin role
- */
 export const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = (req as any).user;
@@ -58,7 +48,6 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
       return response.unauthorized(req, res, 'User not authenticated');
     }
 
-    // Check if user has admin role
     if (user.role !== 'ADMIN' && user.role !== 'admin') {
       log.warn('Access denied: User is not an admin', { userId: user.id, role: user.role });
       return response.forbidden(req, res, 'Access denied. Admin privileges required');
@@ -71,9 +60,6 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
-/**
- * Middleware to check if user is verified
- */
 export const isVerified = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = (req as any).user;
@@ -82,7 +68,7 @@ export const isVerified = async (req: Request, res: Response, next: NextFunction
       return response.unauthorized(req, res, 'User not authenticated');
     }
 
-    if (!user.is_verified) {
+    if (!user.isVerified) {
       return response.forbidden(req, res, 'Account not verified. Please verify your account first');
     }
 
@@ -93,9 +79,6 @@ export const isVerified = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-/**
- * Middleware to check if user is active
- */
 export const isActive = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = (req as any).user;
@@ -104,7 +87,7 @@ export const isActive = async (req: Request, res: Response, next: NextFunction) 
       return response.unauthorized(req, res, 'User not authenticated');
     }
 
-    if (!user.is_active) {
+    if (!user.isActive) {
       return response.forbidden(req, res, 'Account is inactive. Please contact support');
     }
 

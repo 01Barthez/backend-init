@@ -3,7 +3,7 @@ import log from '@services/logging/logger';
 import initMiddlewares from '@utils/middleware/_initMiddlewares';
 import express from 'express';
 
-import health from '@/router/_config/healtcheck/health.router';
+import health from '@/routes/_config/health-check/health.router';
 import metricsRouter from '@/services/metrics/metrics';
 
 import { scheduler } from './services/scheduler';
@@ -11,16 +11,13 @@ import { initNotificationService, initUploader } from './services/scheduler/init
 
 const app = express();
 
-// Setup Swagger for API documentation
 setupSwagger(app);
 
-initMiddlewares(app);
-
-// Metrics endpoint
+// System routes must be registered before the global middleware stack (which ends with 404)
 app.use('/metrics', metricsRouter);
-
-// Health check endpoint
 app.use('/health', health);
+
+initMiddlewares(app);
 
 // Initialize scheduler dependencies
 const uploader = initUploader();

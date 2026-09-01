@@ -6,8 +6,8 @@ export const validate_user = {
   signup: [
     emailValidation('email'),
     passwordValidation(),
-    nameValidation('first_name'),
-    nameValidation('last_name'),
+    nameValidation('firstName'),
+    nameValidation('lastName'),
     body('phone')
       .trim()
       .notEmpty()
@@ -76,8 +76,8 @@ export const validate_user = {
   ],
 
   updateUserInfo: [
-    nameValidation('first_name').optional(),
-    nameValidation('last_name').optional(),
+    nameValidation('firstName').optional(),
+    nameValidation('lastName').optional(),
     body('phone')
       .optional()
       .trim()
@@ -89,7 +89,7 @@ export const validate_user = {
   ],
 
   updateUserRole: [
-    param('user_id').notEmpty().withMessage('User ID is required'),
+    param('userId').notEmpty().withMessage('User ID is required'),
     body('role')
       .trim()
       .notEmpty()
@@ -98,7 +98,7 @@ export const validate_user = {
       .withMessage('Invalid role. Must be USER, ADMIN, or MODERATOR'),
   ],
 
-  deleteUser: [param('user_id').notEmpty().withMessage('User ID is required')],
+  deleteUser: [param('userId').notEmpty().withMessage('User ID is required')],
 
   searchUser: [
     query('search')
@@ -111,9 +111,9 @@ export const validate_user = {
   ],
 
   listUsers: [
-    query('is_active').optional().isBoolean().withMessage('is_active must be a boolean'),
-    query('is_verified').optional().isBoolean().withMessage('is_verified must be a boolean'),
-    query('is_deleted').optional().isBoolean().withMessage('is_deleted must be a boolean'),
+    query('isActive').optional().isBoolean().withMessage('isActive must be a boolean'),
+    query('isVerified').optional().isBoolean().withMessage('isVerified must be a boolean'),
+    query('isDeleted').optional().isBoolean().withMessage('isDeleted must be a boolean'),
     query('page').optional().isInt({ min: 1 }).withMessage('page must be a positive integer'),
     query('limit')
       .optional()
@@ -121,5 +121,5 @@ export const validate_user = {
       .withMessage('limit must be between 1 and 100'),
   ],
 
-  get_user_by_id: [param('user_id').notEmpty().withMessage('User ID is required')],
+  getUserById: [param('userId').notEmpty().withMessage('User ID is required')],
 };

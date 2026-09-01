@@ -3,15 +3,9 @@
  * Defines all types for OAuth2.0 authentication flow
  */
 
-export enum OAuthProvider {
-  GOOGLE = 'GOOGLE',
-  GITHUB = 'GITHUB',
-  FACEBOOK = 'FACEBOOK',
-  INSTAGRAM = 'INSTAGRAM',
-  TWITTER = 'TWITTER',
-  LINKEDIN = 'LINKEDIN',
-  TELEGRAM = 'TELEGRAM',
-}
+export { OAuthProvider } from '@prisma/client';
+
+import type { OAuthProvider } from '@prisma/client';
 
 /**
  * OAuth Provider Configuration
@@ -27,7 +21,7 @@ export interface IOAuthProviderConfig {
 }
 
 /**
- * OAuth Token Response from Provider
+ * OAuth Token Response from Provider (external API format)
  */
 export interface IOAuthTokenResponse {
   access_token: string;
@@ -35,7 +29,7 @@ export interface IOAuthTokenResponse {
   expires_in?: number;
   refresh_token?: string;
   scope?: string;
-  id_token?: string; // For OpenID Connect (Google)
+  id_token?: string;
 }
 
 /**
@@ -43,31 +37,31 @@ export interface IOAuthTokenResponse {
  */
 export interface IOAuthUserProfile {
   provider: OAuthProvider;
-  provider_user_id: string;
+  providerUserId: string;
   email: string;
-  email_verified?: boolean;
-  first_name: string;
-  last_name: string;
-  full_name?: string;
-  avatar_url?: string;
+  emailVerified?: boolean;
+  firstName: string;
+  lastName: string;
+  fullName?: string;
+  avatarUrl?: string;
   locale?: string;
-  raw_profile: Record<string, any>;
+  rawProfile: Record<string, any>;
 }
 
 /**
  * OAuth Account Data for Database
  */
 export interface IOAuthAccountData {
-  user_id: string;
+  userId: string;
   provider: OAuthProvider;
-  provider_user_id: string;
-  provider_email?: string;
-  access_token?: string;
-  refresh_token?: string;
-  token_type?: string;
-  expires_at?: Date;
+  providerUserId: string;
+  providerEmail?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  tokenType?: string;
+  expiresAt?: Date;
   scope?: string;
-  provider_profile_data?: Record<string, any>;
+  providerProfileData?: Record<string, any>;
 }
 
 /**
@@ -75,7 +69,7 @@ export interface IOAuthAccountData {
  */
 export interface IOAuthState {
   state: string;
-  redirect_url?: string;
+  redirectUrl?: string;
   timestamp: number;
 }
 

@@ -1,5 +1,5 @@
 import { MAIL } from '@/core/constant/global';
-import send_mail from '@/services/Mail/send-mail';
+import send_mail from '@/services/mail/send-mail.service';
 import log from '@/services/logging/logger';
 
 import backupConfig from '../_config/backup';

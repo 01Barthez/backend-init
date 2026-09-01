@@ -45,15 +45,15 @@ export class GoogleOAuthService extends BaseOAuthService {
 
       return {
         provider: OAuthProvider.GOOGLE,
-        provider_user_id: userData.id,
+        providerUserId: userData.id,
         email: userData.email,
-        email_verified: userData.verified_email,
-        first_name: userData.given_name || '',
-        last_name: userData.family_name || '',
-        full_name: userData.name,
-        avatar_url: userData.picture,
+        emailVerified: userData.verified_email,
+        firstName: userData.given_name || '',
+        lastName: userData.family_name || '',
+        fullName: userData.name,
+        avatarUrl: userData.picture,
         locale: userData.locale,
-        raw_profile: userData,
+        rawProfile: userData,
       };
     } catch (error: any) {
       log.error('Failed to fetch Google user profile', {

@@ -16,7 +16,7 @@
       "@config/*": ["src/config/*"],
       "@services/*": ["src/services/*"],
       "@middlewares/*": ["src/middlewares/*"],
-      "@router/*": ["src/router/*"],
+      "@routes/*": ["src/routes/*"],
       "@controllers/*": ["src/controllers/*"],
       "@utils/*": ["src/utils/*"]
     },

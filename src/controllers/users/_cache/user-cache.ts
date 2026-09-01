@@ -1,5 +1,3 @@
-import { ObjectId } from 'mongodb';
-
 import prisma from '@/config/prisma/prisma';
 import { CacheTTL } from '@/services/caching/Interface/caching.types';
 import {
@@ -11,9 +9,8 @@ import log from '@/services/logging/logger';
 
 import { UserCacheKeys } from './utils/utils';
 
-/**
- * Get user by ID with cache
- */
+const isObjectId = (value: string): boolean => /^[a-f\d]{24}$/i.test(value);
+
 export const getCachedUser = async (userId: string) => {
   const cacheKey = UserCacheKeys.user(userId);
 
@@ -21,20 +18,20 @@ export const getCachedUser = async (userId: string) => {
     cacheKey,
     async () => {
       log.debug(`Fetching user from DB: ${userId}`);
-      return prisma.users.findUnique({
-        where: { user_id: userId, is_deleted: false },
+      return prisma.user.findUnique({
+        where: { id: userId, isDeleted: false },
         select: {
-          user_id: true,
+          id: true,
           email: true,
-          first_name: true,
-          last_name: true,
+          firstName: true,
+          lastName: true,
           phone: true,
-          avatar_url: true,
-          is_active: true,
-          is_verified: true,
-          email_verified_at: true,
-          created_at: true,
-          updated_at: true,
+          avatarUrl: true,
+          isActive: true,
+          isVerified: true,
+          emailVerifiedAt: true,
+          createdAt: true,
+          updatedAt: true,
         },
       });
     },
@@ -42,9 +39,6 @@ export const getCachedUser = async (userId: string) => {
   );
 };
 
-/**
- * Get user by email with cache
- */
 export const getCachedUserByEmail = async (email: string) => {
   const cacheKey = UserCacheKeys.userByEmail(email);
 
@@ -52,21 +46,18 @@ export const getCachedUserByEmail = async (email: string) => {
     cacheKey,
     async () => {
       log.debug(`Fetching user from DB by email: ${email}`);
-      return prisma.users.findFirst({
-        where: { email, is_deleted: false },
+      return prisma.user.findFirst({
+        where: { email, isDeleted: false },
       });
     },
     CacheTTL.MEDIUM,
   );
 };
 
-/**
- * Get users list with cache (for admin)
- */
 export const getCachedUsersList = async (filters: {
-  is_active?: boolean;
-  is_verified?: boolean;
-  is_deleted?: boolean;
+  isActive?: boolean;
+  isVerified?: boolean;
+  isDeleted?: boolean;
   page: number;
   limit: number;
 }) => {
@@ -81,42 +72,39 @@ export const getCachedUsersList = async (filters: {
       const { page, limit, ...whereFilters } = filters;
       const skip = (page - 1) * limit;
 
-      const where: any = { is_deleted: false };
-      if (whereFilters.is_active !== undefined) where.is_active = whereFilters.is_active;
-      if (whereFilters.is_verified !== undefined) where.is_verified = whereFilters.is_verified;
-      if (whereFilters.is_deleted !== undefined) where.is_deleted = whereFilters.is_deleted;
+      const where: any = { isDeleted: false };
+      if (whereFilters.isActive !== undefined) where.isActive = whereFilters.isActive;
+      if (whereFilters.isVerified !== undefined) where.isVerified = whereFilters.isVerified;
+      if (whereFilters.isDeleted !== undefined) where.isDeleted = whereFilters.isDeleted;
 
       const [users, total] = await Promise.all([
-        prisma.users.findMany({
+        prisma.user.findMany({
           where,
           skip,
           take: limit,
           select: {
-            user_id: true,
+            id: true,
             email: true,
-            first_name: true,
-            last_name: true,
+            firstName: true,
+            lastName: true,
             phone: true,
-            avatar_url: true,
-            is_active: true,
-            is_verified: true,
-            is_deleted: true,
-            created_at: true,
+            avatarUrl: true,
+            isActive: true,
+            isVerified: true,
+            isDeleted: true,
+            createdAt: true,
           },
-          orderBy: { created_at: 'desc' },
+          orderBy: { createdAt: 'desc' },
         }),
-        prisma.users.count({ where }),
+        prisma.user.count({ where }),
       ]);
 
       return { users, total };
     },
-    CacheTTL.SHORT, // Short TTL for frequently changing data
+    CacheTTL.SHORT,
   );
 };
 
-/**
- * Search users with cache
- */
 export const getCachedUsersSearch = async (searchTerm: string) => {
   const cacheKey = UserCacheKeys.usersSearch(searchTerm.toLowerCase());
 
@@ -126,69 +114,67 @@ export const getCachedUsersSearch = async (searchTerm: string) => {
       log.debug(`Searching users from DB: ${searchTerm}`);
 
       if (typeof searchTerm === 'string' && searchTerm.includes('@'))
-        return prisma.users.findMany({
+        return prisma.user.findMany({
           where: {
-            is_deleted: false,
+            isDeleted: false,
             OR: [
               { email: { contains: searchTerm, mode: 'insensitive' } },
-              { first_name: { contains: searchTerm, mode: 'insensitive' } },
-              { last_name: { contains: searchTerm, mode: 'insensitive' } },
+              { firstName: { contains: searchTerm, mode: 'insensitive' } },
+              { lastName: { contains: searchTerm, mode: 'insensitive' } },
               { phone: { contains: searchTerm } },
             ],
           },
           select: {
-            user_id: true,
+            id: true,
             email: true,
-            first_name: true,
-            last_name: true,
+            firstName: true,
+            lastName: true,
             phone: true,
-            avatar_url: true,
-            is_active: true,
-            is_verified: true,
+            avatarUrl: true,
+            isActive: true,
+            isVerified: true,
           },
           take: 20,
         });
 
-      // Si c'est un ObjectID valide
-      if (ObjectId.isValid(searchTerm as string)) {
-        return prisma.users.findFirst({
+      if (isObjectId(searchTerm as string)) {
+        return prisma.user.findFirst({
           where: {
-            user_id: searchTerm as string,
-            is_deleted: false,
+            id: searchTerm as string,
+            isDeleted: false,
           },
           select: {
-            user_id: true,
+            id: true,
             email: true,
-            first_name: true,
-            last_name: true,
-            avatar_url: true,
-            is_active: true,
-            is_verified: true,
-            created_at: true,
-            updated_at: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            isActive: true,
+            isVerified: true,
+            createdAt: true,
+            updatedAt: true,
           },
         });
       }
 
-      // Recherche par nom/prénom
-      return prisma.users.findMany({
+      return prisma.user.findMany({
         where: {
-          is_deleted: false,
+          isDeleted: false,
           OR: [
-            { first_name: { contains: searchTerm as string, mode: 'insensitive' } },
-            { last_name: { contains: searchTerm as string, mode: 'insensitive' } },
+            { firstName: { contains: searchTerm as string, mode: 'insensitive' } },
+            { lastName: { contains: searchTerm as string, mode: 'insensitive' } },
           ],
         },
         select: {
-          user_id: true,
+          id: true,
           email: true,
-          first_name: true,
-          last_name: true,
-          avatar_url: true,
-          is_active: true,
-          is_verified: true,
-          created_at: true,
-          updated_at: true,
+          firstName: true,
+          lastName: true,
+          avatarUrl: true,
+          isActive: true,
+          isVerified: true,
+          createdAt: true,
+          updatedAt: true,
         },
         take: 20,
       });
@@ -197,29 +183,21 @@ export const getCachedUsersSearch = async (searchTerm: string) => {
   );
 };
 
-/**
- * Invalidate user cache when user data changes
- */
 export const invalidateUserCache = async (userId: string, email?: string) => {
   try {
     await invalidateCache(UserCacheKeys.user(userId));
     if (email) {
       await invalidateCache(UserCacheKeys.userByEmail(email));
     }
-    // Invalidate all users lists and searches since they might contain this user
     await invalidateCachePattern(UserCacheKeys.usersListPattern);
     await invalidateCachePattern(UserCacheKeys.usersSearchPattern);
 
     log.info(`User cache invalidated for userId: ${userId}`);
   } catch (error) {
     log.error(`Failed to invalidate user cache for userId: ${userId}`, { error });
-    // Don't throw - cache invalidation failure shouldn't break the operation
   }
 };
 
-/**
- * Invalidate all user-related caches
- */
 export const invalidateAllUserCaches = async () => {
   try {
     await invalidateCachePattern(UserCacheKeys.userPattern);

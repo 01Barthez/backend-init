@@ -1,6 +1,7 @@
-import type { users } from '@prisma/client';
+import type { User } from '@prisma/client';
 
-export type IusersJwt = users & { iat?: number; exp?: number };
-export interface customRequest extends Request {
-  users?: users | IusersJwt;
+export type UserJwtPayload = User & { iat?: number; exp?: number };
+
+export interface CustomRequest extends Request {
+  user?: User | UserJwtPayload;
 }

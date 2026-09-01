@@ -34,9 +34,6 @@ export class OAuthManager {
     this.telegramService = new TelegramOAuthService();
   }
 
-  /**
-   * Initialize all OAuth providers
-   */
   private initializeProviders(): void {
     try {
       this.providers.set(OAuthProvider.GOOGLE, new GoogleOAuthService());
@@ -54,9 +51,6 @@ export class OAuthManager {
     }
   }
 
-  /**
-   * Get OAuth service for a specific provider
-   */
   getProvider(provider: OAuthProvider): IOAuthService {
     const service = this.providers.get(provider);
     if (!service) {
@@ -65,64 +59,45 @@ export class OAuthManager {
     return service;
   }
 
-  /**
-   * Generate OAuth state parameter for CSRF protection
-   */
   generateState(redirectUrl?: string): IOAuthState {
     const state: IOAuthState = {
       state: crypto.randomBytes(32).toString('hex'),
-      redirect_url: redirectUrl,
+      redirectUrl,
       timestamp: Date.now(),
     };
     return state;
   }
 
-  /**
-   * Verify OAuth state parameter
-   */
   verifyState(stateData: IOAuthState): boolean {
     const age = Date.now() - stateData.timestamp;
     return age <= OAUTH_STATE_TTL;
   }
 
-  /**
-   * Get authorization URL for a provider
-   */
   getAuthorizationUrl(provider: OAuthProvider, state: string): string {
     const service = this.getProvider(provider);
     return service.getAuthorizationUrl(state);
   }
 
-  /**
-   * Exchange authorization code for tokens
-   */
   async exchangeCodeForToken(provider: OAuthProvider, code: string): Promise<IOAuthTokenResponse> {
     const service = this.getProvider(provider);
     return service.exchangeCodeForToken(code);
   }
 
-  /**
-   * Get user profile from provider
-   */
   async getUserProfile(provider: OAuthProvider, accessToken: string): Promise<IOAuthUserProfile> {
     const service = this.getProvider(provider);
     return service.getUserProfile(accessToken);
   }
 
-  /**
-   * Find or create user from OAuth profile
-   */
   async findOrCreateUser(
     profile: IOAuthUserProfile,
     tokenData: IOAuthTokenResponse,
   ): Promise<{ user: any; isNewUser: boolean }> {
     try {
-      // Check if OAuth account already exists
-      const existingOAuthAccount = await prisma.oauth_account.findUnique({
+      const existingOAuthAccount = await prisma.oAuthAccount.findUnique({
         where: {
-          provider_provider_user_id: {
+          provider_providerUserId: {
             provider: profile.provider,
-            provider_user_id: profile.provider_user_id,
+            providerUserId: profile.providerUserId,
           },
         },
         include: {
@@ -131,7 +106,6 @@ export class OAuthManager {
       });
 
       if (existingOAuthAccount) {
-        // Update OAuth account tokens
         await this.updateOAuthAccount(existingOAuthAccount.id, tokenData);
 
         return {
@@ -140,14 +114,12 @@ export class OAuthManager {
         };
       }
 
-      // Check if user exists with this email
-      let user = await prisma.users.findUnique({
+      let user = await prisma.user.findUnique({
         where: { email: profile.email },
       });
 
       if (user) {
-        // Link OAuth account to existing user
-        await this.createOAuthAccount(user.user_id, profile, tokenData);
+        await this.createOAuthAccount(user.id, profile, tokenData);
 
         return {
           user,
@@ -155,29 +127,28 @@ export class OAuthManager {
         };
       }
 
-      // Create new user with OAuth account
-      user = await prisma.users.create({
+      user = await prisma.user.create({
         data: {
           email: profile.email,
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          avatar_url: profile.avatar_url,
-          is_verified: profile.email_verified || false,
-          is_active: true,
-          email_verified_at: profile.email_verified ? new Date() : null,
-          oauth_accounts: {
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          avatarUrl: profile.avatarUrl,
+          isVerified: profile.emailVerified || false,
+          isActive: true,
+          emailVerifiedAt: profile.emailVerified ? new Date() : null,
+          oauthAccounts: {
             create: {
               provider: profile.provider,
-              provider_user_id: profile.provider_user_id,
-              provider_email: profile.email,
-              access_token: tokenData.access_token,
-              refresh_token: tokenData.refresh_token,
-              token_type: tokenData.token_type,
-              expires_at: tokenData.expires_in
+              providerUserId: profile.providerUserId,
+              providerEmail: profile.email,
+              accessToken: tokenData.access_token,
+              refreshToken: tokenData.refresh_token,
+              tokenType: tokenData.token_type,
+              expiresAt: tokenData.expires_in
                 ? new Date(Date.now() + tokenData.expires_in * 1000)
                 : null,
               scope: tokenData.scope,
-              provider_profile_data: profile.raw_profile,
+              providerProfileData: profile.rawProfile,
             },
           },
         },
@@ -201,28 +172,25 @@ export class OAuthManager {
     }
   }
 
-  /**
-   * Create OAuth account for existing user
-   */
   private async createOAuthAccount(
     userId: string,
     profile: IOAuthUserProfile,
     tokenData: IOAuthTokenResponse,
   ): Promise<void> {
-    await prisma.oauth_account.create({
+    await prisma.oAuthAccount.create({
       data: {
-        user_id: userId,
+        userId,
         provider: profile.provider,
-        provider_user_id: profile.provider_user_id,
-        provider_email: profile.email,
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
-        token_type: tokenData.token_type,
-        expires_at: tokenData.expires_in
+        providerUserId: profile.providerUserId,
+        providerEmail: profile.email,
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token,
+        tokenType: tokenData.token_type,
+        expiresAt: tokenData.expires_in
           ? new Date(Date.now() + tokenData.expires_in * 1000)
           : null,
         scope: tokenData.scope,
-        provider_profile_data: profile.raw_profile,
+        providerProfileData: profile.rawProfile,
       },
     });
 
@@ -232,20 +200,17 @@ export class OAuthManager {
     });
   }
 
-  /**
-   * Update OAuth account tokens
-   */
   private async updateOAuthAccount(
     accountId: string,
     tokenData: IOAuthTokenResponse,
   ): Promise<void> {
-    await prisma.oauth_account.update({
+    await prisma.oAuthAccount.update({
       where: { id: accountId },
       data: {
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token || undefined,
-        token_type: tokenData.token_type,
-        expires_at: tokenData.expires_in
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token || undefined,
+        tokenType: tokenData.token_type,
+        expiresAt: tokenData.expires_in
           ? new Date(Date.now() + tokenData.expires_in * 1000)
           : null,
         scope: tokenData.scope,
@@ -253,15 +218,12 @@ export class OAuthManager {
     });
   }
 
-  /**
-   * Unlink OAuth account from user
-   */
   async unlinkOAuthAccount(userId: string, provider: OAuthProvider): Promise<void> {
     try {
-      await prisma.oauth_account.delete({
+      await prisma.oAuthAccount.delete({
         where: {
-          user_id_provider: {
-            user_id: userId,
+          userId_provider: {
+            userId,
             provider,
           },
         },
@@ -278,45 +240,39 @@ export class OAuthManager {
     }
   }
 
-  /**
-   * Get user's OAuth accounts
-   */
   async getUserOAuthAccounts(userId: string): Promise<IOAuthAccountData[]> {
-    const accounts = await prisma.oauth_account.findMany({
-      where: { user_id: userId },
+    const accounts = await prisma.oAuthAccount.findMany({
+      where: { userId },
       select: {
         id: true,
         provider: true,
-        provider_user_id: true,
-        provider_email: true,
-        created_at: true,
-        updated_at: true,
+        providerUserId: true,
+        providerEmail: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
     return accounts as any;
   }
 
-  /**
-   * Refresh OAuth access token
-   */
   async refreshAccessToken(userId: string, provider: OAuthProvider): Promise<string> {
     try {
-      const oauthAccount = await prisma.oauth_account.findUnique({
+      const oauthAccount = await prisma.oAuthAccount.findUnique({
         where: {
-          user_id_provider: {
-            user_id: userId,
+          userId_provider: {
+            userId,
             provider,
           },
         },
       });
 
-      if (!oauthAccount || !oauthAccount.refresh_token) {
+      if (!oauthAccount || !oauthAccount.refreshToken) {
         throw new Error('No refresh token available');
       }
 
       const service = this.getProvider(provider);
-      const tokenData = await service.refreshAccessToken!(oauthAccount.refresh_token);
+      const tokenData = await service.refreshAccessToken!(oauthAccount.refreshToken);
 
       await this.updateOAuthAccount(oauthAccount.id, tokenData);
 
@@ -331,13 +287,9 @@ export class OAuthManager {
     }
   }
 
-  /**
-   * Handle Telegram authentication (special case)
-   */
   getTelegramService(): TelegramOAuthService {
     return this.telegramService;
   }
 }
 
-// Export singleton instance
 export const oauthManager = new OAuthManager();

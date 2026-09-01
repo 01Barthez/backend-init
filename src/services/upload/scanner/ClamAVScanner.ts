@@ -11,12 +11,12 @@ export class ClamAVScanner implements Scanner {
   private lastError?: Error;
   private lastChecked: Date = new Date(0);
   private readonly CHECK_INTERVAL_MS = 30000; // 30 seconds
-  private readonly MAX_RETRIES = 3; // Augmenté à 3 tentatives
-  private readonly RETRY_DELAY = 2000; // Augmenté à 2 secondes
-  private readonly SCAN_TIMEOUT_MS = 300000; // Augmenté à 5 minutes
-  private readonly SCAN_CHUNK_SIZE = 128 * 1024; // Augmenté à 128KB
+  private readonly MAX_RETRIES = 3;
+  private readonly RETRY_DELAY = 2000;
+  private readonly SCAN_TIMEOUT_MS = 300000;
+  private readonly SCAN_CHUNK_SIZE = 128 * 1024;
   private readonly MAX_FILE_SIZE_MB = 100;
-  private readonly CONNECTION_TIMEOUT_MS = 60000; // 60 secondes pour la connexion initiale
+  private readonly CONNECTION_TIMEOUT_MS = 60000;
 
   constructor(opts: { host?: string; port?: number; timeoutMs?: number } = {}) {
     this.host = opts.host ?? process.env.CLAMAV_HOST ?? 'clamav';
@@ -104,7 +104,7 @@ export class ClamAVScanner implements Scanner {
     const fileSize = Buffer.isBuffer(streamOrBuffer) ? streamOrBuffer.length : 0;
     const scanId = `${filename}-${startTime}`;
 
-    // Vérifier la taille du fichier
+    // Check file size
     if (fileSize > this.MAX_FILE_SIZE_MB * 1024 * 1024) {
       throw new Error(`File size exceeds maximum allowed size of ${this.MAX_FILE_SIZE_MB}MB`);
     }
@@ -118,28 +118,28 @@ export class ClamAVScanner implements Scanner {
     });
 
     try {
-      // Vérifier la disponibilité du service
+      // Check service availability
       if (!(await this.isAvailable())) {
         throw new Error('ClamAV service is not available');
       }
 
-      // Créer un timeout pour le scan
+      // Create scan timeout
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
           reject(new Error(`Scan timed out after ${this.SCAN_TIMEOUT_MS}ms`));
         }, this.SCAN_TIMEOUT_MS);
       });
 
-      // Exécuter le scan avec timeout
+      // Run scan with timeout
       const scanPromise = (async () => {
         const clamd = this.getClamdClient();
 
-        // Convertir le buffer en stream si nécessaire
+        // Convert buffer to stream when needed
         const stream = Buffer.isBuffer(streamOrBuffer)
           ? require('stream').Readable.from(streamOrBuffer)
           : streamOrBuffer;
 
-        // Exécuter le scan avec retry
+        // Run scan with retry
         return this.withRetry(async () => {
           return new Promise<ScanResult>((resolve, reject) => {
             const chunks: Buffer[] = [];

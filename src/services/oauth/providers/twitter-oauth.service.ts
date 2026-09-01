@@ -61,14 +61,14 @@ export class TwitterOAuthService extends BaseOAuthService {
 
       return {
         provider: OAuthProvider.TWITTER,
-        provider_user_id: userData.id,
-        email: '', // Twitter doesn't provide email in v2 API by default
-        email_verified: false,
-        first_name: nameParts[0] || userData.username,
-        last_name: nameParts.slice(1).join(' ') || '',
-        full_name: userData.name,
-        avatar_url: userData.profile_image_url,
-        raw_profile: userData,
+        providerUserId: userData.id,
+        email: '',
+        emailVerified: false,
+        firstName: nameParts[0] || userData.username,
+        lastName: nameParts.slice(1).join(' ') || '',
+        fullName: userData.name,
+        avatarUrl: userData.profile_image_url,
+        rawProfile: userData,
       };
     } catch (error: any) {
       log.error('Failed to fetch Twitter user profile', {

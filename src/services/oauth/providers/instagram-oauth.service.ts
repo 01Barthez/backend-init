@@ -42,14 +42,14 @@ export class InstagramOAuthService extends BaseOAuthService {
 
       return {
         provider: OAuthProvider.INSTAGRAM,
-        provider_user_id: userData.id,
-        email: '', // Instagram Basic Display API doesn't provide email
-        email_verified: false,
-        first_name: userData.username,
-        last_name: '',
-        full_name: userData.username,
-        avatar_url: undefined,
-        raw_profile: userData,
+        providerUserId: userData.id,
+        email: '',
+        emailVerified: false,
+        firstName: userData.username,
+        lastName: '',
+        fullName: userData.username,
+        avatarUrl: undefined,
+        rawProfile: userData,
       };
     } catch (error: any) {
       log.error('Failed to fetch Instagram user profile', {

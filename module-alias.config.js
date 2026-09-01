@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-  addAliases: (aliases, name) => {
+  addAliases: (aliases) => {
     const basePath = path.join(__dirname, 'dist');
     return {
       ...aliases,
@@ -9,7 +9,7 @@ module.exports = {
       '@config': path.join(basePath, 'config'),
       '@services': path.join(basePath, 'services'),
       '@middlewares': path.join(basePath, 'middlewares'),
-      '@router': path.join(basePath, 'router'),
+      '@routes': path.join(basePath, 'routes'),
       '@utils': path.join(basePath, 'utils'),
       '@controllers': path.join(basePath, 'controllers'),
     };

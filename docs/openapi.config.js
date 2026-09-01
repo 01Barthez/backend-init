@@ -1,116 +1,231 @@
-// docs/openapi.config.js
-module.exports = {
-  definition: {
-    openapi: '3.0.3',
-    info: {
-      title: 'GTA API Documentation',
-      description: `|
-        # Documentation de l'API GTA
-        
-        API complète pour la gestion des utilisateurs et de l'authentification avec support OAuth2.0.
-        
-        ## Authentification
-        
-        Cette API utilise les méthodes d'authentification suivantes :
-        - JWT (JSON Web Tokens)
-        - OAuth2.0 avec plusieurs fournisseurs (Google, GitHub, Facebook, etc.)
-        - Authentification par email/mot de passe
-        
-        ## Sécurité
-        
-        Toutes les requêtes doivent inclure un token JWT valide dans le header 'Authorization: Bearer <token>',
-        sauf pour les endpoints marqués comme publics.
-      `,
-      version: '1.0.0',
-      contact: {
-        name: 'Équipe Support API',
-        email: 'support@gtamarket.com',
-        url: 'https://gtamarket.com/support',
-      },
-      license: {
-        name: 'Propriétaire',
-        url: 'https://gtamarket.com/terms',
+const path = require('path');
+const fs = require('fs');
+const yaml = require('yamljs');
+
+const definition = {
+  openapi: '3.0.3',
+  info: {
+    title: 'Backend Init API',
+    description: [
+      'Production-ready Express + TypeScript backend template.',
+      '',
+      'Features: JWT authentication (RS256), OAuth 2.0, email OTP verification,',
+      'user management, file uploads (MinIO), Redis caching, and scheduled jobs.',
+      '',
+      'Protected routes require: `Authorization: Bearer <access_token>`',
+    ].join('\n'),
+    version: '1.0.0',
+    contact: {
+      name: 'Barthez Kenwou',
+      email: 'kenwoubarthez@gmail.com',
+      url: 'https://github.com/barthez/backend-init',
+    },
+    license: {
+      name: 'MIT',
+      url: 'https://opensource.org/licenses/MIT',
+    },
+  },
+  servers: [
+    {
+      url: 'http://localhost:3000/api/v1',
+      description: 'Local development',
+    },
+  ],
+  tags: [
+    { name: 'Authentication', description: 'Signup, login, OTP, password management' },
+    { name: 'Users', description: 'User profile and administration' },
+    { name: 'OAuth', description: 'Social login (Google, GitHub, etc.)' },
+    { name: 'Blogs', description: 'Reference blog domain (template validation)' },
+    { name: 'System', description: 'Health checks and security endpoints' },
+  ],
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'JWT access token obtained after login',
       },
     },
-    externalDocs: {
-      description: 'Documentation complète',
-      url: 'https://docs.gtamarket.com/api',
-    },
-    servers: [
-      {
-        url: 'http://localhost:3000/api/v1',
-        description: 'Environnement de développement local',
-      },
-      {
-        url: 'https://api.staging.gtamarket.com/api/v1',
-        description: 'Environnement de staging',
-      },
-      {
-        url: 'https://api.gtamarket.com/api/v1',
-        description: 'Production',
-      },
-    ],
-    tags: [
-      {
-        name: 'Authentication',
-        description: 'User authentication and account management',
-      },
-      {
-        name: 'Users',
-        description: 'User profile management',
-      },
-      {
-        name: 'OAuth',
-        description: 'Third-party authentication (Google, GitHub, etc.)',
-      },
-      {
-        name: 'Items',
-        description: 'Items management',
-      },
-      {
-        name: 'Blogs',
-        description: 'Blog posts management',
-      },
-      {
-        name: 'System',
-        description: 'System health and configuration',
-      },
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-          description: 'JWT obtained after authentication',
+    schemas: {
+      User: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+          email: { type: 'string', format: 'email' },
+          firstName: { type: 'string' },
+          lastName: { type: 'string' },
+          phone: { type: 'string' },
+          avatarUrl: { type: 'string', nullable: true },
+          isActive: { type: 'boolean' },
+          isVerified: { type: 'boolean' },
+          role: { type: 'string', enum: ['USER', 'ADMIN'] },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
         },
-        OAuth2: {
-          type: 'oauth2',
-          description: 'OAuth2 authentication',
-          flows: {
-            authorizationCode: {
-              authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-              tokenUrl: 'https://oauth2.googleapis.com/token',
-              scopes: {
-                openid: 'OpenID authentication',
-                profile: 'Access to profile information',
-                email: 'Access to email address',
-              },
-            },
-          },
+      },
+      Blog: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          title: { type: 'string' },
+          slug: { type: 'string' },
+          excerpt: { type: 'string', nullable: true },
+          content: { type: 'string' },
+          coverImage: { type: 'string', nullable: true },
+          status: { type: 'string', enum: ['DRAFT', 'REVIEW', 'PUBLISHED', 'ARCHIVED'] },
+          visibility: { type: 'string', enum: ['PUBLIC', 'PRIVATE', 'MEMBERS_ONLY'] },
+          authorId: { type: 'string' },
+          views: { type: 'integer' },
+          likes: { type: 'integer' },
+          shares: { type: 'integer' },
+          publishedAt: { type: 'string', format: 'date-time', nullable: true },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      ApiResponse: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean' },
+          message: { type: 'string' },
+          data: { type: 'object', nullable: true },
+        },
+      },
+      ErrorResponse: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: false },
+          message: { type: 'string' },
         },
       },
     },
   },
-  apis: [
-    // Fichiers de documentation YAML/JSON
-    './docs/paths/*.yaml',
-    './docs/components/parameters/*.yaml',
-    './docs/components/responses/*.yaml',
-    './docs/components/schemas/*.yaml',
-    // Fichiers source pour l'extraction automatique
-    './src/routes/*.ts',
-    './src/controllers/**/*.ts',
-  ],
+  paths: {
+    '/auth/signup': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Register a new user',
+        requestBody: {
+          required: true,
+          content: {
+            'multipart/form-data': {
+              schema: {
+                type: 'object',
+                required: ['email', 'password', 'firstName', 'lastName', 'phone'],
+                properties: {
+                  email: { type: 'string', format: 'email' },
+                  password: { type: 'string', minLength: 8 },
+                  firstName: { type: 'string' },
+                  lastName: { type: 'string' },
+                  phone: { type: 'string' },
+                  profile: { type: 'string', format: 'binary' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '201': { description: 'User created, OTP sent' },
+          '409': { description: 'Email already exists' },
+        },
+      },
+    },
+    '/auth/verify': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Verify account with OTP',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email', 'otp'],
+                properties: {
+                  email: { type: 'string' },
+                  otp: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: { '200': { description: 'Account verified' } },
+      },
+    },
+    '/auth/login': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Login with email and password',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email', 'password'],
+                properties: {
+                  email: { type: 'string' },
+                  password: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: { '200': { description: 'Login successful' } },
+      },
+    },
+    '/auth/logout': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Logout and revoke tokens',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Logged out' } },
+      },
+    },
+    '/users': {
+      get: {
+        tags: ['Users'],
+        summary: 'List users (paginated)',
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 10 } },
+        ],
+        responses: { '200': { description: 'User list' } },
+      },
+    },
+    '/users/{userId}': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get user by ID',
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'User details' } },
+      },
+    },
+    '/auth/oauth/{provider}': {
+      get: {
+        tags: ['OAuth'],
+        summary: 'Initiate OAuth flow',
+        parameters: [
+          {
+            name: 'provider',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'string',
+              enum: ['google', 'github', 'facebook', 'instagram', 'twitter', 'linkedin'],
+            },
+          },
+        ],
+        responses: { '302': { description: 'Redirect to provider' } },
+      },
+    },
+  },
 };
 
+const outputPath = path.join(__dirname, 'openapi.yaml');
+const yamlContent = yaml.stringify(definition, 10, 2);
+fs.writeFileSync(outputPath, yamlContent, 'utf8');
+console.log(`OpenAPI spec written to ${outputPath}`);
+
+module.exports = { definition };

@@ -7,3 +7,6 @@ logs/
 
 #Ignore test folde for the moment
 tests/
+TECHNICAL_ANALYSIS.md
+ISSUES_QUICK_REFERENCE.md 
+OAUTH_README.md

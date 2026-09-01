@@ -1,6 +1,6 @@
-// =====================================================================================================
-// PRISMA CLIENT CONFIGURATION
-// =====================================================================================================
+// =============================================================================
+// Prisma Client
+// =============================================================================
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,88 +10,62 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-//* ========================================================================================================================================================================================================
+// =============================================================================
+// User
+// =============================================================================
+model User {
+  id                 String    @id @default(auto()) @map("_id") @db.ObjectId
+  email              String    @unique
+  password           String?
+  firstName          String
+  lastName           String
+  avatarUrl          String?
+  phone              String?
+  isActive           Boolean   @default(false)
+  otp                Otp?
+  isVerified         Boolean   @default(false)
+  emailVerifiedAt    DateTime?
+  lastLoginAt        DateTime?
+  lastPasswordChange DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  isDeleted          Boolean   @default(false)
+  deletedAt          DateTime?
+  role               String    @default("USER")
 
-// =====================================================================================================
-// USERS MODEL
-// =====================================================================================================
-model users {
-  user_id    String  @id @default(auto()) @map("_id") @db.ObjectId
-  email      String  @unique
-  password   String? // Optional for OAuth users
-  first_name String
-  last_name  String
-  avatar_url String?
-  phone      String?
-  is_active  Boolean @default(false)
+  oauthAccounts OAuthAccount[]
+  blogs         Blog[]
 
-  // --- Verification ---
-  otp         Otp?
-  is_verified Boolean @default(false)
-
-  // --- Activity tracking ---
-  email_verified_at    DateTime?
-  last_login_at        DateTime?
-  last_password_change DateTime?
-
-  // --- Audit fields ---
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
-  is_deleted Boolean   @default(false)
-  deleted_at DateTime?
-
-  // --- Role: USER / ADMIN ---
-  role String @default("USER")
-
-  // --- OAuth2.0 Integration ---
-  oauth_accounts oauth_account[]
-
-  // --- Relations ---
-  blogs blog[]
-
-  // --- Indexes ---
-  @@index([email, is_verified])
-  @@index([email, deleted_at])
+  @@index([email, isVerified])
+  @@index([email, deletedAt])
+  @@index([role])
+  @@index([isDeleted])
 }
 
-// =====================================================================================================
-// OAUTH ACCOUNT MODEL (OAuth2.0 Provider Accounts)
-// =====================================================================================================
-model oauth_account {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
+// =============================================================================
+// OAuth Account
+// =============================================================================
+model OAuthAccount {
+  id                  String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String        @db.ObjectId
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider            OAuthProvider
+  providerUserId      String
+  providerEmail       String?
+  accessToken         String?
+  refreshToken        String?
+  tokenType           String?
+  expiresAt           DateTime?
+  scope               String?
+  providerProfileData Json?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
-  // --- User relation ---
-  user_id String @db.ObjectId
-  user    users  @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
-
-  // --- Provider information ---
-  provider         oauth_provider // GOOGLE, GITHUB, FACEBOOK, etc.
-  provider_user_id String // User ID from the OAuth provider
-  provider_email   String? // Email from provider (may differ from user.email)
-
-  // --- OAuth tokens ---
-  access_token  String? // OAuth access token
-  refresh_token String? // OAuth refresh token
-  token_type    String? // Usually "Bearer"
-  expires_at    DateTime? // Token expiration timestamp
-  scope         String? // OAuth scopes granted
-
-  // --- Provider profile data ---
-  provider_profile_data Json? // Raw profile data from provider
-
-  // --- Audit fields ---
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  // --- Unique constraint: one account per provider per user ---
-  @@unique([provider, provider_user_id])
-  @@unique([user_id, provider])
+  @@unique([provider, providerUserId])
+  @@unique([userId, provider])
 }
 
-// =====================================================================================================
-// OAUTH PROVIDER ENUM
-// =====================================================================================================
-enum oauth_provider {
+enum OAuthProvider {
   GOOGLE
   GITHUB
   FACEBOOK
@@ -101,123 +75,64 @@ enum oauth_provider {
   TELEGRAM
 }
 
-// =====================================================================================================
-// BLACKLIST MODEL (Invalidated JWT Tokens)
-// =====================================================================================================
-model blacklist {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  token      String   @unique // JWT token to blacklist
-  created_at DateTime @default(now())
-  expire_at  DateTime // Expiration date of the token
+// =============================================================================
+// Token Blacklist
+// =============================================================================
+model Blacklist {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expireAt  DateTime
 
-  // --- Indexes ---
-  @@index([token, expire_at])
-  @@index([expire_at])
+  @@index([token, expireAt])
+  @@index([expireAt])
 }
 
-// =====================================================================================================
-// TYPE: OTP (Used for email / phone verification)
-// =====================================================================================================
+// =============================================================================
+// Embedded OTP
+// =============================================================================
 type Otp {
-  code      String
-  expire_at DateTime
+  code     String
+  expireAt DateTime
 }
 
-//* ========================================================================================================================================================================================================
-
-// =====================================================================================================
-// BLOG MODEL
-// =====================================================================================================
-model blog {
-  blog_id     String  @id @default(auto()) @map("_id") @db.ObjectId
+// =============================================================================
+// Blog (reference domain model for template validation)
+// =============================================================================
+model Blog {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
   title       String
-  slug        String  @unique
-  excerpt     String? // Short summary
-  content     String // Main content (HTML or Markdown)
-  cover_image String? // Cover image URL
+  slug        String        @unique
+  excerpt     String?
+  content     String
+  coverImage  String?
+  status      ArticleStatus @default(DRAFT)
+  visibility  Visibility    @default(PUBLIC)
+  authorId    String        @db.ObjectId
+  author      User          @relation(fields: [authorId], references: [id])
+  views       Int           @default(0)
+  likes       Int           @default(0)
+  shares      Int           @default(0)
+  publishedAt DateTime?
+  scheduledAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
 
-  // --- Publication state ---
-  status     articleStatus @default(DRAFT) // DRAFT, REVIEW, PUBLISHED, ARCHIVED
-  visibility visibility    @default(PUBLIC) // PUBLIC, PRIVATE, MEMBERS_ONLY
-
-  // --- Relations ---
-  authorId String @db.ObjectId
-  author   users  @relation(fields: [authorId], references: [user_id])
-
-  categoryId String?   @db.ObjectId
-  category   category? @relation(fields: [categoryId], references: [category_id])
-
-  tagIds String[] @db.ObjectId
-
-  // --- Analytics ---
-  views  Int @default(0)
-  likes  Int @default(0)
-  shares Int @default(0)
-
-  // --- Audit fields ---
-  published_at DateTime?
-  scheduled_at DateTime?
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
-  deleted_at   DateTime?
-
-  // --- Indexes ---
   @@index([status])
-  @@index([created_at, published_at])
+  @@index([authorId])
+  @@index([createdAt, publishedAt])
 }
 
-// =====================================================================================================
-// CATEGORY MODEL
-// =====================================================================================================
-model category {
-  category_id String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  slug        String   @unique
-  description String?
-  articles    blog[]
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-}
-
-// =====================================================================================================
-// TAG MODEL
-// =====================================================================================================
-model tag {
-  tag_id      String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  slug        String   @unique
-  description String?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-}
-
-// =====================================================================================================
-// ENUMS
-// =====================================================================================================
-enum articleStatus {
+enum ArticleStatus {
   DRAFT
   REVIEW
   PUBLISHED
   ARCHIVED
 }
 
-enum visibility {
+enum Visibility {
   PUBLIC
   PRIVATE
   MEMBERS_ONLY
 }
-
-//* ========================================================================================================================================================================================================
-
-// =====================================================================================================
-// ITEM MODEL (Generic CRUD Example)
-// =====================================================================================================
-model item {
-  item_id    String   @id @default(auto()) @map("_id") @db.ObjectId
-  name       String
-  value      Int
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-}
-
-//* ========================================================================================================================================================================================================

@@ -73,14 +73,14 @@ export class GitHubOAuthService extends BaseOAuthService {
 
       return {
         provider: OAuthProvider.GITHUB,
-        provider_user_id: userData.id.toString(),
+        providerUserId: userData.id.toString(),
         email,
-        email_verified: true,
-        first_name: nameParts[0] || userData.login,
-        last_name: nameParts.slice(1).join(' ') || '',
-        full_name: fullName,
-        avatar_url: userData.avatar_url,
-        raw_profile: userData,
+        emailVerified: true,
+        firstName: nameParts[0] || userData.login,
+        lastName: nameParts.slice(1).join(' ') || '',
+        fullName,
+        avatarUrl: userData.avatar_url,
+        rawProfile: userData,
       };
     } catch (error: any) {
       log.error('Failed to fetch GitHub user profile', {

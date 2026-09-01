@@ -11,9 +11,9 @@ export const cspConfig = {
     // Scripts
     scriptSrc: [
       "'self'",
-      "'nonce-<randomNonce>'", // Recommandé à la place de unsafe-inline
+      "'nonce-<randomNonce>'",
       // Add third-party domains if necessary
-      'https://apis.google.com', // exemple si tu utilises gapi
+      'https://apis.google.com',
     ],
 
     // Styles
