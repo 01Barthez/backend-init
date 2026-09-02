@@ -1,4 +1,4 @@
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 
 import log from '@/services/logging/logger';
 
@@ -77,14 +77,14 @@ export const response = {
 };
 
 /**
- * Safe async controller wrapper with error handling
+ * Safe async handler for controllers and middleware.
  */
 export const asyncHandler = (
-  fn: (req: Request, res: Response) => Promise<void | Response<any>>,
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<void | Response<any>>,
 ) => {
-  return async (req: Request, res: Response) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await fn(req, res);
+      await fn(req, res, next);
     } catch (error) {
       log.error('Unhandled error in controller', {
         error: error instanceof Error ? error.message : String(error),
@@ -96,8 +96,11 @@ export const asyncHandler = (
         query: req.query,
       });
 
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      if (next) {
+        return next(error);
+      }
 
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
       return response.serverError(req, res, errorMessage);
     }
   };

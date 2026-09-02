@@ -6,7 +6,7 @@
 import crypto from 'crypto';
 
 import { envs } from '@/config/env/env';
-import { type IOAuthUserProfile, OAuthProvider } from '@/core/interface/oauth.interface';
+import { type IOAuthUserProfile, OAuthProvider } from '@/core/interfaces/oauth.interface';
 import log from '@/services/logging/logger';
 
 interface TelegramAuthData {
@@ -76,7 +76,6 @@ export class TelegramOAuthService {
    * Generate Telegram login widget URL
    */
   getLoginWidgetUrl(redirectUrl: string): string {
-    const botUsername = envs.TELEGRAM_BOT_USERNAME;
     return `https://oauth.telegram.org/auth?bot_id=${this.botToken.split(':')[0]}&origin=${redirectUrl}&return_to=${redirectUrl}`;
   }
 }

@@ -1,14 +1,13 @@
 import { envs } from '@/config/env/env';
+import { STORAGE_BUCKETS } from '@/core/constants/app.constants';
 import log from '@/services/logging/logger';
-import { MinioUploader } from '@/services/upload/MinioUploader';
+import { MinioUploader } from '@/services/upload/minio-uploader';
 
-// import { ClamAVScanner } from '@/services/upload/scanner/ClamAVScanner';
-
-import { minioClient } from './minioClient';
+import { minioClient } from './minio-client';
 
 export const uploader = new MinioUploader({
   client: minioClient,
-  bucket: envs.MINIO_APP_BUCKET,
+  bucket: envs.MINIO_APP_BUCKET || STORAGE_BUCKETS.UPLOADS,
   basePath: envs.MINIO_BASE_PATH,
   defaultPolicy: {
     maxSizeBytes: 50 * 1024 * 1024,
@@ -28,11 +27,6 @@ export const uploader = new MinioUploader({
     },
   },
   maxRetries: 5,
-  // scanner: new ClamAVScanner({
-  //   host: envs.CLAMAV_HOST || 'clamav',
-  //   port: Number(envs.CLAMAV_PORT) || 3310,
-  //   timeoutMs: 60000, // Augmenté à 60 secondes
-  // }),
 });
 
 uploader.on('uploaded', (infos) => log.info('uploaded', infos));

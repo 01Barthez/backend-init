@@ -1,11 +1,11 @@
 import type { Request, Response } from 'express';
 
-import prisma from '@/config/prisma/prisma';
+import prisma from '@/config/prisma/client';
 import log from '@/services/logging/logger';
 import { asyncHandler, response } from '@/utils/responses/helpers';
 
 import { invalidateUserCache } from '../_cache/user-cache';
-import { uploadAvatar } from '../_utils/avatarUploader';
+import { uploadAvatar } from '../_utils/avatar-uploader';
 
 const updateUserInfo = asyncHandler(
   async (req: Request, res: Response): Promise<void | Response<any>> => {

@@ -5,7 +5,9 @@ export function extFromFilename(filename: string): string {
 }
 
 export function sleep(ms: number) {
-  return new Promise((res) => setTimeout(res, ms));
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 export function generateSafeFilename(originalName: string): string {
@@ -27,14 +29,17 @@ export function generateSafeFilename(originalName: string): string {
   return `${uuid}-${cleanName}.${ext}`.substring(0, 255);
 }
 
-export function generateFilePath(originalName: string): { key: string; path: string } {
+export function generateFilePath(
+  originalName: string,
+  category = 'misc',
+): { key: string; path: string } {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
 
   const safeName = generateSafeFilename(originalName);
-  const key = `${year}/${month}/${day}/${safeName}`;
+  const key = `${category}/${year}/${month}/${day}/${safeName}`;
 
   return {
     key,

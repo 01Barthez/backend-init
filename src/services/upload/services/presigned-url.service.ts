@@ -1,4 +1,4 @@
-import type { MinioProvider } from '../providers/MinioProvider';
+import type { MinioProvider } from '../providers/minio.provider';
 
 export class PresignedUrlService {
   constructor(private provider: MinioProvider) {}

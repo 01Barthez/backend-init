@@ -1,5 +1,6 @@
 import { envs } from '@/config/env/env';
 import log from '@/services/logging/logger';
+import { getMailFromAddress } from '@/services/mail/template.service';
 
 import transporter from './_config/transporter';
 import templateManager from './templates/template-manager';
@@ -27,19 +28,20 @@ async function send_mail<K extends keyof typeof templateManager>(
       throw new Error(error);
     }
 
-    // Render template
     log.debug('Rendering email template', { templateName });
-    const content = await renderTemplate(templateData);
+    const content = await renderTemplate({
+      ...templateData,
+      appName: envs.APP_NAME,
+      year: new Date().getFullYear(),
+    });
 
-    // Mail options
     const mailOptions = {
-      from: `Backend Init <${envs.USER_EMAIL}>`,
+      from: getMailFromAddress(),
       to: receiver,
       subject: subjet,
       html: content,
     };
 
-    // Send email
     log.debug('Sending email via SMTP', {
       from: mailOptions.from,
       to: mailOptions.to,

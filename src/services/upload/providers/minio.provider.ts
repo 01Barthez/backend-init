@@ -1,7 +1,7 @@
 import type { BucketItem, Client as MinioClient } from 'minio';
 
-import { UploadError } from '../core/Errors';
-import type { Logger } from '../core/Logger';
+import { UploadError } from '../core/errors';
+import type { Logger } from '../core/logger';
 
 export class MinioProvider {
   constructor(

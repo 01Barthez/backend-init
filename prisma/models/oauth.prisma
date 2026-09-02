@@ -1,0 +1,31 @@
+// OAuth domain models
+
+enum OAuthProvider {
+  GOOGLE
+  GITHUB
+  FACEBOOK
+  INSTAGRAM
+  TWITTER
+  LINKEDIN
+  TELEGRAM
+}
+
+model OAuthAccount {
+  id                  String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String        @db.ObjectId
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider            OAuthProvider
+  providerUserId      String
+  providerEmail       String?
+  accessToken         String?
+  refreshToken        String?
+  tokenType           String?
+  expiresAt           DateTime?
+  scope               String?
+  providerProfileData Json?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@unique([provider, providerUserId])
+  @@unique([userId, provider])
+}

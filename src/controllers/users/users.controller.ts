@@ -2,6 +2,7 @@ import changePassword from './auth/change-password';
 import forgotPassword from './auth/forgot-password';
 import login from './auth/login';
 import logout from './auth/logout';
+import refreshToken from './auth/refresh-token';
 import resendOtp from './auth/resend-otp';
 import resetPassword from './auth/reset-password';
 import signup from './auth/signup';
@@ -25,6 +26,7 @@ import updateUserRole from './users/update-user-role';
 const usersController = {
   login,
   logout,
+  refreshToken,
   verifyOtp,
   resendOtp,
   signup,

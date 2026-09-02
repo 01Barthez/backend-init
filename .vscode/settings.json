@@ -1,3 +1,4 @@
 {
-    "snyk.advanced.autoSelectOrganization": true
+  "prisma.pinToPrisma6": true,
+  "prisma.showPrismaDataPlatformAlert": false
 }

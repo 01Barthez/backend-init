@@ -1,7 +1,9 @@
 export type FileMeta = {
   filename: string;
   contentType?: string;
-  size?: number; // bytes (if known)
+  size?: number;
+  /** Object key prefix inside the bucket, e.g. users/avatars */
+  category?: string;
 };
 
 export type ValidationPolicy = {

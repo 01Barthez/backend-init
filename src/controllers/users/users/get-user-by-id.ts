@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 
-import prisma from '@/config/prisma/prisma';
+import prisma from '@/config/prisma/client';
 import { asyncHandler, response } from '@/utils/responses/helpers';
 
 const getUserById = asyncHandler(

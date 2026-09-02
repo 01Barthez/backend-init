@@ -1,6 +1,6 @@
 import { body } from 'express-validator';
 
-import { validate } from '@/core/constant/validator.constant';
+import { validate } from '@/core/constants/validator.constants';
 
 export const nameValidation = (field: string) => {
   return body(field)

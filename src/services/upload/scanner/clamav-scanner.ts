@@ -1,7 +1,6 @@
 import log from '@services/logging/logger';
-import { Readable } from 'stream';
 
-import type { ScanResult, Scanner } from './Scanner';
+import type { ScanResult, Scanner } from './scanner';
 
 export class ClamAVScanner implements Scanner {
   private readonly host: string;
@@ -52,7 +51,10 @@ export class ClamAVScanner implements Scanner {
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         if (attempt < this.MAX_RETRIES) {
-          await new Promise((resolve) => setTimeout(resolve, this.RETRY_DELAY * attempt));
+          // eslint-disable-next-line no-await-in-loop -- intentional backoff between retries
+          await new Promise<void>((resolve) => {
+            setTimeout(resolve, this.RETRY_DELAY * attempt);
+          });
         }
       }
     }
@@ -124,7 +126,7 @@ export class ClamAVScanner implements Scanner {
       }
 
       // Create scan timeout
-      const timeoutPromise = new Promise<never>((_, reject) => {
+      const timeoutPromise = new Promise<never>((_resolve, reject) => {
         setTimeout(() => {
           reject(new Error(`Scan timed out after ${this.SCAN_TIMEOUT_MS}ms`));
         }, this.SCAN_TIMEOUT_MS);
@@ -132,8 +134,6 @@ export class ClamAVScanner implements Scanner {
 
       // Run scan with timeout
       const scanPromise = (async () => {
-        const clamd = this.getClamdClient();
-
         // Convert buffer to stream when needed
         const stream = Buffer.isBuffer(streamOrBuffer)
           ? require('stream').Readable.from(streamOrBuffer)

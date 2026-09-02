@@ -1,8 +1,8 @@
 import type { BucketItem } from 'minio';
 import type { Readable } from 'stream';
 
-import type { UploadResult } from './UploadResult';
-import type { FileMeta } from './ValidationPolicy';
+import type { UploadResult } from './upload-result';
+import type { FileMeta } from './validation-policy';
 
 export interface Uploader {
   uploadBuffer(buffer: Buffer, meta: FileMeta, opts?: UploadOptions): Promise<UploadResult>;

@@ -1,8 +1,8 @@
 import { lookup as mimeLookup } from 'mime-types';
 
-import { ValidationError } from '../core/Errors';
-import { extFromFilename } from '../core/Utils';
-import type { FileMeta, ValidationPolicy } from '../core/ValidationPolicy';
+import { ValidationError } from '../core/errors';
+import { extFromFilename } from '../core/utils';
+import type { FileMeta, ValidationPolicy } from '../core/validation-policy';
 
 export class Validator {
   constructor(

@@ -1,16 +1,16 @@
 import type { Request, Response } from 'express';
 
-import prisma from '@/config/prisma/prisma';
-import userToken from '@/services/jwt/jwt.service';
+import prisma from '@/config/prisma/client';
+import jwtService from '@/services/auth/jwt.service';
 import log from '@/services/logging/logger';
-import { hash_password } from '@/utils/password/hashPassword';
+import { hash_password } from '@/utils/password/hash-password';
 import { asyncHandler, response, validateRequiredFields } from '@/utils/responses/helpers';
 
 import { invalidateUserCache } from '../_cache/user-cache';
 
 const resetPassword = asyncHandler(
   async (req: Request, res: Response): Promise<void | Response<any>> => {
-    const { resetToken } = req.params;
+    const resetToken = req.params.resetToken || (req.query.token as string);
     const { new_password } = req.body;
 
     const validation = validateRequiredFields({ resetToken, new_password }, [
@@ -26,7 +26,7 @@ const resetPassword = asyncHandler(
     }
 
     try {
-      const decoded = userToken.verifyPasswordResetToken(resetToken);
+      const decoded = jwtService.verifyPasswordResetToken(resetToken);
       const userId = decoded.userId;
 
       const user = await prisma.user.findFirst({

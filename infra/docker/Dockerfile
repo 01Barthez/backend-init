@@ -1,79 +1,64 @@
-# Étape 1: Build
-FROM node:24-bookworm AS builder
+# =============================================================================
+# Stage 0: MongoDB tools (mongodump not in default Debian repos)
+# =============================================================================
+FROM mongo:6.0-jammy AS mongo-tools
 
-WORKDIR /usr/src/app
+# =============================================================================
+# Stage 1: Dependencies
+# =============================================================================
+FROM node:22-bookworm-slim AS deps
 
-COPY .env.example ./
-COPY .env ./
+WORKDIR /app
 
-# Install dependencies
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
-RUN npm install -g bun
 
-# Copy source code
-COPY tsconfig.json ./
+# =============================================================================
+# Stage 2: Build
+# =============================================================================
+FROM node:22-bookworm-slim AS builder
+
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json package-lock.json tsconfig.json ./
 COPY prisma ./prisma/
 COPY src ./src/
-COPY docs/openapi.config.js ./docs/
-
-# Set up module aliases
-RUN mkdir -p node_modules
-RUN echo "{\"dependencies\":{\"@config\":\"file:./src/config\",\"@services\":\"file:./src/services\",\"@middlewares\":\"file:./src/middlewares\",\"@router\":\"file:./src/router\",\"@utils\":\"file:./src/utils\"}}" > node_modules/package.json
-
-# Generate OpenAPI and Prisma client
-RUN npm run generate:openapi && npm run prisma:generate
-
-# Build TypeScript
-RUN npm run build
-
-# Étape 2: Production
-FROM node:24-bookworm AS production
-
-WORKDIR /usr/src/app
-
-# Install MongoDB tools (mongodump)
-RUN apt-get update && apt-get install -y wget gnupg && \
-    wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/mongodb-6.0.gpg && \
-    echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/6.0 main" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list && \
-    apt-get update && apt-get install -y mongodb-database-tools && \
-    rm -rf /var/lib/apt/lists/*
-
-
-ENV NODE_ENV=production
-
-# Copy environment files
-COPY --from=builder /usr/src/app/.env.example ./
-COPY --from=builder /usr/src/app/.env ./
-
-# Copy docs directory
-COPY --from=builder /usr/src/app/docs ./docs
-
-# Copy and set permissions for MongoDB startup script
-COPY scripts/start-mongo.sh /usr/local/bin/start-mongo.sh
-RUN chmod +x /usr/local/bin/start-mongo.sh
-
-# Set up module aliases in node_modules
+COPY docs ./docs/
 COPY module-alias.config.js ./
 
-# Set up open ai doc
-COPY docs/openapi.yaml /usr/src/app/docs/
+RUN npm run prisma:generate && npm run build
 
-# Install production dependencies only
+# =============================================================================
+# Stage 3: Production runtime
+# =============================================================================
+FROM node:22-bookworm-slim AS production
+
+COPY --from=mongo-tools /usr/bin/mongodump /usr/bin/mongodump
+
+ENV NODE_ENV=production
+WORKDIR /app
+
+RUN groupadd -r nodejs && useradd -r -g nodejs nodejs
+
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --ignore-scripts
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY module-alias.config.js ./
+COPY docs/openapi.yaml ./docs/
 
-# Copy build output and prisma schema
-COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/prisma ./prisma
-COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
+# JWT keys must be mounted at runtime via secrets volume — NOT baked into the image
+RUN mkdir -p /app/keys && chown -R nodejs:nodejs /app
 
-# Copy JWT keys from source
-COPY --from=builder /usr/src/app/src/config/keys ./src/config/keys
+USER nodejs
 
-# Expose port
 EXPOSE 3000
 
-# Start the application
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
 CMD ["node", "-r", "module-alias/register", "-r", "./module-alias.config.js", "dist/index.js"]

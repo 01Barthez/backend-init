@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 
-import prisma from '@/config/prisma/prisma';
+import prisma from '@/config/prisma/client';
 import log from '@/services/logging/logger';
 import { asyncHandler } from '@/utils/responses/helpers';
 

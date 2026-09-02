@@ -1,17 +1,17 @@
 import EventEmitter from 'events';
 
 import log from '../logging/logger';
-import { UploadError, ValidationError } from './core/Errors';
-import { defaultLogger } from './core/Logger';
-import type { Logger } from './core/Logger';
-import type { UploadResult } from './core/UploadResult';
-import { generateFilePath, sleep } from './core/Utils';
-import type { FileMeta, ValidationPolicy } from './core/ValidationPolicy';
-import { MinioProvider } from './providers/MinioProvider';
-import type { Scanner } from './scanner/Scanner';
-import { MultipartService } from './services/MultipartService';
-import { PresignedUrlService } from './services/PresignedUrlService';
-import { Validator } from './validation/Validator';
+import { UploadError, ValidationError } from './core/errors';
+import { defaultLogger } from './core/logger';
+import type { Logger } from './core/logger';
+import type { UploadResult } from './core/upload-result';
+import { generateFilePath, sleep } from './core/utils';
+import type { FileMeta, ValidationPolicy } from './core/validation-policy';
+import { MinioProvider } from './providers/minio.provider';
+import type { Scanner } from './scanner/scanner';
+import { MultipartService } from './services/multipart.service';
+import { PresignedUrlService } from './services/presigned-url.service';
+import { Validator } from './validation/validator';
 
 export class MinioUploader extends EventEmitter {
   private validator: Validator;
@@ -83,8 +83,8 @@ export class MinioUploader extends EventEmitter {
         log.debug('Virus scan completed', { uploadId, duration: scanResult.scanDuration });
       }
 
-      // Generate file path
-      const { key, path } = generateFilePath(meta.filename);
+      // Generate structured object key: category/YYYY/MM/DD/uuid-name.ext
+      const { key, path } = generateFilePath(meta.filename, meta.category ?? 'misc');
 
       // Upload to MinIO
       await this.retry(async () => {
@@ -159,6 +159,7 @@ export class MinioUploader extends EventEmitter {
 
         const delay = 200 * attempt;
         log.debug(`Waiting ${delay}ms before retry...`);
+        // eslint-disable-next-line no-await-in-loop -- intentional backoff between retries
         await sleep(delay);
       }
     }

@@ -1,7 +1,7 @@
 import rateLimit from 'express-rate-limit';
 
 import { envs } from '@/config/env/env';
-import { LIMIT_REQUEST } from '@/core/mock/global';
+import { LIMIT_REQUEST } from '@/core/constants/rate-limit.constants';
 import log from '@/services/logging/logger';
 
 export const cspConfig = {

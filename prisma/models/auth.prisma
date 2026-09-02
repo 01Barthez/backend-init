@@ -1,0 +1,51 @@
+// Authentication token models
+
+enum TokenFamily {
+  ACCESS
+  REFRESH
+  PASSWORD_RESET
+  EMAIL_VERIFY
+}
+
+enum RevokeReason {
+  LOGOUT
+  PASSWORD_CHANGE
+  ADMIN_REVOKE
+  TOKEN_ROTATION
+  REUSE_DETECTED
+  SECURITY_EVENT
+}
+
+model BlacklistEntry {
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  jti       String       @unique
+  tokenHash String
+  family    TokenFamily
+  userId    String?      @db.ObjectId
+  reason    RevokeReason @default(LOGOUT)
+  expireAt  DateTime
+  revokedAt DateTime     @default(now())
+
+  @@index([tokenHash])
+  @@index([userId, family])
+  @@index([expireAt])
+}
+
+model RefreshToken {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String   @db.ObjectId
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jti          String   @unique
+  tokenHash    String   @unique
+  familyId     String
+  isRevoked    Boolean  @default(false)
+  replacedBy   String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  lastUsedAt   DateTime?
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@index([isRevoked])
+}

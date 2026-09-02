@@ -3,8 +3,8 @@
  * Handles GitHub OAuth2.0 authentication
  */
 import { envs } from '@/config/env/env';
-import { OAUTH_SCOPES, OAUTH_URLS } from '@/core/constant/oauth.constant';
-import { type IOAuthUserProfile, OAuthProvider } from '@/core/interface/oauth.interface';
+import { OAUTH_SCOPES, OAUTH_URLS } from '@/core/constants/oauth.constants';
+import { type IOAuthUserProfile, OAuthProvider } from '@/core/interfaces/oauth.interface';
 import log from '@/services/logging/logger';
 
 import { BaseOAuthService } from '../base-oauth.service';
@@ -64,7 +64,9 @@ export class GitHubOAuthService extends BaseOAuthService {
           },
         );
 
-        const primaryEmail = emailsResponse.data.find((e) => e.primary && e.verified);
+        const primaryEmail = emailsResponse.data.find(
+          (e: { primary: boolean; verified: boolean; email?: string }) => e.primary && e.verified,
+        );
         email = primaryEmail?.email || emailsResponse.data[0]?.email || '';
       }
 

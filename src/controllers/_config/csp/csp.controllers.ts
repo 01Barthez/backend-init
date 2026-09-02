@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 
-import securityLogger from '@/services/logging/securityLogger';
+import securityLogger from '@/services/logging/security-logger';
 import { response } from '@/utils/responses/helpers';
 
 const CSPControllers = {

@@ -3,8 +3,8 @@
  * Handles Instagram Basic Display API OAuth2.0 authentication
  */
 import { envs } from '@/config/env/env';
-import { OAUTH_SCOPES, OAUTH_URLS } from '@/core/constant/oauth.constant';
-import { type IOAuthUserProfile, OAuthProvider } from '@/core/interface/oauth.interface';
+import { OAUTH_SCOPES, OAUTH_URLS } from '@/core/constants/oauth.constants';
+import { type IOAuthUserProfile, OAuthProvider } from '@/core/interfaces/oauth.interface';
 import log from '@/services/logging/logger';
 
 import { BaseOAuthService } from '../base-oauth.service';

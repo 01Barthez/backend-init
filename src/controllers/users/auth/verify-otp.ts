@@ -1,12 +1,12 @@
 import type { Request, Response } from 'express';
 
-import prisma from '@/config/prisma/prisma';
-import { MAIL } from '@/core/constant/global';
-import send_mail from '@/services/mail/send-mail.service';
+import prisma from '@/config/prisma/client';
+import { MAIL } from '@/core/constants/mail.constants';
 import log from '@/services/logging/logger';
+import { queueMail } from '@/services/mail/mail.service';
 import { asyncHandler, response, validateRequiredFields } from '@/utils/responses/helpers';
 
-import { getCachedUserByEmail, invalidateUserCache } from '../_cache/user-cache';
+import { invalidateUserCache } from '../_cache/user-cache';
 
 const verifyOtp = asyncHandler(
   async (req: Request, res: Response): Promise<void | Response<any>> => {
@@ -21,7 +21,17 @@ const verifyOtp = asyncHandler(
       );
     }
 
-    const user = await getCachedUserByEmail(email);
+    const user = await prisma.user.findFirst({
+      where: { email, isDeleted: false },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        isVerified: true,
+        otp: true,
+      },
+    });
 
     if (!user) {
       return response.notFound(req, res, 'User not found');
@@ -49,8 +59,11 @@ const verifyOtp = asyncHandler(
 
     const userFullName = `${user.lastName} ${user.firstName}`;
 
-    send_mail(email, MAIL.WELCOME_SUBJECT, 'welcome', {
-      name: userFullName,
+    queueMail({
+      to: email,
+      subject: MAIL.WELCOME_SUBJECT,
+      template: 'welcome',
+      data: { name: userFullName },
     }).catch((error) => {
       log.warn('Failed to send welcome email', { email, error: error.message });
     });

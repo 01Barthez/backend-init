@@ -1,18 +1,19 @@
 import type { Request, Response } from 'express';
 
-import prisma from '@/config/prisma/prisma';
-import { MAIL } from '@/core/constant/global';
-import send_mail from '@/services/mail/send-mail.service';
+import prisma from '@/config/prisma/client';
+import { MAIL } from '@/core/constants/mail.constants';
+import rbacService from '@/services/auth/rbac.service';
 import log from '@/services/logging/logger';
-import { getOtpExpirationDate } from '@/utils/otp/otp-expiration';
+import { queueMail } from '@/services/mail/mail.service';
 import generateOtp from '@/utils/otp/generate-otp';
-import { hash_password } from '@/utils/password/hashPassword';
+import { getOtpExpirationDate } from '@/utils/otp/otp-expiration';
+import { hash_password } from '@/utils/password/hash-password';
 import { asyncHandler, response, validateRequiredFields } from '@/utils/responses/helpers';
 
-import { uploadAvatar } from '../_utils/avatarUploader';
+import { uploadAvatar } from '../_utils/avatar-uploader';
 
 const signup = asyncHandler(async (req: Request, res: Response): Promise<void | Response<any>> => {
-  const { email, password, firstName, lastName, phone, role } = req.body;
+  const { email, password, firstName, lastName, phone } = req.body;
 
   const validation = validateRequiredFields(req.body, [
     'email',
@@ -52,33 +53,30 @@ const signup = asyncHandler(async (req: Request, res: Response): Promise<void | 
       lastName,
       phone,
       avatarUrl: profileUrl,
-      role,
       otp: {
         code: userOtp || '000000',
         expireAt: otpExpireDate,
       },
     },
   });
+
   if (!newUser) return response.badRequest(req, res, 'failed to create user');
 
-  const userFullName = `${lastName} ${firstName}`;
-  let emailSent = false;
+  await rbacService.assignDefaultRole(newUser.id);
 
-  send_mail(email, MAIL.OTP_SUBJECT, 'otp', {
-    date: now,
-    name: userFullName,
-    otp: userOtp,
-  })
-    .then(() => {
-      emailSent = true;
-      log.info('OTP email sent successfully', { email });
-    })
-    .catch((mailError: any) => {
-      log.warn('Failed to send OTP email, but user was created successfully', {
-        email,
-        error: mailError.message,
-      });
+  const userFullName = `${lastName} ${firstName}`;
+
+  queueMail({
+    to: email,
+    subject: MAIL.OTP_SUBJECT,
+    template: 'otp',
+    data: { date: now, name: userFullName, otp: userOtp },
+  }).catch((mailError: any) => {
+    log.warn('Failed to queue OTP email, but user was created successfully', {
+      email,
+      error: mailError.message,
     });
+  });
 
   log.info('User created successfully', { email });
 
@@ -91,10 +89,7 @@ const signup = asyncHandler(async (req: Request, res: Response): Promise<void | 
       lastName,
       phone,
       profileUrl,
-      otp: {
-        otpExpireDate,
-      },
-      emailSent,
+      otp: { otpExpireDate },
     },
     'User created successfully',
   );

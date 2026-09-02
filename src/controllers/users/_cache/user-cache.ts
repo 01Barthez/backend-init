@@ -1,10 +1,6 @@
-import prisma from '@/config/prisma/prisma';
-import { CacheTTL } from '@/services/caching/Interface/caching.types';
-import {
-  cacheData,
-  invalidateCache,
-  invalidateCachePattern,
-} from '@/services/caching/cache-functions';
+import prisma from '@/config/prisma/client';
+import { cacheData, invalidateCache, invalidateCachePattern } from '@/services/cache/cache.service';
+import { CacheTTL } from '@/services/cache/interfaces/cache.types';
 import log from '@/services/logging/logger';
 
 import { UserCacheKeys } from './utils/utils';
@@ -48,6 +44,19 @@ export const getCachedUserByEmail = async (email: string) => {
       log.debug(`Fetching user from DB by email: ${email}`);
       return prisma.user.findFirst({
         where: { email, isDeleted: false },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          avatarUrl: true,
+          isActive: true,
+          isVerified: true,
+          emailVerifiedAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
       });
     },
     CacheTTL.MEDIUM,

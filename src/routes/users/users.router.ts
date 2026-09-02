@@ -1,18 +1,23 @@
 import { Router } from 'express';
 
 import usersController from '@/controllers/users/users.controller';
-import { isActive, isAdmin, isAuthenticated, isVerified } from '@/middlewares/auth';
+import {
+  authenticate,
+  requireActive,
+  requirePermission,
+  requireVerified,
+} from '@/middlewares/authenticate.middleware';
 import { upload } from '@/middlewares/upload';
-import { validationErrorHandler } from '@/middlewares/validationErrorHandler';
+import { validationErrorHandler } from '@/middlewares/validation-error-handler.middleware';
 import { validate_user } from '@/services/validator/validate/users';
 
 const users = Router();
 
 users.put(
   '/profile',
-  isAuthenticated,
-  isVerified,
-  isActive,
+  authenticate,
+  requireVerified,
+  requireActive,
   upload.single('profile'),
   validate_user.updateUserInfo,
   validationErrorHandler,
@@ -21,6 +26,8 @@ users.put(
 
 users.get(
   '/search',
+  authenticate,
+  requirePermission('user:read:any'),
   validate_user.searchUser,
   validationErrorHandler,
   usersController.searchUsers,
@@ -28,15 +35,19 @@ users.get(
 
 users.get(
   '/',
+  authenticate,
+  requirePermission('user:read:any'),
   validate_user.listUsers,
   validationErrorHandler,
   usersController.listUsers,
 );
 
-users.get('/export', usersController.exportUsers);
+users.get('/export', authenticate, requirePermission('user:export'), usersController.exportUsers);
 
 users.get(
   '/:userId',
+  authenticate,
+  requirePermission('user:read:any'),
   validate_user.getUserById,
   validationErrorHandler,
   usersController.getUserById,
@@ -44,6 +55,8 @@ users.get(
 
 users.put(
   '/:userId/role',
+  authenticate,
+  requirePermission('user:role:assign'),
   validate_user.updateUserRole,
   validationErrorHandler,
   usersController.updateUserRole,
@@ -51,6 +64,8 @@ users.put(
 
 users.delete(
   '/:userId',
+  authenticate,
+  requirePermission('user:delete:any'),
   validate_user.deleteUser,
   validationErrorHandler,
   usersController.deleteUser,
@@ -58,6 +73,8 @@ users.delete(
 
 users.delete(
   '/:userId/permanent',
+  authenticate,
+  requirePermission('user:delete:any'),
   validate_user.deleteUser,
   validationErrorHandler,
   usersController.deleteUserPermanently,
@@ -65,13 +82,18 @@ users.delete(
 
 users.post(
   '/:userId/restore',
-  isAuthenticated,
-  isAdmin,
+  authenticate,
+  requirePermission('user:update:any'),
   validate_user.deleteUser,
   validationErrorHandler,
   usersController.restoreUser,
 );
 
-users.delete('/clear-all', usersController.clearAllUsers);
+users.delete(
+  '/clear-all',
+  authenticate,
+  requirePermission('user:delete:any'),
+  usersController.clearAllUsers,
+);
 
 export default users;

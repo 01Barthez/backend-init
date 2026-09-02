@@ -1,7 +1,7 @@
 import dotenvSafe from 'dotenv-safe';
 import env from 'env-var';
 
-dotenvSafe.config();
+dotenvSafe.config({ allowEmptyValues: true });
 
 export const envs = {
   PORT: env.get('PORT').required().asPortNumber(),
@@ -41,9 +41,26 @@ export const envs = {
   MINIO_PORT: env.get('MINIO_PORT').required().asPortNumber(),
   MINIO_USE_SSL: env.get('MINIO_USE_SSL').default('false').asBool(),
   MINIO_ENDPOINT: env.get('MINIO_ENDPOINT').default('localhost').asString(),
-  MINIO_APP_BUCKET: env.get('MINIO_APP_BUCKET').default('my-app-uploads').asString(),
+  MINIO_APP_BUCKET: env.get('MINIO_APP_BUCKET').default('app-uploads').asString(),
   MINIO_BASE_PATH: env.get('MINIO_BASE_PATH').default('uploads/').asString(),
+  MINIO_PUBLIC_URL: env.get('MINIO_PUBLIC_URL').default('').asString(),
   BACKUP_RETENTION_DAYS: env.get('BACKUP_RETENTION_DAYS').default('30').asString(),
+  BACKUP_ENCRYPTION_KEY: env.get('BACKUP_ENCRYPTION_KEY').default('').asString(),
+  MAIL_FROM_NAME: env.get('MAIL_FROM_NAME').default('').asString(),
+  BACKUP_CRON: env.get('BACKUP_CRON').default('0 0 * * *').asString(),
+  MAINTENANCE_CRON: env.get('MAINTENANCE_CRON').default('0 0 * * *').asString(),
+  BLACKLIST_PURGE_CRON: env.get('BLACKLIST_PURGE_CRON').default('0 */6 * * *').asString(),
+
+  // Storage
+  STORAGE_PROVIDER: env.get('STORAGE_PROVIDER').default('minio').asString(),
+  S3_REGION: env.get('S3_REGION').default('us-east-1').asString(),
+  S3_ACCESS_KEY: env.get('S3_ACCESS_KEY').default('').asString(),
+  S3_SECRET_KEY: env.get('S3_SECRET_KEY').default('').asString(),
+  S3_BUCKET: env.get('S3_BUCKET').default('').asString(),
+  S3_ENDPOINT: env.get('S3_ENDPOINT').default('').asString(),
+  S3_PORT: env.get('S3_PORT').default('443').asPortNumber(),
+  S3_USE_SSL: env.get('S3_USE_SSL').default('true').asBool(),
+  S3_PUBLIC_URL: env.get('S3_PUBLIC_URL').default('').asString(),
 
   // ============================================
 
@@ -51,7 +68,7 @@ export const envs = {
   REDIS_HOST: env.get('REDIS_HOST').required().asString(),
   REDIS_PORT: env.get('REDIS_PORT').required().asPortNumber(),
   REDIS_USERNAME: env.get('REDIS_USERNAME').default('redis_username').asString(),
-  REDIS_PASSWORD: env.get('REDIS_PASSWORD').default('redis_password').asString(),
+  REDIS_PASSWORD: env.get('REDIS_PASSWORD').default('').asString(),
 
   // ============================================
 
@@ -112,6 +129,7 @@ export const envs = {
     .get('JWT_REFRESH_PUBLIC_KEY_PATH')
     .default('src/config/keys/refreshPublic.key')
     .asString(),
+  REFRESH_TOKEN_COOKIE: env.get('REFRESH_TOKEN_COOKIE').default('refresh_token').asString(),
 
   // ============================================
 
@@ -236,6 +254,21 @@ export const envs = {
   // Telegram OAuth (Bot-based)
   TELEGRAM_BOT_TOKEN: env.get('TELEGRAM_BOT_TOKEN').default('').asString(),
   TELEGRAM_BOT_USERNAME: env.get('TELEGRAM_BOT_USERNAME').default('').asString(),
+
+  // Feature flags (Flagsmith)
+  FLAGSMITH_API_KEY: env.get('FLAGSMITH_API_KEY').default('').asString(),
+  FLAGSMITH_API_URL: env.get('FLAGSMITH_API_URL').default('').asString(),
+  FLAGSMITH_DEFAULTS: {
+    enable_oauth: false,
+    enable_backup: true,
+    enable_maintenance_jobs: true,
+  } as Record<string, boolean>,
+
+  // Secrets management (Infisical)
+  INFISICAL_CLIENT_ID: env.get('INFISICAL_CLIENT_ID').default('').asString(),
+  INFISICAL_CLIENT_SECRET: env.get('INFISICAL_CLIENT_SECRET').default('').asString(),
+  INFISICAL_PROJECT_ID: env.get('INFISICAL_PROJECT_ID').default('').asString(),
+  INFISICAL_ENVIRONMENT: env.get('INFISICAL_ENVIRONMENT').default('dev').asString(),
 
   // ============================================
 };

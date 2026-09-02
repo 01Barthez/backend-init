@@ -63,7 +63,7 @@ src/
 
 ```bash
 cp .env.example .env
-docker compose up -d
+cd infra/docker && docker compose up -d && cd ../..
 npm install
 npm run prisma:push
 npm run dev
@@ -99,6 +99,25 @@ npm run dev
 | `npm run generate:openapi` | Regenerate `docs/openapi.yaml` |
 | `npm run prisma:generate` | Generate Prisma client |
 | `npm run prisma:push` | Push schema to MongoDB |
+| `npm run prisma:seed` | Seed RBAC roles and permissions |
+
+## Infrastructure
+
+Docker and ops files live under `infra/`:
+
+```
+infra/
+├── docker/           # Dockerfile, docker-compose.yml, docker-compose.monitoring.yml
+├── nginx/            # Reverse proxy config
+├── monitoring/       # Prometheus, Grafana, Loki, Alertmanager
+└── scripts/          # start/stop/status shell scripts
+```
+
+Start the full stack:
+
+```bash
+./infra/scripts/full_start.sh
+```
 
 ## API Overview
 
@@ -112,6 +131,7 @@ Base URL: `/api/v1`
 | POST | `/auth/verify` | Verify OTP |
 | POST | `/auth/resend-otp` | Resend OTP |
 | POST | `/auth/login` | Login (JWT + refresh cookie) |
+| POST | `/auth/refresh` | Rotate refresh token |
 | POST | `/auth/logout` | Logout |
 | POST | `/auth/forgot-password` | Request password reset |
 | POST | `/auth/reset-password/:token` | Reset password |

@@ -1,11 +1,11 @@
 import type { Request, Response } from 'express';
 
 import { envs } from '@/config/env/env';
-import prisma from '@/config/prisma/prisma';
-import { MAIL } from '@/core/constant/global';
-import send_mail from '@/services/mail/send-mail.service';
-import userToken from '@/services/jwt/jwt.service';
+import prisma from '@/config/prisma/client';
+import { MAIL } from '@/core/constants/mail.constants';
+import jwtService from '@/services/auth/jwt.service';
 import log from '@/services/logging/logger';
+import { queueMail } from '@/services/mail/mail.service';
 import { asyncHandler, response } from '@/utils/responses/helpers';
 
 const forgotPassword = asyncHandler(
@@ -29,30 +29,25 @@ const forgotPassword = asyncHandler(
       );
     }
 
-    const resetToken = userToken.generatePasswordResetToken(user.id);
+    const resetToken = jwtService.generatePasswordResetToken(user.id);
     const resetLink = `${envs.CLIENT_URL}/reset-password?token=${resetToken}`;
 
     const userFullName = `${user.lastName} ${user.firstName}`;
-    let emailSent = false;
 
     try {
-      await send_mail(email, MAIL.RESET_PWD_SUBJECT, 'resetPassword', {
-        name: userFullName,
-        resetLink,
+      await queueMail({
+        to: email,
+        subject: MAIL.RESET_PWD_SUBJECT,
+        template: 'reset-password',
+        data: { name: userFullName, resetLink },
       });
-      emailSent = true;
-      log.info('Password reset email sent successfully', { email });
+      log.info('Password reset email queued', { email });
     } catch (mailError: any) {
-      log.error('Failed to send password reset email', { email, error: mailError.message });
+      log.error('Failed to queue password reset email', { email, error: mailError.message });
       return response.unprocessable(req, res, 'Failed to send password reset email');
     }
 
-    return response.ok(
-      req,
-      res,
-      { emailSent },
-      'Password reset link sent to your email',
-    );
+    return response.ok(req, res, { emailSent: true }, 'Password reset link sent to your email');
   },
 );
 

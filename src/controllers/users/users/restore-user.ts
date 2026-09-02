@@ -1,6 +1,9 @@
 import type { Request, Response } from 'express';
 
-import prisma from '@/config/prisma/prisma';
+import prisma from '@/config/prisma/client';
+import { MAIL } from '@/core/constants/mail.constants';
+import log from '@/services/logging/logger';
+import { queueMail } from '@/services/mail/mail.service';
 import { asyncHandler, response } from '@/utils/responses/helpers';
 
 const restoreDeletedUser = asyncHandler(
@@ -22,6 +25,18 @@ const restoreDeletedUser = asyncHandler(
     if (!user) {
       return response.notFound(req, res, 'User not found');
     }
+
+    const userFullName = `${user.lastName} ${user.firstName}`;
+    queueMail({
+      to: user.email,
+      subject: MAIL.ACCOUNT_RESTORED_SUBJECT,
+      template: 'account-restored',
+      data: { name: userFullName, date: new Date() },
+    }).catch((error) => {
+      log.warn('Failed to queue account-restored email', { userId, error: error.message });
+    });
+
+    log.info('User restored', { userId });
 
     return response.ok(req, res, user, 'User restored successfully');
   },

@@ -1,0 +1,39 @@
+// User domain models
+
+type Otp {
+  code     String
+  expireAt DateTime
+}
+
+model User {
+  id                 String    @id @default(auto()) @map("_id") @db.ObjectId
+  email              String    @unique
+  password           String?
+  firstName          String
+  lastName           String
+  avatarUrl          String?
+  phone              String?
+  isActive           Boolean   @default(false)
+  otp                Otp?
+  isVerified         Boolean   @default(false)
+  emailVerifiedAt    DateTime?
+  lastLoginAt        DateTime?
+  lastPasswordChange DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  isDeleted          Boolean   @default(false)
+  deletedAt          DateTime?
+  failedLoginAttempts Int      @default(0)
+  lockedUntil        DateTime?
+
+  userRoles     UserRole[]
+  oauthAccounts OAuthAccount[]
+  blogs         Blog[]
+  refreshTokens RefreshToken[]
+  aclRules      AclRule[]
+
+  @@index([email, isVerified])
+  @@index([email, deletedAt])
+  @@index([isDeleted])
+  @@index([lockedUntil])
+}

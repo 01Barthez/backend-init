@@ -4,11 +4,12 @@ import { envs } from '@/config/env/env';
 import CSP from '@/routes/_config/csp/csp.router';
 import CSRF from '@/routes/_config/csrf-token/csrf.router';
 import health from '@/routes/_config/health-check/health.router';
+import blogs from '@/routes/blogs/blogs.routes';
 import auth from '@/routes/users/auth.router';
 import oauth from '@/routes/users/oauth.router';
 import users from '@/routes/users/users.router';
 
-import { rateLimitingSubRoute } from './securityConfig';
+import { rateLimitingSubRoute } from './security-config';
 
 const apiPrefix = envs.API_PREFIX || '/api/v1';
 
@@ -22,6 +23,7 @@ const setupRoutes = (app: Express): void => {
   api.use('/auth', rateLimitingSubRoute, auth);
   api.use('/auth/oauth', rateLimitingSubRoute, oauth);
   api.use('/users', rateLimitingSubRoute, users);
+  api.use('/blogs', rateLimitingSubRoute, blogs);
 
   app.use(apiPrefix, api);
 };

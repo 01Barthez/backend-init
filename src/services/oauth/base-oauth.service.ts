@@ -10,7 +10,7 @@ import type {
   IOAuthService,
   IOAuthTokenResponse,
   IOAuthUserProfile,
-} from '@/core/interface/oauth.interface';
+} from '@/core/interfaces/oauth.interface';
 import log from '@/services/logging/logger';
 
 export abstract class BaseOAuthService implements IOAuthService {

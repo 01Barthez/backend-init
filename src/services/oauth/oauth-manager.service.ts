@@ -4,16 +4,16 @@
  */
 import crypto from 'crypto';
 
-import prisma from '@/config/prisma/prisma';
-import { OAUTH_ERRORS, OAUTH_STATE_TTL } from '@/core/constant/oauth.constant';
+import prisma from '@/config/prisma/client';
+import { OAUTH_ERRORS, OAUTH_STATE_TTL } from '@/core/constants/oauth.constants';
 import type {
   IOAuthAccountData,
   IOAuthService,
   IOAuthState,
   IOAuthTokenResponse,
   IOAuthUserProfile,
-} from '@/core/interface/oauth.interface';
-import { OAuthProvider } from '@/core/interface/oauth.interface';
+} from '@/core/interfaces/oauth.interface';
+import { OAuthProvider } from '@/core/interfaces/oauth.interface';
 import log from '@/services/logging/logger';
 
 import { FacebookOAuthService } from './providers/facebook-oauth.service';
@@ -186,9 +186,7 @@ export class OAuthManager {
         accessToken: tokenData.access_token,
         refreshToken: tokenData.refresh_token,
         tokenType: tokenData.token_type,
-        expiresAt: tokenData.expires_in
-          ? new Date(Date.now() + tokenData.expires_in * 1000)
-          : null,
+        expiresAt: tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000) : null,
         scope: tokenData.scope,
         providerProfileData: profile.rawProfile,
       },
@@ -210,9 +208,7 @@ export class OAuthManager {
         accessToken: tokenData.access_token,
         refreshToken: tokenData.refresh_token || undefined,
         tokenType: tokenData.token_type,
-        expiresAt: tokenData.expires_in
-          ? new Date(Date.now() + tokenData.expires_in * 1000)
-          : null,
+        expiresAt: tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000) : null,
         scope: tokenData.scope,
       },
     });
@@ -267,7 +263,7 @@ export class OAuthManager {
         },
       });
 
-      if (!oauthAccount || !oauthAccount.refreshToken) {
+      if (!oauthAccount?.refreshToken) {
         throw new Error('No refresh token available');
       }
 

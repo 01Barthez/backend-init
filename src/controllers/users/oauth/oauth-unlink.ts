@@ -4,8 +4,8 @@
  */
 import type { Request, Response } from 'express';
 
-import { OAUTH_ERRORS } from '@/core/constant/oauth.constant';
-import { OAuthProvider } from '@/core/interface/oauth.interface';
+import { OAUTH_ERRORS } from '@/core/constants/oauth.constants';
+import { OAuthProvider } from '@/core/interfaces/oauth.interface';
 import log from '@/services/logging/logger';
 import { oauthManager } from '@/services/oauth/oauth-manager.service';
 import { asyncHandler, response } from '@/utils/responses/helpers';

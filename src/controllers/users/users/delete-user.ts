@@ -1,7 +1,9 @@
 import type { Request, Response } from 'express';
 
-import prisma from '@/config/prisma/prisma';
+import prisma from '@/config/prisma/client';
+import { MAIL } from '@/core/constants/mail.constants';
 import log from '@/services/logging/logger';
+import { queueMail } from '@/services/mail/mail.service';
 import { asyncHandler, response } from '@/utils/responses/helpers';
 
 import { invalidateUserCache } from '../_cache/user-cache';
@@ -32,6 +34,16 @@ const deleteUser = asyncHandler(
     });
 
     await invalidateUserCache(userId, user.email);
+
+    const userFullName = `${user.lastName} ${user.firstName}`;
+    queueMail({
+      to: user.email,
+      subject: MAIL.ACCOUNT_DELETED_SUBJECT,
+      template: 'account-deleted',
+      data: { name: userFullName, date: new Date() },
+    }).catch((error) => {
+      log.warn('Failed to queue account-deleted email', { userId, error: error.message });
+    });
 
     log.info('User soft deleted', { userId });
 

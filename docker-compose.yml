@@ -1,0 +1,3 @@
+include:
+  - path: infra/docker/docker-compose.yml
+    env_file: .env

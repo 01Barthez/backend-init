@@ -1,11 +1,11 @@
 import type { Request, Response } from 'express';
 
-import prisma from '@/config/prisma/prisma';
-import { MAIL } from '@/core/constant/global';
-import send_mail from '@/services/mail/send-mail.service';
+import prisma from '@/config/prisma/client';
+import { MAIL } from '@/core/constants/mail.constants';
 import log from '@/services/logging/logger';
-import { getOtpExpirationDate } from '@/utils/otp/otp-expiration';
+import { queueMail } from '@/services/mail/mail.service';
 import generateOtp from '@/utils/otp/generate-otp';
+import { getOtpExpirationDate } from '@/utils/otp/otp-expiration';
 import { asyncHandler, response } from '@/utils/responses/helpers';
 
 import { getCachedUserByEmail, invalidateUserCache } from '../_cache/user-cache';
@@ -48,10 +48,11 @@ const resendOtp = asyncHandler(
     let emailSent = false;
 
     try {
-      await send_mail(email, MAIL.OTP_SUBJECT, 'otp', {
-        date: now,
-        name: userFullName,
-        otp: userOtp,
+      await queueMail({
+        to: email,
+        subject: MAIL.OTP_SUBJECT,
+        template: 'otp',
+        data: { date: now, name: userFullName, otp: userOtp },
       });
       emailSent = true;
       log.info('OTP resent successfully', { email });

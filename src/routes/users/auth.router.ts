@@ -1,8 +1,13 @@
 import { Router } from 'express';
 
 import usersController from '@/controllers/users/users.controller';
+import {
+  authenticate,
+  requireActive,
+  requireVerified,
+} from '@/middlewares/authenticate.middleware';
 import { upload } from '@/middlewares/upload';
-import { validationErrorHandler } from '@/middlewares/validationErrorHandler';
+import { validationErrorHandler } from '@/middlewares/validation-error-handler.middleware';
 import { validate_user } from '@/services/validator/validate/users';
 
 const auth = Router();
@@ -31,6 +36,8 @@ auth.post(
 
 auth.post('/login', validate_user.login, validationErrorHandler, usersController.login);
 
+auth.post('/refresh', usersController.refreshToken);
+
 auth.post(
   '/forgot-password',
   validate_user.forgotPassword,
@@ -39,16 +46,19 @@ auth.post(
 );
 
 auth.post(
-  '/reset-password/:resetToken',
+  '/reset-password/:resetToken?',
   validate_user.resetPassword,
   validationErrorHandler,
   usersController.resetPassword,
 );
 
-auth.post('/logout', usersController.logout);
+auth.post('/logout', authenticate, requireVerified, requireActive, usersController.logout);
 
 auth.post(
   '/change-password',
+  authenticate,
+  requireVerified,
+  requireActive,
   validate_user.changePassword,
   validationErrorHandler,
   usersController.changePassword,

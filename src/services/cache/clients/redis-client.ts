@@ -11,18 +11,16 @@ const redisClient = new Redis({
   lazyConnect: true,
   connectTimeout: 10000,
   maxRetriesPerRequest: 5,
+  password: envs.REDIS_PASSWORD || undefined,
   retryStrategy(times) {
     const delay = Math.min(times * 50, 2000);
     return delay;
   },
 });
 
-// Handle error
+// Handle error — log only; throwing here crashes the process on transient outages
 redisClient.on('error', (error) => {
-  const msgError = `[Redis] Error when connecting to redis at ${envs.REDIS_HOST}:${envs.REDIS_PORT}: ${error}`;
-
-  log.error(msgError);
-  throw new Error(msgError);
+  log.error(`[Redis] connection error at ${envs.REDIS_HOST}:${envs.REDIS_PORT}`, { error });
 });
 
 // success connection

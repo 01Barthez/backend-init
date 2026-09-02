@@ -1,6 +1,6 @@
 import type { Readable } from 'stream';
 
-import { UploadError } from '../core/Errors';
+import { UploadError } from '../core/errors';
 
 export class MultipartService {
   constructor(
