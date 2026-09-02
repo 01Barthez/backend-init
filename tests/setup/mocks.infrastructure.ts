@@ -1,12 +1,11 @@
 /**
- * Global Vitest setup — mocks infrastructure so integration tests stay offline.
- * Keep mocks aligned with `@/shared/...` and `@/app/...` import paths.
+ * Offline infrastructure doubles (Prisma, Redis, BullMQ, loggers).
+ * Used by integration / e2e projects so CI stays Docker-free by default.
+ * Live infra suites opt out via `RUN_LIVE_INFRA=1` + dedicated helpers.
  */
-import { vi } from 'vitest';
+import './env';
 
-process.env.NODE_ENV = 'test';
-process.env.PORT = '0';
-process.env.REDIS_HOST = '127.0.0.1';
+import { vi } from 'vitest';
 
 const redisMock = {
   get: vi.fn().mockResolvedValue(null),
@@ -150,12 +149,4 @@ vi.mock('@/shared/infrastructure/logging/security-logger', () => ({
   securityRequestLogger: vi.fn((_req: unknown, _res: unknown, next: () => void) => next()),
 }));
 
-vi.setConfig({
-  testTimeout: 10000,
-  hookTimeout: 30000,
-});
-
-declare global {
-  // eslint-disable-next-line no-var
-  var testServer: import('./helpers/test-server').TestServer | undefined;
-}
+export { prismaMock, redisMock, loggerMock };

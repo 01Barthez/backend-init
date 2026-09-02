@@ -1,107 +1,53 @@
 # Testing
 
-Backend Init uses **Vitest** with path aliases, a global setup file, and
-Supertest for HTTP integration tests.
+Backend Init uses **Vitest** multi-project suites, path aliases, and Supertest.
+
+See also: [`tests/README.md`](../../tests/README.md) and [`.github/README.md`](../../.github/README.md).
 
 ## Layout
 
 ```
 tests/
-├── setup.ts                 # Global Vitest setup
-├── helpers/                 # Test server & utilities
-├── fixtures/                # Static fixtures
-├── factories/               # Test data builders
-├── mocks/ / __mocks__/      # Shared mocks
-├── unit/
-│   ├── modules/             # Prefer module-aligned unit tests
-│   ├── unit/
-│   │   ├── modules/           # Use-case / domain tests
-│   │   └── shared/            # Shared kernel tests
-│   ├── integration/           # HTTP API tests (supertest)
-│   └── e2e/                   # Reserved for full-stack scenarios
-│   └── shared/
-├── integration/
-│   └── api/                 # HTTP + wiring tests
-├── e2e/                     # Broader scenarios
-├── load/                    # Load scenarios (e.g. k6-oriented assets)
-└── utils/
+├── setup/            # unit / integration / e2e / contract setups
+├── fixtures/
+├── factories/
+├── helpers/
+├── unit/modules|shared
+├── integration/api|database|cache|queue|storage
+├── e2e/journeys
+├── contract/openapi
+└── load/             # not executed by Vitest
 ```
-
-Config: `vitest.config.ts` — `include: ['tests/**/*.{test,spec}.ts']`, setup
-`./tests/setup.ts`.
 
 ## Commands
 
 ```bash
-npm test                 # vitest run
-npm run test:watch
+npm run test:unit
+npm run test:integration
+npm run test:integration:live   # RUN_LIVE_INFRA=1 (+ optional Testcontainers)
+npm run test:e2e
+npm run test:contract
 npm run test:coverage
-npm run validate         # lint + types + tests + OpenAPI
+npm run test:ci
+npm run validate
 ```
 
-## Strategy by layer
+## Strategy
 
-| Kind        | Target                             | Doubles                                      |
-| ----------- | ---------------------------------- | -------------------------------------------- |
-| Unit        | Commands, domain rules, pure utils | Fake ports / in-memory repos                 |
-| Integration | Routers + container wiring         | Override deps; may use test DB if configured |
-| E2E         | Critical user journeys             | Prefer Dockerized dependencies               |
+| Kind | Target | Doubles |
+|------|--------|---------|
+| Unit | Commands, domain, utils | Fake ports |
+| Integration API | Routers + middleware | Offline Prisma/Redis mocks |
+| Integration live | Mongo / Redis / MinIO / queue | Real services or Testcontainers |
+| E2E | Multi-step HTTP journeys | Offline doubles by default |
+| Contract | OpenAPI document | File-based |
+
+Stack note: **MongoDB + Redis + MinIO** (not PostgreSQL / RabbitMQ).
 
 ## Mocking ports
 
-Modules expose `createDefaultXxxDeps(overrides)` and the app exposes
-`createContainer(overrides)`. Prefer overriding **ports**, not mocking Prisma
-globally, when testing use cases.
+Prefer `createDefaultXxxDeps(overrides)` / `createContainer(overrides)` over global Prisma mocks when testing a single use case.
 
-### Module-level
+## CI
 
-```ts
-import { createAuthModule, createDefaultAuthDeps } from '@/modules/auth';
-
-const auth = createAuthModule(
-  createDefaultAuthDeps({
-    mailer: {
-      send: async () => undefined,
-    },
-    userRepository: fakeUserRepository,
-  }),
-);
-
-await auth.useCases.login.execute({ email, password });
-```
-
-### Container-level
-
-```ts
-import { createContainer } from '@/app/container';
-
-const container = createContainer({
-  auth: {
-    userRepository: fakeUserRepository,
-  },
-});
-
-// mount container.auth.router on a test Express app
-```
-
-Reset the singleton between suites when tests call `getContainer()`:
-
-```ts
-import { resetContainer } from '@/app/container';
-
-afterEach(() => {
-  resetContainer();
-});
-```
-
-## Guidelines
-
-- Name tests after behavior (`rejects expired OTP`), not implementation details.
-- Keep unit tests free of network I/O.
-- Do not assert on private infrastructure helpers when a public use case exists.
-- Align new unit folders with `src/modules/<name>/`.
-
-## Related
-
-- [Extending](../architecture/extending.md) — where to place new tests
-- [ADR 003](../architecture/decisions/003-dependency-injection.md)
+GitHub Actions `ci.yml` runs lint → typecheck → unit → integration → e2e → contract → coverage → build.

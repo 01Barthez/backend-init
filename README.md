@@ -172,11 +172,13 @@ Full contract: [docs/api/openapi.yaml](./docs/api/openapi.yaml)
 | ------------------------------------------- | ----------------------------------------- |
 | `npm run dev`                               | Dev server with hot reload (Bun)          |
 | `npm run build` / `npm start`               | Compile and run production build          |
-| `npm test` / `npm run test:coverage`        | Vitest (unit + integration)               |
-| `npm run validate`                          | Lint + types + tests + OpenAPI validation |
+| `npm test` / `test:ci` / `test:coverage`    | Vitest (unit, integration, e2e, contract) |
+| `npm run test:unit` / `integration` / `e2e` | Individual Vitest projects                |
+| `npm run test:contract` / `test:docs`       | OpenAPI contract + swagger-cli            |
+| `npm run validate`                          | Lint + types + test:ci + OpenAPI          |
 | `npm run format` / `lint`                   | Prettier + ESLint                         |
 | `npm run generate:openapi`                  | Regenerate `docs/api/openapi.yaml`        |
-| `npm run docker:up` / `docker:rebuild`      | Compose lifecycle                         |
+| `npm run docker:up` / `docker:build`        | Compose / local image build               |
 | `npm run prisma:generate` / `push` / `seed` | Database tooling                          |
 
 ---
@@ -189,7 +191,7 @@ Before opening a PR:
 npm run format
 npm run lint:ci
 npm run type-check
-npm test
+npm run test:ci
 npm run test:docs
 ```
 
