@@ -1,10 +1,14 @@
+import { envs } from '@/app/config';
+
 import { OAuthInvalidProviderError } from '../../domain/errors/oauth.errors';
 import { OAuthProvider } from '../../domain/types/oauth.types';
 import type { OAuthManager } from '../../infrastructure/manager/oauth-manager.service';
 import type { AuthorizeInput, AuthorizeResult } from '../dto/oauth.dto';
+import { resolveAllowedRedirect } from '../services/allowed-redirect';
 
 export type AuthorizeCommandDeps = {
   oauthManager: OAuthManager;
+  clientUrl?: string;
 };
 
 /**
@@ -19,7 +23,13 @@ export class AuthorizeCommand {
       throw new OAuthInvalidProviderError();
     }
 
-    const stateData = this.deps.oauthManager.generateState(input.redirectUrl);
+    const redirectUrl = resolveAllowedRedirect(
+      input.redirectUrl,
+      this.deps.clientUrl || envs.CLIENT_URL,
+      envs.OAUTH_ALLOWED_ORIGINS as string,
+    );
+
+    const stateData = this.deps.oauthManager.generateState(redirectUrl);
     const stateCookieValue = Buffer.from(JSON.stringify(stateData)).toString('base64');
     const authUrl = this.deps.oauthManager.getAuthorizationUrl(providerUpper, stateData.state);
 

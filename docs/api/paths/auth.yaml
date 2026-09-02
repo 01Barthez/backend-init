@@ -51,7 +51,7 @@
   post:
     tags: [Authentication]
     summary: Resend verification OTP
-    description: Sends a new one-time password to the given email address.
+    description: Sends a new one-time password when the account exists and is unverified. Response is identical for unknown emails (no enumeration).
     requestBody:
       required: true
       content:
@@ -62,9 +62,9 @@
             properties:
               email: { type: string, format: email }
     responses:
-      '200': { description: OTP resent successfully }
+      '200': { description: Accepted (OTP sent when applicable) }
       '400': { description: Validation failed }
-      '404': { description: User not found }
+      '429': { description: Too many attempts }
       '500': { description: Unexpected server error }
 
 /api/v1/auth/login:
@@ -87,6 +87,7 @@
       '400': { description: Validation failed }
       '401': { description: Invalid credentials }
       '403': { description: Account inactive or unverified }
+      '429': { description: Account locked or rate limited }
       '500': { description: Unexpected server error }
 
 /api/v1/auth/refresh:
@@ -112,7 +113,7 @@
   post:
     tags: [Authentication]
     summary: Request password reset
-    description: Sends a password-reset link/token to the user email when the account exists.
+    description: Always returns the same success payload. A single-use opaque token is emailed only when the account exists (no user enumeration).
     requestBody:
       required: true
       content:
@@ -123,41 +124,38 @@
             properties:
               email: { type: string, format: email }
     responses:
-      '200': { description: Reset instructions sent when the account exists }
+      '200': { description: Generic accepted response }
       '400': { description: Validation failed }
-      '404': { description: User not found }
+      '429': { description: Too many attempts }
       '500': { description: Unexpected server error }
 
-/api/v1/auth/reset-password/{resetToken}:
+/api/v1/auth/reset-password:
   post:
     tags: [Authentication]
     summary: Reset password with token
-    description: Sets a new password using the reset token from the email link. Express also accepts an optional path segment (`/reset-password/:resetToken?`).
-    parameters:
-      - name: resetToken
-        in: path
-        required: true
-        schema: { type: string }
+    description: Consumes a single-use opaque `resetToken` from the email (JSON body, not the URL) and revokes all sessions.
     requestBody:
       required: true
       content:
         application/json:
           schema:
             type: object
-            required: [new_password]
+            required: [resetToken, new_password]
             properties:
+              resetToken: { type: string }
               new_password: { type: string, minLength: 8 }
     responses:
       '200': { description: Password reset successful }
       '400': { description: Validation failed }
-      '401': { description: Invalid or expired reset token }
+      '422': { description: Invalid or expired reset token }
+      '429': { description: Too many attempts }
       '500': { description: Unexpected server error }
 
 /api/v1/auth/logout:
   post:
     tags: [Authentication]
     summary: Logout and revoke session
-    description: Clears the refresh cookie and revokes the current session. Requires a verified, active user.
+    description: Clears the refresh cookie, blacklists the access `jti`, and revokes the refresh family. Account `isActive` is unchanged. Requires a verified user.
     security:
       - bearerAuth: []
     responses:

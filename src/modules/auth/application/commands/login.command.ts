@@ -1,9 +1,15 @@
+import { config } from '@/app/config';
 import { MAIL } from '@/shared/constants/mail.constants';
 import { AppError } from '@/shared/domain/errors/app-error';
 import log from '@/shared/infrastructure/logging/logger';
-import { comparePassword } from '@/shared/utils/crypto';
+import { comparePassword, DUMMY_PASSWORD_HASH } from '@/shared/utils/crypto';
 
-import { AccountNotVerifiedError, InvalidCredentialsError } from '../../domain/errors/auth.errors';
+import {
+  AccountInactiveError,
+  AccountLockedError,
+  AccountNotVerifiedError,
+  InvalidCredentialsError,
+} from '../../domain/errors/auth.errors';
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';
 import type { LoginInput, LoginResult } from '../dto/auth.dto';
 import type { MailerPort } from '../services/mailer.port';
@@ -17,8 +23,14 @@ export type LoginCommandDeps = {
   mailer: MailerPort;
 };
 
+const isLocked = (lockedUntil?: Date | null): boolean =>
+  Boolean(lockedUntil && lockedUntil.getTime() > Date.now());
+
 /**
- * Authenticates a verified user, issues a token pair, and queues a login alert.
+ * Authenticates a verified user and issues a token pair.
+ *
+ * Session model: `isActive` is account status (admin disable), not "logged in".
+ * Failed attempts use `failedLoginAttempts` / `lockedUntil`.
  */
 export class LoginCommand {
   constructor(private readonly deps: LoginCommandDeps) {}
@@ -31,7 +43,18 @@ export class LoginCommand {
     }
 
     const user = await this.deps.userRepository.findByEmail(email);
-    if (!user) {
+
+    if (user && isLocked(user.lockedUntil)) {
+      throw new AccountLockedError();
+    }
+
+    const passwordHash = user?.passwordHash || DUMMY_PASSWORD_HASH;
+    const isPasswordValid = await comparePassword(password, passwordHash);
+
+    if (!user || !user.passwordHash || !isPasswordValid) {
+      if (user) {
+        await this.registerFailure(user.id, user.failedLoginAttempts ?? 0);
+      }
       throw new InvalidCredentialsError();
     }
 
@@ -39,10 +62,15 @@ export class LoginCommand {
       throw new AccountNotVerifiedError();
     }
 
-    const isPasswordValid = await comparePassword(password, user.passwordHash || '');
-    if (!isPasswordValid) {
-      throw new InvalidCredentialsError();
+    if (!user.isActive) {
+      throw new AccountInactiveError();
     }
+
+    await this.deps.userRepository.update(user.id, {
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      lastLoginAt: new Date(),
+    });
 
     const { permissions, roles } = await this.deps.rbac.getUserAuthContext(user.id);
     const tokenPair = this.deps.tokenService.issueTokenPair(
@@ -65,8 +93,6 @@ export class LoginCommand {
       tokenPair.refreshJti,
       tokenPair.familyId,
     );
-
-    await this.deps.userRepository.setActive(user.id, true);
 
     const userFullName = `${user.lastName} ${user.firstName}`;
     this.deps.mailer
@@ -92,5 +118,17 @@ export class LoginCommand {
       accessToken: tokenPair.accessToken,
       refreshToken: tokenPair.refreshToken,
     };
+  }
+
+  private async registerFailure(userId: string, previous: number): Promise<void> {
+    const next = previous + 1;
+    const max = config.security.lockout.maxLoginAttempts;
+    const lockedUntil =
+      next >= max ? new Date(Date.now() + config.security.lockout.lockoutMs) : null;
+
+    await this.deps.userRepository.update(userId, {
+      failedLoginAttempts: next,
+      lockedUntil,
+    });
   }
 }

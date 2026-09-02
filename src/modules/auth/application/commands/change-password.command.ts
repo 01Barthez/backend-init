@@ -4,6 +4,7 @@ import log from '@/shared/infrastructure/logging/logger';
 import { comparePassword, hashPassword } from '@/shared/utils/crypto';
 
 import { IncorrectPasswordError } from '../../domain/errors/auth.errors';
+import type { TokenRepositoryPort } from '../../domain/repositories/token.repository';
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';
 import type { ChangePasswordInput } from '../dto/auth.dto';
 import type { MailerPort } from '../services/mailer.port';
@@ -11,12 +12,13 @@ import type { UserCachePort } from '../services/user-cache.port';
 
 export type ChangePasswordCommandDeps = {
   userRepository: UserRepositoryPort;
+  tokenRepository: TokenRepositoryPort;
   mailer: MailerPort;
   userCache?: UserCachePort;
 };
 
 /**
- * Changes password for an authenticated user after verifying the current one.
+ * Changes password for an authenticated user and revokes every refresh family.
  */
 export class ChangePasswordCommand {
   constructor(private readonly deps: ChangePasswordCommandDeps) {}
@@ -43,11 +45,12 @@ export class ChangePasswordCommand {
     }
 
     const hashedPassword = await hashPassword(newPassword);
-    if (!hashedPassword) {
-      throw AppError.internal('Failed to hash password');
-    }
+    await this.deps.userRepository.update(userId, {
+      passwordHash: hashedPassword,
+      lastPasswordChange: new Date(),
+    });
 
-    await this.deps.userRepository.update(userId, { passwordHash: hashedPassword });
+    await this.deps.tokenRepository.revokeAllForUser(userId, 'PASSWORD_CHANGE');
     await this.deps.userCache?.invalidate(userId, dbUser.email);
 
     const userFullName = `${dbUser.lastName} ${dbUser.firstName}`;

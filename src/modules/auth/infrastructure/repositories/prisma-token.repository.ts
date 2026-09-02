@@ -140,6 +140,27 @@ export class PrismaTokenRepository implements TokenRepositoryPort {
     return false;
   }
 
+  async revokeAllForUser(userId: string, reason: AuthRevokeReason): Promise<void> {
+    const tokens = await prisma.refreshToken.findMany({
+      where: { userId, isRevoked: false },
+      select: { familyId: true },
+    });
+    const families = [...new Set(tokens.map((row) => row.familyId))];
+    await Promise.all(families.map((familyId) => this.revokeFamily(familyId, reason)));
+  }
+
+  async savePasswordResetToken(userId: string, tokenHash: string, ttlSeconds: number): Promise<void> {
+    await redisClient.setex(`pwd-reset:${tokenHash}`, Math.max(1, ttlSeconds), userId);
+  }
+
+  async consumePasswordResetToken(tokenHash: string): Promise<string | null> {
+    const key = `pwd-reset:${tokenHash}`;
+    const userId = await redisClient.get(key);
+    if (!userId) return null;
+    await redisClient.del(key);
+    return userId;
+  }
+
   async purgeExpired(): Promise<number> {
     const result = await prisma.blacklistEntry.deleteMany({
       where: { expireAt: { lte: new Date() } },

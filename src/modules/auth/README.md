@@ -62,9 +62,12 @@ container.register('auth', authModule);
 
 ## Compatibility
 
-- `src/routes/users/auth.router.ts` re-exports `createAuthRouter()`.
-- Legacy `src/services/auth/jwt.service.ts` and `blacklist.service.ts` re-export
-  module providers.
-- Legacy `src/core/interfaces/auth.interface.ts` re-exports module types.
-- Old controller files under `src/controllers/users/auth/` are deprecated —
-  presentation here is the source of truth.
+- Public surface is `src/modules/auth/index.ts`.
+- Presentation here is the source of truth for HTTP.
+
+## Session and security notes
+
+- `isActive` is account status, not a login switch. Logout blacklists `jti` + refresh family.
+- OTP is stored hashed (`hashOtpCode`); reset tokens are opaque Redis values, not JWTs.
+- Login uses a dummy bcrypt hash when the email is unknown (timing).
+- Credential routes sit behind `rateLimitingAuth` (`MAX_AUTH_QUERY_NUMBER`).

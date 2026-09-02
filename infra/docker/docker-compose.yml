@@ -103,6 +103,39 @@ services:
     environment:
       - REDIS_HOSTS=local:redis:6379
 
+  # Dev-only data browser. Not for production. Prefer `npm run prisma:studio` on the host.
+  prisma-studio:
+    image: node:22-bookworm-slim
+    container_name: ${PRISMA_STUDIO_NAME:-prisma_studio}
+    profiles: [tools]
+    working_dir: /app
+    volumes:
+      - ../..:/app
+    command:
+      [
+        'npx',
+        'prisma',
+        'studio',
+        '--schema',
+        'prisma/',
+        '--hostname',
+        '0.0.0.0',
+        '--port',
+        '5555',
+        '--browser',
+        'none',
+      ]
+    environment:
+      DATABASE_URL: 'mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD:-secret123}@mongo:27017/${MONGO_DB:-appDB}?replicaSet=rs0&authSource=admin'
+    ports:
+      - '${PRISMA_STUDIO_PORT:-5555}:5555'
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - backend_network
+    restart: unless-stopped
+
   minio:
     image: minio/minio:RELEASE.2023-10-25T06-33-25Z
     container_name: ${MINIO_NAME:-minio_storage}

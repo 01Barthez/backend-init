@@ -34,5 +34,12 @@ export interface TokenRepositoryPort {
 
   isRevoked(jti: string): Promise<boolean>;
 
+  /** Revoke every refresh family for a user (password change / security event). */
+  revokeAllForUser(userId: string, reason: AuthRevokeReason): Promise<void>;
+
+  savePasswordResetToken(userId: string, tokenHash: string, ttlSeconds: number): Promise<void>;
+
+  consumePasswordResetToken(tokenHash: string): Promise<string | null>;
+
   purgeExpired(): Promise<number>;
 }

@@ -8,6 +8,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Security
+
+- Auth sessions no longer use `isActive` as a logout switch; logout blacklists the access `jti` and refresh family.
+- Login lockout, hashed OTPs, single-use opaque password-reset tokens, and session revoke on password change.
+- Login no longer re-activates admin-disabled accounts; `authenticate` reloads live `isActive` / `isVerified`.
+- OAuth callback no longer puts tokens in the URL; post-login redirects are origin-allowlisted; provider tokens encrypted at rest.
+- JWT verify pins RS256 + token `type`; PEM keys cached; cookie `maxAge` parsed as a real duration (`7d`).
+- Stricter rate limit on login/OTP/forgot/reset; CSRF token endpoint no longer overwrites the csurf secret cookie.
+
 ### Changed
 
 - Migrated the codebase to a **modular monolith**: bounded contexts under

@@ -2,6 +2,10 @@
  * HTTP security, cookies, CSRF, CSP and rate-limiting knobs.
  */
 import { fromEnv } from '../env';
+import { parseDurationMs } from '../parse-duration';
+
+const SEVEN_DAYS_MS = 7 * 86_400_000;
+const FIFTEEN_MINUTES_MS = 15 * 60_000;
 
 export const securityConfig = {
   hstsMaxAge: fromEnv.get('HSTS_MAX_AGE').default(31536000).asInt(),
@@ -13,32 +17,49 @@ export const securityConfig = {
     globalWindowMs: fromEnv.get('MAX_GLOBAL_QUERY_WINDOW').default(900000).asInt(),
     uniqueMax: fromEnv.get('MAX_UNIQ_QUERY_NUMBER').default(50).asInt(),
     uniqueWindowMs: fromEnv.get('MAX_UNIQ_QUERY_WINDOW').default(900000).asInt(),
+    /** Stricter bucket for login / OTP / forgot / reset. */
+    authMax: fromEnv.get('MAX_AUTH_QUERY_NUMBER').default(10).asInt(),
+    authWindowMs: fromEnv.get('MAX_AUTH_QUERY_WINDOW').default(900000).asInt(),
   },
 
   csrf: {
     enabled: fromEnv.get('ALLOW_CSRF_PROTECTION').default('true').asBool(),
     cookieName: fromEnv.get('CSRF_COOKIE_NAME').default('XSRF-TOKEN').asString(),
     headerName: fromEnv.get('CSRF_HEADER_NAME').default('X-XSRF-TOKEN').asString(),
-    expiresIn: fromEnv.get('CSRF_EXPIRES_IN').default('2h').asString(),
+    expiresInMs: parseDurationMs(
+      fromEnv.get('CSRF_EXPIRES_IN').default('24h').asString(),
+      86_400_000,
+    ),
   },
 
   cspReportUri: fromEnv.get('CSP_REPORT_URI').default('/security/csp-violation').asString(),
 
   cookie: {
-    domain: fromEnv.get('COOKIE_DOMAIN').default('localhost').asString(),
+    /** Empty = host-only cookie (correct for localhost / most SPA setups). */
+    domain: fromEnv.get('COOKIE_DOMAIN').default('').asString(),
     secure: fromEnv.get('COOKIE_SECURE').default('true').asBool(),
     httpOnly: fromEnv.get('COOKIE_HTTP_STATUS').default('true').asBool(),
     sameSite: fromEnv.get('COOKIE_SAME_SITE').default('strict').asString() as
       | 'strict'
       | 'lax'
       | 'none',
-    expiresIn: fromEnv.get('COOKIE_EXPIRES_IN').default('2h').asInt(),
+    /** Refresh-cookie lifetime. Align with JWT_REFRESH_EXPIRES_IN (default 7d). */
+    expiresInMs: parseDurationMs(
+      fromEnv.get('COOKIE_EXPIRES_IN').default('7d').asString(),
+      SEVEN_DAYS_MS,
+    ),
   },
 
   swagger: {
     enabled: fromEnv.get('SWAGGER_ENABLED').default('true').asBool(),
     user: fromEnv.get('SWAGGER_USER').default('admin').asString(),
     password: fromEnv.get('SWAGGER_PASSWORD').default('admin').asString(),
+  },
+
+  lockout: {
+    maxLoginAttempts: fromEnv.get('MAX_LOGIN_ATTEMPTS').default(5).asInt(),
+    lockoutMs: fromEnv.get('LOGIN_LOCKOUT_MS').default(FIFTEEN_MINUTES_MS).asInt(),
+    maxOtpAttempts: fromEnv.get('MAX_OTP_ATTEMPTS').default(5).asInt(),
   },
 } as const;
 

@@ -2,7 +2,7 @@
  * Auth express-validator rules (presentation layer).
  * Auth-owned — not shared with the users module.
  */
-import { body, param } from 'express-validator';
+import { body } from 'express-validator';
 
 import {
   emailValidation,
@@ -49,7 +49,7 @@ export const authSchemas = {
   forgotPassword: [emailValidation()],
 
   resetPassword: [
-    param('resetToken').trim().notEmpty().withMessage('Reset token is required'),
+    body('resetToken').trim().notEmpty().withMessage('Reset token is required'),
     passwordFieldValidation('new_password'),
   ],
 

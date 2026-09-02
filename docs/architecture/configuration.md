@@ -18,6 +18,7 @@ All runtime settings flow through `src/app/config`. Modules must not call
 ```
 src/app/config/
 ├── env.ts                 # dotenv bootstrap + raw accessors
+├── parse-duration.ts      # Human durations (`7d`) → milliseconds
 ├── index.ts               # Aggregated frozen `config` + transitional `envs`
 ├── sections/
 │   ├── app.ts             # Port, API prefix, name, URLs, locale

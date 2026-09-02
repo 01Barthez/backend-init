@@ -41,8 +41,12 @@ app.use(`${prefix}/auth/oauth`, createOAuthRouter());
    `createDefaultOAuthDeps`.
 3. **OAuthManager** — swap find-or-create / linking strategy for tests.
 
-## Compatibility
+## Security
 
-- `src/routes/users/oauth.router.ts` re-exports `createOAuthRouter()`.
-- `src/core/interfaces/oauth.interface.ts` re-exports domain types.
-- `src/services/oauth/**` re-exports infrastructure from this module.
+- Validate `state` (TTL enforced by the manager).
+- Never log access tokens or authorization codes.
+- Post-login `redirectUrl` is origin-allowlisted (`CLIENT_URL` + `OAUTH_ALLOWED_ORIGINS`).
+- Callback never puts JWTs in the query string (cookie + `Authorization` header only).
+- Provider tokens at rest: `AUTH_ENCRYPTION_KEY` (AES-256-GCM). Empty key = do not persist.
+- Redirect URIs must match the provider console **exactly**.
+- Inactive accounts cannot complete login or linking.

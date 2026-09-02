@@ -62,6 +62,8 @@ Update OpenAPI enums / path docs and this guide’s provider list. Run
 
 - Validate `state` (TTL enforced by the manager).
 - Never log access tokens or authorization codes.
+- Allowlist post-login redirects (`CLIENT_URL`, `OAUTH_ALLOWED_ORIGINS`). Never put tokens in the callback URL.
+- Encrypt provider tokens at rest (`AUTH_ENCRYPTION_KEY`) or leave the key empty to skip persistence.
 - Redirect URIs must match the provider console **exactly**.
 - Decide account-linking rules carefully when an email already exists (follow
   existing find-or-create behavior unless you intentionally change it).

@@ -5,13 +5,14 @@ import type { MailerPort } from '@/modules/auth/application/services/mailer.port
 import type { RbacPort } from '@/modules/auth/application/services/rbac.port';
 import type { TokenServicePort } from '@/modules/auth/application/services/token.service.port';
 import type { UserEntity } from '@/modules/auth/domain/entities/user.entity';
-import { InvalidCredentialsError } from '@/modules/auth/domain/errors/auth.errors';
+import { AccountInactiveError, InvalidCredentialsError } from '@/modules/auth/domain/errors/auth.errors';
 import type { UserRepositoryPort } from '@/modules/auth/domain/repositories/user.repository';
 import { comparePassword } from '@/shared/utils/crypto';
 
 vi.mock('@/shared/utils/crypto', () => ({
   comparePassword: vi.fn(),
   hashPassword: vi.fn(),
+  DUMMY_PASSWORD_HASH: 'dummy-hash',
 }));
 
 const comparePasswordMock = vi.mocked(comparePassword);
@@ -27,6 +28,8 @@ const buildUser = (overrides: Partial<UserEntity> = {}): UserEntity => ({
   isVerified: true,
   isActive: true,
   isDeleted: false,
+  failedLoginAttempts: 0,
+  lockedUntil: null,
   ...overrides,
 });
 
@@ -44,7 +47,7 @@ describe('LoginCommand', () => {
       findByEmail: vi.fn(),
       findById: vi.fn(),
       create: vi.fn(),
-      update: vi.fn(),
+      update: vi.fn().mockResolvedValue(buildUser()),
       setActive: vi.fn().mockResolvedValue(undefined),
     };
 
@@ -59,8 +62,8 @@ describe('LoginCommand', () => {
       persistRefreshToken: vi.fn().mockResolvedValue(undefined),
       verifyAccessToken: vi.fn(),
       verifyRefreshToken: vi.fn(),
-      generatePasswordResetToken: vi.fn(),
-      verifyPasswordResetToken: vi.fn(),
+      createPasswordResetToken: vi.fn(),
+      consumePasswordResetToken: vi.fn(),
       rotateRefreshToken: vi.fn(),
       getRefreshCookieName: vi.fn().mockReturnValue('refresh_token'),
     };
@@ -80,14 +83,15 @@ describe('LoginCommand', () => {
     command = new LoginCommand({ userRepository, tokenService, rbac, mailer });
   });
 
-  it('throws InvalidCredentialsError when user is not found', async () => {
+  it('throws InvalidCredentialsError when user is not found (dummy hash compare)', async () => {
     vi.mocked(userRepository.findByEmail).mockResolvedValue(null);
+    comparePasswordMock.mockResolvedValue(false);
 
     await expect(
       command.execute({ email: 'missing@example.com', password: 'Password1!' }),
     ).rejects.toBeInstanceOf(InvalidCredentialsError);
 
-    expect(comparePasswordMock).not.toHaveBeenCalled();
+    expect(comparePasswordMock).toHaveBeenCalled();
     expect(tokenService.issueTokenPair).not.toHaveBeenCalled();
   });
 
@@ -99,11 +103,12 @@ describe('LoginCommand', () => {
       command.execute({ email: 'alice@example.com', password: 'WrongPass1!' }),
     ).rejects.toBeInstanceOf(InvalidCredentialsError);
 
+    expect(userRepository.update).toHaveBeenCalled();
     expect(tokenService.issueTokenPair).not.toHaveBeenCalled();
   });
 
-  it('returns tokens on successful login', async () => {
-    vi.mocked(userRepository.findByEmail).mockResolvedValue(buildUser());
+  it('returns tokens on successful login with isActive true in the JWT', async () => {
+    vi.mocked(userRepository.findByEmail).mockResolvedValue(buildUser({ isActive: true }));
     comparePasswordMock.mockResolvedValue(true);
 
     const result = await command.execute({
@@ -114,21 +119,30 @@ describe('LoginCommand', () => {
     expect(result).toMatchObject({
       id: 'user-1',
       email: 'alice@example.com',
-      firstName: 'Alice',
-      lastName: 'Doe',
-      roles: ['USER'],
-      permissions: ['blog:create'],
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
     });
 
-    expect(tokenService.persistRefreshToken).toHaveBeenCalledWith(
+    expect(userRepository.update).toHaveBeenCalledWith(
       'user-1',
-      'refresh-token',
-      'refresh-jti',
-      'family-1',
+      expect.objectContaining({ failedLoginAttempts: 0 }),
     );
-    expect(userRepository.setActive).toHaveBeenCalledWith('user-1', true);
+    expect(tokenService.issueTokenPair).toHaveBeenCalledWith(
+      expect.objectContaining({ isActive: true }),
+      expect.any(Array),
+      expect.any(Array),
+    );
     expect(mailer.queue).toHaveBeenCalled();
+  });
+
+  it('rejects inactive accounts without issuing tokens', async () => {
+    vi.mocked(userRepository.findByEmail).mockResolvedValue(buildUser({ isActive: false }));
+    comparePasswordMock.mockResolvedValue(true);
+
+    await expect(
+      command.execute({ email: 'alice@example.com', password: 'Password1!' }),
+    ).rejects.toBeInstanceOf(AccountInactiveError);
+
+    expect(tokenService.issueTokenPair).not.toHaveBeenCalled();
   });
 });

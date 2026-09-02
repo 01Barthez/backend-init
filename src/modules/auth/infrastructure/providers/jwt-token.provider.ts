@@ -1,19 +1,29 @@
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 
-import { envs } from '@/app/config';
+import { config, envs } from '@/app/config';
 import { AUTH_COOKIES } from '@/shared/constants/app.constants';
-import { hashToken, randomHex } from '@/shared/utils/crypto';
-import { readFileSync } from '@/shared/utils/fs-utils';
+import { hashToken, randomHex, tokenHashesEqual } from '@/shared/utils/crypto';
 
 import type { RbacPort } from '../../application/services/rbac.port';
 import type { TokenServicePort } from '../../application/services/token.service.port';
 import type { TokenRepositoryPort } from '../../domain/repositories/token.repository';
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';
 import type { TokenPair, UserJwtPayload } from '../../domain/types/auth.types';
+import { getJwtKeys } from './jwt-keys';
 
 const generateJti = (): string => uuidv4();
 const generateFamilyId = (): string => randomHex(16);
+
+const jwtAlgorithm = (): jwt.Algorithm => envs.JWT_ALGORITHM as jwt.Algorithm;
+
+const keys = () =>
+  getJwtKeys({
+    accessPrivate: envs.JWT_PRIVATE_KEY_PATH,
+    accessPublic: envs.JWT_PUBLIC_KEY_PATH,
+    refreshPrivate: envs.JWT_REFRESH_PRIVATE_KEY_PATH,
+    refreshPublic: envs.JWT_REFRESH_PUBLIC_KEY_PATH,
+  });
 
 export type JwtTokenProviderDeps = {
   userRepository: UserRepositoryPort;
@@ -23,7 +33,7 @@ export type JwtTokenProviderDeps = {
 
 /**
  * JWT TokenServicePort implementation.
- * Crypto stays here; persistence goes through TokenRepositoryPort / UserRepositoryPort.
+ * Keys are cached in-process; verify pins algorithm + token `type`.
  */
 export class JwtTokenProvider implements TokenServicePort {
   constructor(private readonly deps: JwtTokenProviderDeps) {}
@@ -32,6 +42,8 @@ export class JwtTokenProvider implements TokenServicePort {
     const accessJti = generateJti();
     const refreshJti = generateJti();
     const familyId = generateFamilyId();
+    const pem = keys();
+    const alg = jwtAlgorithm();
 
     const payload = {
       id: user.id,
@@ -47,18 +59,18 @@ export class JwtTokenProvider implements TokenServicePort {
 
     const accessToken = jwt.sign(
       { ...payload, jti: accessJti, type: 'ACCESS' },
-      readFileSync(envs.JWT_PRIVATE_KEY_PATH) || '',
+      pem.accessPrivate,
       {
-        algorithm: envs.JWT_ALGORITHM as jwt.Algorithm,
+        algorithm: alg,
         expiresIn: envs.JWT_ACCESS_EXPIRES_IN as jwt.SignOptions['expiresIn'],
       },
     );
 
     const refreshToken = jwt.sign(
       { ...payload, jti: refreshJti, familyId, type: 'REFRESH' },
-      readFileSync(envs.JWT_REFRESH_PRIVATE_KEY_PATH) || '',
+      pem.refreshPrivate,
       {
-        algorithm: envs.JWT_ALGORITHM as jwt.Algorithm,
+        algorithm: alg,
         expiresIn: envs.JWT_REFRESH_EXPIRES_IN as jwt.SignOptions['expiresIn'],
       },
     );
@@ -87,39 +99,45 @@ export class JwtTokenProvider implements TokenServicePort {
   }
 
   verifyAccessToken(token: string): UserJwtPayload {
-    return jwt.verify(token, readFileSync(envs.JWT_PUBLIC_KEY_PATH) || '') as UserJwtPayload;
+    const decoded = jwt.verify(token, keys().accessPublic, {
+      algorithms: [jwtAlgorithm()],
+    }) as UserJwtPayload;
+
+    if (decoded.type !== 'ACCESS') {
+      throw new jwt.JsonWebTokenError('Invalid token type');
+    }
+
+    return decoded;
   }
 
   verifyRefreshToken(token: string): UserJwtPayload & { familyId: string; jti: string } {
-    return jwt.verify(
-      token,
-      readFileSync(envs.JWT_REFRESH_PUBLIC_KEY_PATH) || '',
-    ) as UserJwtPayload & { familyId: string; jti: string };
-  }
+    const decoded = jwt.verify(token, keys().refreshPublic, {
+      algorithms: [jwtAlgorithm()],
+    }) as UserJwtPayload & { familyId: string; jti: string };
 
-  generatePasswordResetToken(userId: string): string {
-    const jti = generateJti();
-    return jwt.sign(
-      { userId, jti, type: 'PASSWORD_RESET' },
-      readFileSync(envs.JWT_PRIVATE_KEY_PATH) || '',
-      {
-        algorithm: envs.JWT_ALGORITHM as jwt.Algorithm,
-        expiresIn: '1h',
-      },
-    );
-  }
-
-  verifyPasswordResetToken(token: string): { userId: string; jti: string } {
-    const decoded = jwt.verify(
-      token,
-      readFileSync(envs.JWT_PUBLIC_KEY_PATH) || '',
-    ) as jwt.JwtPayload & { userId: string; jti: string; type: string };
-
-    if (decoded.type !== 'PASSWORD_RESET') {
-      throw new Error('Invalid token type');
+    if (decoded.type !== 'REFRESH') {
+      throw new jwt.JsonWebTokenError('Invalid token type');
     }
 
-    return { userId: decoded.userId, jti: decoded.jti };
+    return decoded;
+  }
+
+  async createPasswordResetToken(userId: string): Promise<string> {
+    const raw = randomHex(32);
+    const ttlSeconds = Math.max(
+      60,
+      Math.floor(config.auth.jwt.passwordResetExpiresInMs / 1000),
+    );
+    await this.deps.tokenRepository.savePasswordResetToken(userId, hashToken(raw), ttlSeconds);
+    return raw;
+  }
+
+  async consumePasswordResetToken(token: string): Promise<{ userId: string }> {
+    const userId = await this.deps.tokenRepository.consumePasswordResetToken(hashToken(token));
+    if (!userId) {
+      throw new Error('Invalid token type');
+    }
+    return { userId };
   }
 
   /**
@@ -137,7 +155,7 @@ export class JwtTokenProvider implements TokenServicePort {
       throw new Error('Refresh token reuse detected');
     }
 
-    if (stored.tokenHash !== hashToken(oldToken)) {
+    if (!tokenHashesEqual(stored.tokenHash, hashToken(oldToken))) {
       await this.deps.tokenRepository.revokeFamily(stored.familyId, 'REUSE_DETECTED');
       throw new Error('Invalid refresh token');
     }
@@ -157,7 +175,7 @@ export class JwtTokenProvider implements TokenServicePort {
         lastName: user.lastName,
         avatarUrl: user.avatarUrl,
         isVerified: user.isVerified,
-        isActive: user.isActive,
+        isActive: true,
       },
       permissions,
       roles,

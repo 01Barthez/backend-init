@@ -1,81 +1,56 @@
 # Authentication
 
-Backend Init implements email/password auth with OTP verification, RS256 JWTs,
-and refresh-token rotation. OAuth is covered separately in
-[Adding an OAuth provider](./adding-oauth-provider.md).
+Email/password with OTP, RS256 JWTs, refresh rotation, and session revoke.
+OAuth: [Adding an OAuth provider](./adding-oauth-provider.md).
 
-## Building blocks
+## Session model
 
-| Concern         | Location                                |
-| --------------- | --------------------------------------- |
-| HTTP routes     | `src/modules/auth/presentation`         |
-| Use cases       | `src/modules/auth/application/commands` |
-| JWT + blacklist | auth infrastructure providers           |
-| Config          | `config.auth` / JWT key paths           |
-| Mount           | `{API_PREFIX}/auth`                     |
+| Flag / store | Meaning |
+| --- | --- |
+| `user.isActive` | Account enabled (admin disable / soft-delete). **Not** “currently logged in”. Login does not flip this flag. |
+| Refresh family + access `jti` blacklist | Actual sessions. Logout / password change / reuse detection revoke these. |
+| Access JWT | Short-lived (default 15m). Blacklisted on logout. `authenticate` reloads live `isActive` / `isVerified` from the database. |
 
-## Signup and OTP
+## Flows
 
-1. `POST /auth/signup` — creates an unverified user (optional profile upload via
-   Multer/files module), sends OTP email.
-2. `POST /auth/verify` — validates OTP, marks the account verified.
-3. `POST /auth/resend-otp` — issues a new OTP subject to delay (`OTP_DELAY` /
-   `config.auth.otpDelayMs`).
+1. `POST /auth/signup` — bcrypt (12) password, hashed OTP at rest, email OTP.
+2. `POST /auth/verify` — hashed OTP compare, attempt cap (`MAX_OTP_ATTEMPTS`).
+3. `POST /auth/login` — dummy bcrypt on unknown email, lockout (`MAX_LOGIN_ATTEMPTS` / `LOGIN_LOCKOUT_MS`), reject inactive accounts, JWT minted from current account flags.
+4. `POST /auth/refresh` — rotate + reuse detection (family revoke). Refresh fails if the account is inactive.
+5. `POST /auth/logout` — blacklist access `jti` + refresh family. Account stays active so the next login works.
+6. `POST /auth/forgot-password` — identical response whether the email exists; opaque single-use token (Redis hash, not a JWT in the URL).
+7. `POST /auth/reset-password` — body `resetToken` + `new_password`; consumes the token and revokes all sessions.
+8. `POST /auth/change-password` — same session revoke.
 
-OTP generation helpers live under `@/shared/utils/otp`. Mail is sent through
-mailer ports → shared mail / notifications infrastructure (queued when workers
-are running).
+## Tokens
 
-## Login and tokens
+- Access / refresh: RS256, algorithm pinned, `type` claim required (`ACCESS` / `REFRESH`), PEM keys **cached in process**.
+- Refresh: SHA-256 at rest, rotation, family reuse revoke.
+- Reset: `randomHex` + SHA-256 in Redis (`PASSWORD_RESET_EXPIRES_IN`).
 
-1. `POST /auth/login` — validates credentials; issues an **access token**
-   (Bearer) and a **refresh token** (HTTP-only cookie by default, name from
-   `REFRESH_TOKEN_COOKIE`).
-2. Access tokens are JWT RS256 using configured key paths and expiries
-   (`JWT_ACCESS_EXPIRES_IN`, etc.).
-3. RBAC context is attached via the auth module’s RBAC port (roles/permissions
-   from the rbac module).
+## Cookies
 
-## Refresh rotation
+`COOKIE_EXPIRES_IN` is a duration (`7d`, `15m`, or milliseconds). Empty `COOKIE_DOMAIN` = host-only. Flags: `Secure`, `HttpOnly`, `SameSite`. Align cookie TTL with `JWT_REFRESH_EXPIRES_IN`.
 
-`POST /auth/refresh` rotates refresh tokens: the previous refresh credential is
-invalidated (blacklist / token store) and a new pair is issued. Clients must
-treat refresh as single-use.
+A bare integer is milliseconds (Express `maxAge`). Do not set `COOKIE_EXPIRES_IN=2` expecting “2 hours”.
 
-This limits replay if a refresh cookie is stolen and used once by an attacker
-(the legitimate client fails on next refresh and can be forced to
-re-authenticate).
+## OAuth
 
-## Logout and password flows
+- `redirectUrl` must match `CLIENT_URL` or `OAUTH_ALLOWED_ORIGINS`.
+- Callback sets the refresh cookie and redirects **without** tokens in the query string.
+- Inactive accounts cannot complete OAuth login.
+- Provider access/refresh tokens are AES-256-GCM (`AUTH_ENCRYPTION_KEY`). Empty key → tokens are not stored.
 
-| Endpoint                                 | Behavior                        |
-| ---------------------------------------- | ------------------------------- |
-| `POST /auth/logout`                      | Authenticated; revokes tokens   |
-| `POST /auth/forgot-password`             | Sends reset mail                |
-| `POST /auth/reset-password/:resetToken?` | Consumes reset token            |
-| `POST /auth/change-password`             | Authenticated; updates password |
+## Rate limits
 
-## Middleware
+Auth credential routes use `MAX_AUTH_QUERY_NUMBER` / `MAX_AUTH_QUERY_WINDOW` (default 10 / 15 min) in addition to the global `/auth` bucket.
 
-Protected routes typically chain:
+## CSRF
 
-- `authenticate` — Bearer access token
-- `requireVerified` / `requireActive` — account state
-- RBAC checks where applicable
-
-Prefer these middlewares over ad-hoc JWT parsing in controllers.
-
-## Operational notes
-
-- Mount JWT keys securely in production
-  ([production.md](../deployment/production.md)).
-- Tune cookie flags (`Secure`, `HttpOnly`, `SameSite`, domain) for your frontend
-  origin (`CLIENT_URL`).
-- Rate limits apply on auth routes via the shared rate-limiting sub-route
-  wrapper.
+When `ALLOW_CSRF_PROTECTION=true`, `csurf` owns the httpOnly secret cookie. GET requests (including `/csrf-token` and OAuth callbacks) are ignored. `GET /csrf-token` returns the token in JSON only (does not overwrite that cookie).
 
 ## Related
 
 - [Modules — auth](../architecture/modules.md)
 - [OpenAPI](../api/README.md)
-- Auth module README: `src/modules/auth/README.md`
+- `src/modules/auth/README.md`

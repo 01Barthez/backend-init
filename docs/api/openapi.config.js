@@ -229,6 +229,14 @@ const definition = {
         description: 'Conflict with existing resource state',
         ...errorContent,
       },
+      Unprocessable: {
+        description: 'Semantic error (invalid or expired token)',
+        ...errorContent,
+      },
+      TooManyRequests: {
+        description: 'Rate limit or account lockout',
+        ...errorContent,
+      },
       ServerError: {
         description: 'Unexpected server error',
         ...errorContent,
@@ -312,7 +320,8 @@ const definition = {
       post: {
         tags: ['Authentication'],
         summary: 'Resend verification OTP',
-        description: 'Sends a new one-time password to the given email address.',
+        description:
+          'Sends a new one-time password when the account exists and is unverified. Response is identical for unknown emails (no enumeration).',
         requestBody: {
           required: true,
           content: {
@@ -328,9 +337,9 @@ const definition = {
           },
         },
         responses: {
-          200: okContent(null, 'OTP resent successfully'),
+          200: okContent(null, 'Accepted (OTP sent when applicable)'),
           400: { $ref: '#/components/responses/BadRequest' },
-          404: { $ref: '#/components/responses/NotFound' },
+          429: { $ref: '#/components/responses/TooManyRequests' },
           500: { $ref: '#/components/responses/ServerError' },
         },
       },
@@ -361,6 +370,7 @@ const definition = {
           400: { $ref: '#/components/responses/BadRequest' },
           401: { $ref: '#/components/responses/Unauthorized' },
           403: { $ref: '#/components/responses/Forbidden' },
+          429: { $ref: '#/components/responses/TooManyRequests' },
           500: { $ref: '#/components/responses/ServerError' },
         },
       },
@@ -399,7 +409,8 @@ const definition = {
       post: {
         tags: ['Authentication'],
         summary: 'Request password reset',
-        description: 'Sends a password-reset link/token to the user email when the account exists.',
+        description:
+          'Always returns the same success payload. A single-use opaque token is emailed only when the account exists (no user enumeration).',
         requestBody: {
           required: true,
           content: {
@@ -415,36 +426,28 @@ const definition = {
           },
         },
         responses: {
-          200: okContent(null, 'Reset instructions sent when the account exists'),
+          200: okContent(null, 'Generic accepted response'),
           400: { $ref: '#/components/responses/BadRequest' },
-          404: { $ref: '#/components/responses/NotFound' },
+          429: { $ref: '#/components/responses/TooManyRequests' },
           500: { $ref: '#/components/responses/ServerError' },
         },
       },
     },
-    '/api/v1/auth/reset-password/{resetToken}': {
+    '/api/v1/auth/reset-password': {
       post: {
         tags: ['Authentication'],
         summary: 'Reset password with token',
         description:
-          'Sets a new password using the reset token from the email link. The Express route also accepts an optional path segment (`/reset-password/:resetToken?`).',
-        parameters: [
-          {
-            name: 'resetToken',
-            in: 'path',
-            required: true,
-            schema: { type: 'string' },
-            description: 'Password reset token from the email link',
-          },
-        ],
+          'Consumes a single-use opaque `resetToken` from the email (JSON body, not the URL) and revokes all sessions.',
         requestBody: {
           required: true,
           content: {
             'application/json': {
               schema: {
                 type: 'object',
-                required: ['new_password'],
+                required: ['resetToken', 'new_password'],
                 properties: {
+                  resetToken: { type: 'string' },
                   new_password: {
                     type: 'string',
                     minLength: 8,
@@ -458,7 +461,8 @@ const definition = {
         responses: {
           200: okContent(null, 'Password reset successful'),
           400: { $ref: '#/components/responses/BadRequest' },
-          401: { $ref: '#/components/responses/Unauthorized' },
+          422: { $ref: '#/components/responses/Unprocessable' },
+          429: { $ref: '#/components/responses/TooManyRequests' },
           500: { $ref: '#/components/responses/ServerError' },
         },
       },
@@ -468,7 +472,7 @@ const definition = {
         tags: ['Authentication'],
         summary: 'Logout and revoke session',
         description:
-          'Clears the refresh cookie and revokes the current session. Requires a verified, active user.',
+          'Clears the refresh cookie, blacklists the access `jti`, and revokes the refresh family. Account `isActive` is unchanged. Requires a verified user.',
         security: bearer,
         responses: {
           200: okContent(null, 'Logged out'),
@@ -588,13 +592,21 @@ const definition = {
       get: {
         tags: ['OAuth'],
         summary: 'Start OAuth authorization',
-        description: 'Redirects the browser to the selected OAuth provider consent screen.',
+        description:
+          'Redirects the browser to the selected OAuth provider consent screen. Query `redirectUrl` must match `CLIENT_URL` or `OAUTH_ALLOWED_ORIGINS`.',
         parameters: [
           {
             name: 'provider',
             in: 'path',
             required: true,
             schema: oauthProviders,
+          },
+          {
+            name: 'redirectUrl',
+            in: 'query',
+            required: false,
+            schema: { type: 'string', format: 'uri' },
+            description: 'Post-login SPA URL (allowlisted origin only)',
           },
         ],
         responses: {
@@ -609,7 +621,7 @@ const definition = {
         tags: ['OAuth'],
         summary: 'OAuth provider callback',
         description:
-          'Handles the provider redirect, exchanges the authorization code, and completes login or account linking.',
+          'Completes login, sets the refresh cookie, and redirects without putting tokens in the query string.',
         parameters: [
           {
             name: 'provider',
@@ -640,9 +652,10 @@ const definition = {
           },
         ],
         responses: {
-          302: { description: 'Redirect to the frontend success or error URL' },
+          302: { description: 'Redirect to the allowlisted frontend URL (no tokens in the query)' },
           400: { $ref: '#/components/responses/BadRequest' },
           401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
           500: { $ref: '#/components/responses/ServerError' },
         },
       },
@@ -1190,7 +1203,7 @@ const definition = {
         tags: ['System'],
         summary: 'Issue CSRF token',
         description:
-          'Returns a CSRF token and sets the CSRF cookie used by mutating requests when CSRF protection is enabled.',
+          'Returns a CSRF token in JSON. The httpOnly csurf secret cookie is owned by middleware — this endpoint does not overwrite it.',
         responses: {
           200: {
             description: 'CSRF token issued',

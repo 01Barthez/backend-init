@@ -6,14 +6,19 @@ import type { NextFunction, Response } from 'express';
 
 import blacklistService from '@/modules/auth/infrastructure/providers/blacklist.provider';
 import jwtService from '@/modules/auth/infrastructure/providers/jwt.service';
+import { PrismaUserRepository } from '@/modules/auth/infrastructure/repositories/prisma-user.repository';
 import type { AuthenticatedRequest } from '@/modules/auth/presentation/types/authenticated-request';
 import rbacService from '@/modules/rbac';
+import { SYSTEM_ROLES } from '@/shared/constants/app.constants';
 import { AppError } from '@/shared/domain/errors/app-error';
 import log from '@/shared/infrastructure/logging/logger';
 import { asyncHandler } from '@/shared/utils/http/responses/helpers';
 
+const accountDirectory = new PrismaUserRepository();
+
 /**
- * Require a valid, non-revoked Bearer access token and attach `req.user`.
+ * Require a valid, non-revoked Bearer access token and attach `req.user`
+ * with live account flags + RBAC (one user + one RBAC load per request).
  */
 export const authenticate = asyncHandler(
   async (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
@@ -34,8 +39,22 @@ export const authenticate = asyncHandler(
       throw AppError.unauthorized('Token has been revoked');
     }
 
-    const authContext = await rbacService.getUserAuthContext(decoded.id);
-    req.user = { ...decoded, permissions: authContext.permissions, roles: authContext.roles };
+    const [account, authContext] = await Promise.all([
+      accountDirectory.findById(decoded.id),
+      rbacService.getUserAuthContext(decoded.id),
+    ]);
+
+    if (!account) {
+      throw AppError.unauthorized('User not found');
+    }
+
+    req.user = {
+      ...decoded,
+      isActive: account.isActive,
+      isVerified: account.isVerified,
+      permissions: authContext.permissions,
+      roles: authContext.roles,
+    };
 
     next();
   },
@@ -63,7 +82,11 @@ export const requirePermission = (permission: string) =>
   asyncHandler(async (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
     if (!req.user) throw AppError.unauthorized();
 
-    const allowed = await rbacService.hasPermission(req.user.id, permission);
+    const roles = req.user.roles ?? [];
+    const permissions = req.user.permissions ?? [];
+    const allowed =
+      roles.includes(SYSTEM_ROLES.SUPER_ADMIN) || permissions.includes(permission);
+
     if (!allowed) {
       log.warn('Permission denied', { userId: req.user.id, permission });
       throw AppError.forbidden(`Missing permission: ${permission}`);
@@ -76,7 +99,8 @@ export const requireAnyRole = (...roles: string[]) =>
   asyncHandler(async (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
     if (!req.user) throw AppError.unauthorized();
 
-    const allowed = await rbacService.hasAnyRole(req.user.id, roles);
+    const userRoles = req.user.roles ?? [];
+    const allowed = roles.some((role) => userRoles.includes(role));
     if (!allowed) {
       throw AppError.forbidden('Insufficient role privileges');
     }

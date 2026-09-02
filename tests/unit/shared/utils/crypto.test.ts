@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { comparePassword, hashPassword, hashToken, randomHex } from '@/shared/utils/crypto';
+import {
+  comparePassword,
+  decryptSecret,
+  encryptSecret,
+  hashPassword,
+  hashToken,
+  randomHex,
+} from '@/shared/utils/crypto';
 
 describe('shared/utils/crypto', () => {
   it('hashPassword / comparePassword round-trip', async () => {
@@ -24,5 +31,12 @@ describe('shared/utils/crypto', () => {
 
   it('randomHex rejects invalid byteLength', () => {
     expect(() => randomHex(0)).toThrow(/byteLength/);
+  });
+
+  it('encryptSecret / decryptSecret round-trip', () => {
+    const key = 'a'.repeat(64);
+    const boxed = encryptSecret('provider-token', key);
+    expect(boxed.startsWith('enc:v1:')).toBe(true);
+    expect(decryptSecret(boxed, key)).toBe('provider-token');
   });
 });

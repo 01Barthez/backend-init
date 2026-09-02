@@ -3,6 +3,7 @@ import log from '@/shared/infrastructure/logging/logger';
 import { hashPassword } from '@/shared/utils/crypto';
 
 import { InvalidResetTokenError } from '../../domain/errors/auth.errors';
+import type { TokenRepositoryPort } from '../../domain/repositories/token.repository';
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';
 import type { ResetPasswordInput } from '../dto/auth.dto';
 import type { TokenServicePort } from '../services/token.service.port';
@@ -11,11 +12,12 @@ import type { UserCachePort } from '../services/user-cache.port';
 export type ResetPasswordCommandDeps = {
   userRepository: UserRepositoryPort;
   tokenService: TokenServicePort;
+  tokenRepository: TokenRepositoryPort;
   userCache?: UserCachePort;
 };
 
 /**
- * Validates a password-reset JWT and replaces the user's password hash.
+ * Consumes a single-use reset token, replaces the password, and revokes sessions.
  */
 export class ResetPasswordCommand {
   constructor(private readonly deps: ResetPasswordCommandDeps) {}
@@ -29,31 +31,26 @@ export class ResetPasswordCommand {
 
     let userId: string;
     try {
-      const decoded = this.deps.tokenService.verifyPasswordResetToken(resetToken);
-      userId = decoded.userId;
-    } catch (error: unknown) {
-      const err = error as { name?: string; message?: string };
-      log.error('Password reset failed', { error: err.message });
-      if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-        throw new InvalidResetTokenError();
-      }
-      if (err.message === 'Invalid token type') {
-        throw new InvalidResetTokenError();
-      }
-      throw AppError.internal('Failed to reset password');
+      const consumed = await this.deps.tokenService.consumePasswordResetToken(resetToken);
+      userId = consumed.userId;
+    } catch {
+      throw new InvalidResetTokenError();
     }
 
     const user = await this.deps.userRepository.findById(userId);
     if (!user) {
-      throw AppError.notFound('User not found');
+      throw new InvalidResetTokenError();
     }
 
     const hashedPassword = await hashPassword(newPassword);
-    if (!hashedPassword) {
-      throw AppError.internal('Failed to hash password');
-    }
+    await this.deps.userRepository.update(userId, {
+      passwordHash: hashedPassword,
+      lastPasswordChange: new Date(),
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+    });
 
-    await this.deps.userRepository.update(userId, { passwordHash: hashedPassword });
+    await this.deps.tokenRepository.revokeAllForUser(userId, 'PASSWORD_CHANGE');
     await this.deps.userCache?.invalidate(userId, user.email);
 
     log.info('Password reset successfully', { userId });

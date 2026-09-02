@@ -44,6 +44,13 @@ export const rateLimitingSubRoute = rateLimit({
   message: LIMIT_REQUEST.SUB_ROUTE,
 });
 
+/** Credential-stuffing / OTP brute-force bucket (login, forgot, OTP, reset). */
+export const rateLimitingAuth = rateLimit({
+  max: config.security.rateLimit.authMax,
+  windowMs: config.security.rateLimit.authWindowMs,
+  message: LIMIT_REQUEST.AUTH_ROUTE,
+});
+
 export const morganFormat = ':method :url  :status :response-time ms';
 export const morganOptions = {
   stream: {

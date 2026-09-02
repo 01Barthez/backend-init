@@ -83,10 +83,17 @@ export function createAuthController(deps: AuthControllerDeps) {
     const result = await deps.logout.execute({
       userId: user?.id ?? '',
       refreshToken,
+      accessJti: user?.jti,
+      accessExpiresAt: user?.exp ? new Date(user.exp * 1000) : undefined,
     });
 
     res.removeHeader('authorization');
-    res.clearCookie(result.refreshCookieName, cookieOptions);
+    res.clearCookie(result.refreshCookieName, {
+      path: '/',
+      secure: envs.COOKIE_SECURE as boolean,
+      httpOnly: envs.COOKIE_HTTP_STATUS as boolean,
+      sameSite: envs.COOKIE_SAME_SITE as 'strict' | 'lax' | 'none',
+    });
 
     return response.ok(req, res, null, 'Logout successful');
   });
@@ -132,7 +139,7 @@ export function createAuthController(deps: AuthControllerDeps) {
   });
 
   const resetPassword = asyncHandler(async (req: Request, res: Response) => {
-    const resetToken = req.params.resetToken || (req.query.token as string);
+    const resetToken = (req.body.resetToken as string) || (req.query.token as string);
     await deps.resetPassword.execute({
       resetToken,
       newPassword: req.body.new_password,

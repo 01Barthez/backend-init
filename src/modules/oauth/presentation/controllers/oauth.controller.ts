@@ -65,8 +65,8 @@ export function createOAuthController(deps: OAuthControllerDeps) {
     setSafeCookie(res, AUTH_COOKIES.REFRESH_TOKEN, result.refreshToken, cookieOptions);
 
     if (result.redirectUrl) {
-      const redirectUrlWithToken = `${result.redirectUrl}?token=${result.accessToken}&refresh_token=${result.refreshToken}`;
-      return res.redirect(redirectUrlWithToken);
+      // Tokens stay in the Set-Cookie / Authorization header — never in the query string.
+      return res.redirect(result.redirectUrl);
     }
 
     return response.ok(

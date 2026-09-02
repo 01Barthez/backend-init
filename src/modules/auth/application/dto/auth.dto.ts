@@ -48,6 +48,8 @@ export type SignupResult = {
 export type LogoutInput = {
   userId: string;
   refreshToken?: string;
+  accessJti?: string;
+  accessExpiresAt?: Date;
 };
 
 export type RefreshTokenInput = {

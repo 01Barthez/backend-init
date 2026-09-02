@@ -17,6 +17,7 @@ Centralized, typed configuration for the entire backend.
 ```
 config/
 ├── env.ts                 # dotenv bootstrap + raw env accessors
+├── parse-duration.ts      # `7d` / `15m` / ms → number for cookie / CSRF TTL
 ├── index.ts               # Aggregated `config` export
 ├── sections/              # One file per concern
 │   ├── app.ts

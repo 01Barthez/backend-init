@@ -25,6 +25,7 @@ model User {
   deletedAt          DateTime?
   failedLoginAttempts Int      @default(0)
   lockedUntil        DateTime?
+  otpFailedAttempts  Int       @default(0)
 
   userRoles     UserRole[]
   oauthAccounts OAuthAccount[]

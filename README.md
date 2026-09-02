@@ -133,6 +133,7 @@ npm run dev
 | Bull Board    | http://localhost:3000/admin/queues |
 | MailHog       | http://localhost:8025              |
 | MinIO Console | http://localhost:9001              |
+| Prisma Studio | http://localhost:5555 (dev only)   |
 
 More detail:
 [docs/development/getting-started.md](./docs/development/getting-started.md)
@@ -180,6 +181,8 @@ Full contract: [docs/api/openapi.yaml](./docs/api/openapi.yaml)
 | `npm run generate:openapi`                  | Regenerate `docs/api/openapi.yaml`        |
 | `npm run docker:up` / `docker:build`        | Compose / local image build               |
 | `npm run prisma:generate` / `push` / `seed` | Database tooling                          |
+| `npm run prisma:studio`                     | Browse Mongo data (dev; localhost:5555)   |
+| `npm run docker:tools`                      | Optional tools profile (Studio, RedisInsight) |
 
 ---
 

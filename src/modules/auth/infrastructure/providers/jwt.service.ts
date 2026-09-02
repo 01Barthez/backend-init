@@ -19,8 +19,8 @@ export const jwtService = {
   persistRefreshToken: provider.persistRefreshToken.bind(provider),
   verifyAccessToken: provider.verifyAccessToken.bind(provider),
   verifyRefreshToken: provider.verifyRefreshToken.bind(provider),
-  generatePasswordResetToken: provider.generatePasswordResetToken.bind(provider),
-  verifyPasswordResetToken: provider.verifyPasswordResetToken.bind(provider),
+  createPasswordResetToken: provider.createPasswordResetToken.bind(provider),
+  consumePasswordResetToken: provider.consumePasswordResetToken.bind(provider),
   rotateRefreshToken: provider.rotateRefreshToken.bind(provider),
   getRefreshCookieName: provider.getRefreshCookieName.bind(provider),
 };

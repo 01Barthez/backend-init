@@ -10,6 +10,7 @@ import type { UserRepositoryPort } from '../../domain/repositories/user.reposito
 import type { SignupInput, SignupResult } from '../dto/auth.dto';
 import type { AvatarUploaderPort } from '../services/avatar-uploader.port';
 import type { MailerPort } from '../services/mailer.port';
+import { hashOtpCode } from '../services/otp-hash';
 import type { RbacPort } from '../services/rbac.port';
 
 export type SignupCommandDeps = {
@@ -58,7 +59,7 @@ export class SignupCommand {
       phone,
       avatarUrl: profileUrl,
       otp: {
-        code: userOtp || '000000',
+        code: hashOtpCode(email, userOtp),
         expireAt: otpExpireDate,
       },
     });

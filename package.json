@@ -80,6 +80,7 @@
     "prisma:format": "prisma format --schema prisma/",
     "prisma:push": "prisma db push --schema prisma/",
     "prisma:push:local": "DATABASE_URL=\"mongodb://admin:secret123@127.0.0.1:27017/appDB?directConnection=true&authSource=admin\" prisma db push --schema prisma/",
+    "prisma:studio": "DATABASE_URL=\"mongodb://admin:secret123@127.0.0.1:27017/appDB?directConnection=true&authSource=admin\" prisma studio --schema prisma/ --port 5555",
     "prisma:seed": "ts-node -r tsconfig-paths/register --project prisma/tsconfig.json prisma/seed.ts",
     "generate:openapi": "node docs/api/openapi.config.js",
     "postinstall": "npm run prisma:generate",

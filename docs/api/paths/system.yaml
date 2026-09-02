@@ -14,7 +14,7 @@
   get:
     tags: [System]
     summary: Issue CSRF token
-    description: Returns a CSRF token and sets the CSRF cookie used by mutating requests when CSRF protection is enabled.
+    description: Returns a CSRF token in JSON. The httpOnly csurf secret cookie is owned by middleware — this endpoint does not overwrite it.
     responses:
       '200':
         description: CSRF token issued

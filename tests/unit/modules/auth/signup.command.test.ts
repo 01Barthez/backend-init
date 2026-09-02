@@ -12,6 +12,8 @@ import { buildSignupPayload, buildUserEntity } from '../../../factories/user.fac
 vi.mock('@/shared/utils/crypto', () => ({
   hashPassword: vi.fn(),
   comparePassword: vi.fn(),
+  hashToken: (value: string) => `hash:${value}`,
+  tokenHashesEqual: (a: string, b: string) => a === b,
 }));
 
 vi.mock('@/shared/utils/otp/generate-otp', () => ({

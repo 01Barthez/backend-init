@@ -51,6 +51,11 @@ export const oauthConfig = {
     botToken: fromEnv.get('TELEGRAM_BOT_TOKEN').default('').asString(),
     botUsername: fromEnv.get('TELEGRAM_BOT_USERNAME').default('').asString(),
   },
+  /**
+   * Extra origins allowed as post-login redirects (comma-separated).
+   * `CLIENT_URL` is always allowed. Query `redirectUrl` must match this list.
+   */
+  allowedOrigins: fromEnv.get('OAUTH_ALLOWED_ORIGINS').default('').asString(),
 } as const;
 
 export type OAuthConfig = typeof oauthConfig;

@@ -28,6 +28,16 @@ Production pattern:
 3. Point env paths at the mount.
 4. Restrict filesystem permissions; do not commit private keys.
 
+HS256 `JWT_SECRET` is **not** used. Do not add a symmetric secret as a fallback.
+
+## Auth encryption and cookies
+
+- Set `AUTH_ENCRYPTION_KEY` (64-char hex or a strong passphrase) so OAuth provider tokens are stored AES-256-GCM. Empty = tokens are not persisted.
+- `COOKIE_EXPIRES_IN` must be a duration (`7d`) or milliseconds. Align with `JWT_REFRESH_EXPIRES_IN`.
+- Leave `COOKIE_DOMAIN` empty for host-only cookies unless you explicitly need a parent domain.
+- Restrict OAuth post-login redirects with `OAUTH_ALLOWED_ORIGINS` (comma-separated). `CLIENT_URL` is always allowed.
+- Enable CSRF for browser cookie flows (`ALLOW_CSRF_PROTECTION=true`).
+
 ## Reverse proxy
 
 Compose includes `nginx` with `infra/nginx/default.conf`. In production:
@@ -66,9 +76,9 @@ Wire probes to `/health`. Scrape `/metrics` from an internal network only.
 ## Security headers and cookies
 
 - Confirm `COOKIE_SECURE`, `COOKIE_SAME_SITE`, and domain settings for your
-  public URL.
+  public URL. `COOKIE_EXPIRES_IN` is Express `maxAge` (use `7d`, not `2`).
 - Enable CSRF protection when browser cookie flows require it
-  (`ALLOW_CSRF_PROTECTION`).
+  (`ALLOW_CSRF_PROTECTION`). `GET /csrf-token` returns JSON only.
 - Keep Helmet / CSP report URI configured; monitor CSP reports.
 
 ## Related

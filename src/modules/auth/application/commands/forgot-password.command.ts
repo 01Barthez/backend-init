@@ -8,6 +8,8 @@ import type { ForgotPasswordInput, ForgotPasswordResult } from '../dto/auth.dto'
 import type { MailerPort } from '../services/mailer.port';
 import type { TokenServicePort } from '../services/token.service.port';
 
+const GENERIC_MESSAGE = 'If an account exists for this email, a reset link has been sent';
+
 export type ForgotPasswordCommandDeps = {
   userRepository: UserRepositoryPort;
   tokenService: TokenServicePort;
@@ -16,7 +18,8 @@ export type ForgotPasswordCommandDeps = {
 
 /**
  * Sends a password-reset link when the email exists.
- * Always returns a success-shaped payload for unknown emails to avoid enumeration.
+ * Response is identical for unknown emails (no enumeration).
+ * The token is an opaque random value (hashed in Redis), not a JWT in the URL.
  */
 export class ForgotPasswordCommand {
   constructor(private readonly deps: ForgotPasswordCommandDeps) {}
@@ -30,13 +33,10 @@ export class ForgotPasswordCommand {
 
     const user = await this.deps.userRepository.findByEmail(email);
     if (!user) {
-      return {
-        emailSent: true,
-        message: 'If email exists, password reset link has been sent',
-      };
+      return { emailSent: true, message: GENERIC_MESSAGE };
     }
 
-    const resetToken = this.deps.tokenService.generatePasswordResetToken(user.id);
+    const resetToken = await this.deps.tokenService.createPasswordResetToken(user.id);
     const resetLink = `${envs.CLIENT_URL}/reset-password?token=${resetToken}`;
     const userFullName = `${user.lastName} ${user.firstName}`;
 
@@ -51,12 +51,8 @@ export class ForgotPasswordCommand {
     } catch (mailError: unknown) {
       const message = mailError instanceof Error ? mailError.message : String(mailError);
       log.error('Failed to queue password reset email', { email, error: message });
-      throw AppError.unprocessable('Failed to send password reset email');
     }
 
-    return {
-      emailSent: true,
-      message: 'Password reset link sent to your email',
-    };
+    return { emailSent: true, message: GENERIC_MESSAGE };
   }
 }

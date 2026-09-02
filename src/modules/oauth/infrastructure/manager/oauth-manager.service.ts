@@ -2,10 +2,11 @@
  * OAuth Manager Service
  * Central service to manage all OAuth providers
  */
+import { envs } from '@/app/config';
 import { OAUTH_ERRORS, OAUTH_STATE_TTL } from '@/shared/constants/oauth.constants';
 import prisma from '@/shared/infrastructure/database/prisma.client';
 import log from '@/shared/infrastructure/logging/logger';
-import { randomHex } from '@/shared/utils/crypto';
+import { decryptSecret, encryptSecret, randomHex } from '@/shared/utils/crypto';
 
 import type {
   IOAuthAccountData,
@@ -140,8 +141,8 @@ export class OAuthManager {
               provider: profile.provider,
               providerUserId: profile.providerUserId,
               providerEmail: profile.email,
-              accessToken: tokenData.access_token,
-              refreshToken: tokenData.refresh_token,
+              accessToken: sealProviderToken(tokenData.access_token),
+              refreshToken: sealProviderToken(tokenData.refresh_token),
               tokenType: tokenData.token_type,
               expiresAt: tokenData.expires_in
                 ? new Date(Date.now() + tokenData.expires_in * 1000)
@@ -182,8 +183,8 @@ export class OAuthManager {
         provider: profile.provider,
         providerUserId: profile.providerUserId,
         providerEmail: profile.email,
-        accessToken: tokenData.access_token,
-        refreshToken: tokenData.refresh_token,
+        accessToken: sealProviderToken(tokenData.access_token),
+        refreshToken: sealProviderToken(tokenData.refresh_token),
         tokenType: tokenData.token_type,
         expiresAt: tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000) : null,
         scope: tokenData.scope,
@@ -204,8 +205,8 @@ export class OAuthManager {
     await prisma.oAuthAccount.update({
       where: { id: accountId },
       data: {
-        accessToken: tokenData.access_token,
-        refreshToken: tokenData.refresh_token || undefined,
+        accessToken: sealProviderToken(tokenData.access_token),
+        refreshToken: sealProviderToken(tokenData.refresh_token) || undefined,
         tokenType: tokenData.token_type,
         expiresAt: tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000) : null,
         scope: tokenData.scope,
@@ -262,12 +263,17 @@ export class OAuthManager {
         },
       });
 
-      if (!oauthAccount?.refreshToken) {
+      if (!oauthAccount) {
+        throw new Error('No OAuth account found');
+      }
+
+      const storedRefresh = openProviderToken(oauthAccount.refreshToken);
+      if (!storedRefresh) {
         throw new Error('No refresh token available');
       }
 
       const service = this.getProvider(provider);
-      const tokenData = await service.refreshAccessToken!(oauthAccount.refreshToken);
+      const tokenData = await service.refreshAccessToken!(storedRefresh);
 
       await this.updateOAuthAccount(oauthAccount.id, tokenData);
 
@@ -286,5 +292,32 @@ export class OAuthManager {
     return this.telegramService;
   }
 }
+
+const sealProviderToken = (value?: string): string | undefined => {
+  if (!value) return undefined;
+  const key = envs.AUTH_ENCRYPTION_KEY as string;
+  if (!key) {
+    log.warn('AUTH_ENCRYPTION_KEY is empty — provider OAuth tokens are not stored');
+    return undefined;
+  }
+  try {
+    return encryptSecret(value, key);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    log.warn('Failed to encrypt OAuth provider token', { error: message });
+    return undefined;
+  }
+};
+
+const openProviderToken = (value?: string | null): string => {
+  if (!value) return '';
+  const key = envs.AUTH_ENCRYPTION_KEY as string;
+  if (!key) return '';
+  try {
+    return decryptSecret(value, key);
+  } catch {
+    return '';
+  }
+};
 
 export const oauthManager = new OAuthManager();

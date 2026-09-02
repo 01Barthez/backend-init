@@ -72,13 +72,14 @@ export const initMiddlewares = (app: Express, registerRoutes: () => void): void 
         cookie: {
           key: config.security.csrf.cookieName,
           secure: config.security.cookie.secure,
-          httpOnly: config.security.cookie.httpOnly,
+          httpOnly: true,
           sameSite: config.security.cookie.sameSite,
-          domain: config.security.cookie.domain,
+          ...(config.security.cookie.domain ? { domain: config.security.cookie.domain } : {}),
           path: '/',
-          maxAge: 86400,
+          maxAge: config.security.csrf.expiresInMs,
         },
-        ignoreMethods: ['HEAD', 'OPTIONS'],
+        // GET must stay ignored: /csrf-token and OAuth callbacks are GET.
+        ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
       }),
     );
   }

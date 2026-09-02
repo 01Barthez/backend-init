@@ -2,6 +2,7 @@ import type { TokenServicePort } from '@/modules/auth';
 import type { MailerPort } from '@/modules/auth/application/services/mailer.port';
 import type { RbacPort } from '@/modules/auth/application/services/rbac.port';
 import { MAIL } from '@/shared/constants/mail.constants';
+import { AppError } from '@/shared/domain/errors/app-error';
 import log from '@/shared/infrastructure/logging/logger';
 
 import {
@@ -64,6 +65,10 @@ export class CallbackCommand {
 
     if (isNewUser) {
       await this.deps.rbac.assignDefaultRole(user.id);
+    }
+
+    if (!user.isActive) {
+      throw AppError.forbidden('Account is inactive');
     }
 
     const { permissions, roles } = await this.deps.rbac.getUserAuthContext(user.id);

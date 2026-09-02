@@ -7,6 +7,7 @@ import { getOtpExpirationDate } from '@/shared/utils/otp/otp-expiration';
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';
 import type { ResendOtpInput, ResendOtpResult } from '../dto/auth.dto';
 import type { MailerPort } from '../services/mailer.port';
+import { hashOtpCode } from '../services/otp-hash';
 import type { UserCachePort } from '../services/user-cache.port';
 
 export type ResendOtpCommandDeps = {
@@ -30,12 +31,8 @@ export class ResendOtpCommand {
     }
 
     const user = await this.deps.userRepository.findByEmail(email);
-    if (!user) {
-      throw AppError.notFound('User not found');
-    }
-
-    if (user.isVerified) {
-      throw AppError.conflict('User already verified');
+    if (!user || user.isVerified) {
+      return { emailSent: true };
     }
 
     const userOtp = generateOtp();
@@ -43,7 +40,8 @@ export class ResendOtpCommand {
     const otpExpireDate = getOtpExpirationDate(now);
 
     await this.deps.userRepository.update(user.id, {
-      otp: { code: userOtp, expireAt: otpExpireDate },
+      otp: { code: hashOtpCode(email, userOtp), expireAt: otpExpireDate },
+      otpFailedAttempts: 0,
     });
 
     await this.deps.userCache?.invalidate(user.id, email);

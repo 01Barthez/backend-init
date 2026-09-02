@@ -24,10 +24,17 @@ include:
 
 ### Tools profile (`profiles: [tools]`)
 
-| Service        | Role                                             |
-| -------------- | ------------------------------------------------ |
-| `mongo-backup` | Periodic `mongodump` into `infra/docker/backups` |
-| `redisinsight` | Redis UI                                         |
+| Service         | Role                                                          |
+| --------------- | ------------------------------------------------------------- |
+| `mongo-backup`  | Periodic `mongodump` into `infra/docker/backups`              |
+| `redisinsight`  | Redis UI                                                      |
+| `prisma-studio` | Prisma data browser on `:5555` (dev only — not for production) |
+
+Prefer the host script when the API runs outside Compose:
+
+```bash
+npm run prisma:studio
+```
 
 ```bash
 npm run docker:tools

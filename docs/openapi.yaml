@@ -11,18 +11,24 @@ info:
     name: MIT
     url: 'https://opensource.org/licenses/MIT'
 servers:
-  - url: 'http://localhost:3000'
+  -
+    url: 'http://localhost:3000'
     description: 'Local development'
 tags:
-  - name: Authentication
+  -
+    name: Authentication
     description: 'Signup, login, OTP verification, token refresh, and password management'
-  - name: OAuth
+  -
+    name: OAuth
     description: 'Social login providers, Telegram auth, account linking and unlinking'
-  - name: Users
+  -
+    name: Users
     description: 'Profile updates and administrative user management'
-  - name: Blogs
+  -
+    name: Blogs
     description: 'Reference blog domain used to validate the modular template'
-  - name: System
+  -
+    name: System
     description: 'Health, CSRF, Prometheus metrics, CSP reports, and Bull Board admin UI'
 components:
   securitySchemes:
@@ -214,6 +220,18 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    Unprocessable:
+      description: 'Semantic error (invalid or expired token)'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: 'Rate limit or account lockout'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     ServerError:
       description: 'Unexpected server error'
       content:
@@ -266,8 +284,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - { $ref: '#/components/schemas/ApiResponse' }
-                  - { type: object, properties: { data: { $ref: '#/components/schemas/User' } } }
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {$ref: '#/components/schemas/User'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -304,11 +322,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - { $ref: '#/components/schemas/ApiResponse' }
-                  - {
-                      type: object,
-                      properties: { data: { $ref: '#/components/schemas/TokenPair' } },
-                    }
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {$ref: '#/components/schemas/TokenPair'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -320,7 +335,7 @@ paths:
       tags:
         - Authentication
       summary: 'Resend verification OTP'
-      description: 'Sends a new one-time password to the given email address.'
+      description: 'Sends a new one-time password when the account exists and is unverified. Response is identical for unknown emails (no enumeration).'
       requestBody:
         required: true
         content:
@@ -335,15 +350,15 @@ paths:
                   format: email
       responses:
         '200':
-          description: 'OTP resent successfully'
+          description: 'Accepted (OTP sent when applicable)'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/ServerError'
   /api/v1/auth/login:
@@ -374,17 +389,16 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - { $ref: '#/components/schemas/ApiResponse' }
-                  - {
-                      type: object,
-                      properties: { data: { $ref: '#/components/schemas/TokenPair' } },
-                    }
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {$ref: '#/components/schemas/TokenPair'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/ServerError'
   /api/v1/auth/refresh:
@@ -410,11 +424,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - { $ref: '#/components/schemas/ApiResponse' }
-                  - {
-                      type: object,
-                      properties: { data: { $ref: '#/components/schemas/TokenPair' } },
-                    }
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {$ref: '#/components/schemas/TokenPair'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -426,7 +437,7 @@ paths:
       tags:
         - Authentication
       summary: 'Request password reset'
-      description: 'Sends a password-reset link/token to the user email when the account exists.'
+      description: 'Always returns the same success payload. A single-use opaque token is emailed only when the account exists (no user enumeration).'
       requestBody:
         required: true
         content:
@@ -441,30 +452,23 @@ paths:
                   format: email
       responses:
         '200':
-          description: 'Reset instructions sent when the account exists'
+          description: 'Generic accepted response'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/ServerError'
-  '/api/v1/auth/reset-password/{resetToken}':
+  /api/v1/auth/reset-password:
     post:
       tags:
         - Authentication
       summary: 'Reset password with token'
-      description: 'Sets a new password using the reset token from the email link. The Express route also accepts an optional path segment (`/reset-password/:resetToken?`).'
-      parameters:
-        - name: resetToken
-          in: path
-          required: true
-          schema:
-            type: string
-          description: 'Password reset token from the email link'
+      description: 'Consumes a single-use opaque `resetToken` from the email (JSON body, not the URL) and revokes all sessions.'
       requestBody:
         required: true
         content:
@@ -472,8 +476,11 @@ paths:
             schema:
               type: object
               required:
+                - resetToken
                 - new_password
               properties:
+                resetToken:
+                  type: string
                 new_password:
                   type: string
                   minLength: 8
@@ -487,8 +494,10 @@ paths:
                 $ref: '#/components/schemas/ApiResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/ServerError'
   /api/v1/auth/logout:
@@ -496,9 +505,10 @@ paths:
       tags:
         - Authentication
       summary: 'Logout and revoke session'
-      description: 'Clears the refresh cookie and revokes the current session. Requires a verified, active user.'
+      description: 'Clears the refresh cookie, blacklists the access `jti`, and revokes the refresh family. Account `isActive` is unchanged. Requires a verified user.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       responses:
         '200':
           description: 'Logged out'
@@ -519,7 +529,8 @@ paths:
       summary: 'Change password (authenticated)'
       description: 'Updates the password for the current verified, active user.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       requestBody:
         required: true
         content:
@@ -558,7 +569,8 @@ paths:
       summary: 'List linked OAuth accounts'
       description: 'Returns social accounts linked to the authenticated user.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       responses:
         '200':
           description: 'Linked OAuth accounts'
@@ -566,15 +578,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - { $ref: '#/components/schemas/ApiResponse' }
-                  - {
-                      type: object,
-                      properties:
-                        {
-                          data:
-                            { type: array, items: { $ref: '#/components/schemas/OAuthAccount' } },
-                        },
-                    }
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {type: array, items: {$ref: '#/components/schemas/OAuthAccount'}}}}
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -629,9 +634,10 @@ paths:
       tags:
         - OAuth
       summary: 'Start OAuth authorization'
-      description: 'Redirects the browser to the selected OAuth provider consent screen.'
+      description: 'Redirects the browser to the selected OAuth provider consent screen. Query `redirectUrl` must match `CLIENT_URL` or `OAUTH_ALLOWED_ORIGINS`.'
       parameters:
-        - name: provider
+        -
+          name: provider
           in: path
           required: true
           schema:
@@ -645,6 +651,14 @@ paths:
               - linkedin
               - telegram
             description: 'OAuth provider identifier'
+        -
+          name: redirectUrl
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uri
+          description: 'Post-login SPA URL (allowlisted origin only)'
       responses:
         '302':
           description: 'Redirect to the OAuth provider'
@@ -657,9 +671,10 @@ paths:
       tags:
         - OAuth
       summary: 'OAuth provider callback'
-      description: 'Handles the provider redirect, exchanges the authorization code, and completes login or account linking.'
+      description: 'Completes login, sets the refresh cookie, and redirects without putting tokens in the query string.'
       parameters:
-        - name: provider
+        -
+          name: provider
           in: path
           required: true
           schema:
@@ -673,19 +688,22 @@ paths:
               - linkedin
               - telegram
             description: 'OAuth provider identifier'
-        - name: code
+        -
+          name: code
           in: query
           required: false
           schema:
             type: string
           description: 'Authorization code from the provider'
-        - name: state
+        -
+          name: state
           in: query
           required: false
           schema:
             type: string
           description: 'CSRF/state value from the authorize step'
-        - name: error
+        -
+          name: error
           in: query
           required: false
           schema:
@@ -693,11 +711,13 @@ paths:
           description: 'Provider error code when consent is denied'
       responses:
         '302':
-          description: 'Redirect to the frontend success or error URL'
+          description: 'Redirect to the allowlisted frontend URL (no tokens in the query)'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
   '/api/v1/auth/oauth/{provider}/unlink':
@@ -707,9 +727,11 @@ paths:
       summary: 'Unlink an OAuth provider'
       description: 'Removes the linked social account for the given provider from the current user.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       parameters:
-        - name: provider
+        -
+          name: provider
           in: path
           required: true
           schema:
@@ -747,7 +769,8 @@ paths:
       summary: 'Update own profile'
       description: 'Updates the authenticated user profile. Optional avatar via multipart field `profile`.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       requestBody:
         required: false
         content:
@@ -773,8 +796,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - { $ref: '#/components/schemas/ApiResponse' }
-                  - { type: object, properties: { data: { $ref: '#/components/schemas/User' } } }
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {$ref: '#/components/schemas/User'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -790,30 +813,36 @@ paths:
       summary: 'List users'
       description: 'Returns a paginated user list. Requires `user:read:any`.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       parameters:
-        - name: page
+        -
+          name: page
           in: query
           schema:
             type: integer
             minimum: 1
             default: 1
-        - name: limit
+        -
+          name: limit
           in: query
           schema:
             type: integer
             minimum: 1
             maximum: 100
             default: 10
-        - name: isActive
+        -
+          name: isActive
           in: query
           schema:
             type: boolean
-        - name: isVerified
+        -
+          name: isVerified
           in: query
           schema:
             type: boolean
-        - name: isDeleted
+        -
+          name: isDeleted
           in: query
           schema:
             type: boolean
@@ -825,10 +854,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  success: { type: boolean }
-                  message: { type: string }
-                  data: { type: array, items: { $ref: '#/components/schemas/User' } }
-                  pagination: { $ref: '#/components/schemas/PaginationMeta' }
+                  success: {type: boolean}
+                  message: {type: string}
+                  data: {type: array, items: {$ref: '#/components/schemas/User'}}
+                  pagination: {$ref: '#/components/schemas/PaginationMeta'}
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -842,9 +871,11 @@ paths:
       summary: 'Search users'
       description: 'Searches users by name or email. Requires `user:read:any`.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       parameters:
-        - name: search
+        -
+          name: search
           in: query
           schema:
             type: string
@@ -858,12 +889,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - { $ref: '#/components/schemas/ApiResponse' }
-                  - {
-                      type: object,
-                      properties:
-                        { data: { type: array, items: { $ref: '#/components/schemas/User' } } },
-                    }
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {type: array, items: {$ref: '#/components/schemas/User'}}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -879,7 +906,8 @@ paths:
       summary: 'Export users'
       description: 'Exports users (typically CSV/file download). Requires `user:export`.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       responses:
         '200':
           description: 'Export payload or file download'
@@ -904,7 +932,8 @@ paths:
       summary: 'Clear all users'
       description: 'Destructive admin operation that clears user records. Requires `user:delete:any`. Registered before `/:userId` so the path is not captured as an id.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       responses:
         '200':
           description: 'Users cleared'
@@ -925,9 +954,11 @@ paths:
       summary: 'Get user by ID'
       description: 'Returns a single user. Requires `user:read:any`.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       parameters:
-        - name: userId
+        -
+          name: userId
           in: path
           required: true
           schema:
@@ -939,8 +970,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - { $ref: '#/components/schemas/ApiResponse' }
-                  - { type: object, properties: { data: { $ref: '#/components/schemas/User' } } }
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {$ref: '#/components/schemas/User'}}}
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -955,9 +986,11 @@ paths:
       summary: 'Soft-delete user'
       description: 'Soft-deletes the user. Requires `user:delete:any`.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       parameters:
-        - name: userId
+        -
+          name: userId
           in: path
           required: true
           schema:
@@ -984,9 +1017,11 @@ paths:
       summary: 'Assign user role'
       description: 'Updates the role for a user. Requires `user:role:assign`.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       parameters:
-        - name: userId
+        -
+          name: userId
           in: path
           required: true
           schema:
@@ -1010,8 +1045,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - { $ref: '#/components/schemas/ApiResponse' }
-                  - { type: object, properties: { data: { $ref: '#/components/schemas/User' } } }
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {$ref: '#/components/schemas/User'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1029,9 +1064,11 @@ paths:
       summary: 'Permanently delete user'
       description: 'Hard-deletes the user record. Requires `user:delete:any`.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       parameters:
-        - name: userId
+        -
+          name: userId
           in: path
           required: true
           schema:
@@ -1058,9 +1095,11 @@ paths:
       summary: 'Restore soft-deleted user'
       description: 'Restores a previously soft-deleted user. Requires `user:update:any`.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       parameters:
-        - name: userId
+        -
+          name: userId
           in: path
           required: true
           schema:
@@ -1072,8 +1111,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - { $ref: '#/components/schemas/ApiResponse' }
-                  - { type: object, properties: { data: { $ref: '#/components/schemas/User' } } }
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {$ref: '#/components/schemas/User'}}}
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1089,13 +1128,15 @@ paths:
       summary: 'List blog posts'
       description: 'Returns a paginated list of blog posts (public listing).'
       parameters:
-        - name: page
+        -
+          name: page
           in: query
           schema:
             type: integer
             minimum: 1
             default: 1
-        - name: limit
+        -
+          name: limit
           in: query
           schema:
             type: integer
@@ -1109,10 +1150,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  success: { type: boolean }
-                  message: { type: string }
-                  data: { type: array, items: { $ref: '#/components/schemas/Blog' } }
-                  pagination: { $ref: '#/components/schemas/PaginationMeta' }
+                  success: {type: boolean}
+                  message: {type: string}
+                  data: {type: array, items: {$ref: '#/components/schemas/Blog'}}
+                  pagination: {$ref: '#/components/schemas/PaginationMeta'}
         '500':
           $ref: '#/components/responses/ServerError'
     post:
@@ -1121,7 +1162,8 @@ paths:
       summary: 'Create blog post'
       description: 'Creates a blog post. Requires authentication and `blog:create`.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       requestBody:
         required: true
         content:
@@ -1150,8 +1192,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - { $ref: '#/components/schemas/ApiResponse' }
-                  - { type: object, properties: { data: { $ref: '#/components/schemas/Blog' } } }
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {$ref: '#/components/schemas/Blog'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1167,7 +1209,8 @@ paths:
       summary: 'Get blog by slug'
       description: 'Returns a single blog post identified by its URL slug.'
       parameters:
-        - name: slug
+        -
+          name: slug
           in: path
           required: true
           schema:
@@ -1180,8 +1223,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - { $ref: '#/components/schemas/ApiResponse' }
-                  - { type: object, properties: { data: { $ref: '#/components/schemas/Blog' } } }
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {$ref: '#/components/schemas/Blog'}}}
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -1193,9 +1236,11 @@ paths:
       summary: 'Update blog post'
       description: 'Updates an existing blog. Requires `blog:update:own` (or elevated permission).'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1228,8 +1273,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - { $ref: '#/components/schemas/ApiResponse' }
-                  - { type: object, properties: { data: { $ref: '#/components/schemas/Blog' } } }
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {$ref: '#/components/schemas/Blog'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1246,9 +1291,11 @@ paths:
       summary: 'Delete blog post'
       description: 'Deletes a blog post. Requires `blog:delete:own`.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1275,9 +1322,11 @@ paths:
       summary: 'Publish blog post'
       description: 'Transitions a blog to published status. Requires `blog:publish`.'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
       parameters:
-        - name: id
+        -
+          name: id
           in: path
           required: true
           schema:
@@ -1289,8 +1338,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - { $ref: '#/components/schemas/ApiResponse' }
-                  - { type: object, properties: { data: { $ref: '#/components/schemas/Blog' } } }
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {$ref: '#/components/schemas/Blog'}}}
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1319,7 +1368,7 @@ paths:
       tags:
         - System
       summary: 'Issue CSRF token'
-      description: 'Returns a CSRF token and sets the CSRF cookie used by mutating requests when CSRF protection is enabled.'
+      description: 'Returns a CSRF token in JSON. The httpOnly csurf secret cookie is owned by middleware — this endpoint does not overwrite it.'
       responses:
         '200':
           description: 'CSRF token issued'
@@ -1327,12 +1376,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - { $ref: '#/components/schemas/ApiResponse' }
-                  - {
-                      type: object,
-                      properties:
-                        { data: { type: object, properties: { csrfToken: { type: string } } } },
-                    }
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {type: object, properties: {csrfToken: {type: string}}}}}
         '500':
           $ref: '#/components/responses/ServerError'
   /metrics:
@@ -1365,14 +1410,7 @@ paths:
               properties:
                 csp-report:
                   type: object
-                  properties:
-                    {
-                      document-uri: { type: string },
-                      referrer: { type: string },
-                      blocked-uri: { type: string },
-                      violated-directive: { type: string },
-                      original-policy: { type: string },
-                    }
+                  properties: {document-uri: {type: string}, referrer: {type: string}, blocked-uri: {type: string}, violated-directive: {type: string}, original-policy: {type: string}}
       responses:
         '200':
           description: 'Report accepted'
@@ -1389,8 +1427,10 @@ paths:
       summary: 'Bull Board queue admin UI'
       description: 'Serves the Bull Board dashboard for mail, backup, maintenance, and heavy-task queues. Requires HTTP Basic (`SWAGGER_USER` / `SWAGGER_PASSWORD`) plus a JWT for an admin user.'
       security:
-        - basicAuth: []
-        - bearerAuth: []
+        -
+          basicAuth: []
+        -
+          bearerAuth: []
       responses:
         '200':
           description: 'Bull Board HTML UI'

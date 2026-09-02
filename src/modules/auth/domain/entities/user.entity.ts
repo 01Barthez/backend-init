@@ -21,6 +21,9 @@ export type UserEntity = {
   isDeleted: boolean;
   otp?: UserOtp | null;
   emailVerifiedAt?: Date | null;
+  failedLoginAttempts?: number;
+  lockedUntil?: Date | null;
+  otpFailedAttempts?: number;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -46,4 +49,9 @@ export type UpdateUserInput = Partial<{
   isDeleted: boolean;
   otp: UserOtp | null;
   emailVerifiedAt: Date | null;
+  failedLoginAttempts: number;
+  lockedUntil: Date | null;
+  otpFailedAttempts: number;
+  lastLoginAt: Date | null;
+  lastPasswordChange: Date | null;
 }>;

@@ -44,7 +44,7 @@
   get:
     tags: [OAuth]
     summary: Start OAuth authorization
-    description: Redirects the browser to the selected OAuth provider consent screen.
+    description: Redirects the browser to the selected OAuth provider consent screen. Query `redirectUrl` must match `CLIENT_URL` or `OAUTH_ALLOWED_ORIGINS`.
     parameters:
       - name: provider
         in: path
@@ -52,6 +52,10 @@
         schema:
           type: string
           enum: [google, github, facebook, instagram, twitter, linkedin, telegram]
+      - name: redirectUrl
+        in: query
+        schema: { type: string, format: uri }
+        description: Post-login SPA URL (allowlisted origin only)
     responses:
       '302': { description: Redirect to the OAuth provider }
       '400': { description: Unsupported provider }
@@ -61,7 +65,7 @@
   get:
     tags: [OAuth]
     summary: OAuth provider callback
-    description: Handles the provider redirect, exchanges the authorization code, and completes login or account linking.
+    description: Completes login, sets the refresh cookie, and redirects without putting tokens in the query string.
     parameters:
       - name: provider
         in: path
@@ -79,9 +83,10 @@
         in: query
         schema: { type: string }
     responses:
-      '302': { description: Redirect to the frontend success or error URL }
+      '302': { description: Redirect to the allowlisted frontend URL (no tokens in the query) }
       '400': { description: Invalid callback parameters }
       '401': { description: OAuth exchange failed }
+      '403': { description: Account inactive }
       '500': { description: Unexpected server error }
 
 /api/v1/auth/oauth/{provider}/unlink:

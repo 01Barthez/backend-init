@@ -32,6 +32,8 @@ Review at least:
 - `REDIS_HOST` / `REDIS_PORT`
 - `MINIO_*` or `S3_*` + `STORAGE_PROVIDER`
 - `JWT_*_KEY_PATH` (dev keys under `src/app/config/keys` or mounted paths)
+- `COOKIE_EXPIRES_IN` (duration such as `7d`, not a tiny integer)
+- `AUTH_ENCRYPTION_KEY` if you persist OAuth provider tokens
 - OAuth provider variables you plan to exercise
 
 Do not commit `.env`.
@@ -62,8 +64,15 @@ Useful URLs after boot:
 | Metrics       | http://localhost:3000/metrics  |
 | MailHog       | http://localhost:8025          |
 | MinIO console | http://localhost:9001          |
+| Prisma Studio | http://localhost:5555 (dev)    |
 
-Optional tooling profile (RedisInsight, mongo-backup loop):
+Browse Mongo collections locally (Mongo must be up, port published):
+
+```bash
+npm run prisma:studio
+```
+
+Optional tooling profile (Prisma Studio, RedisInsight, mongo-backup loop):
 
 ```bash
 npm run docker:tools

@@ -18,6 +18,13 @@ export class AccountNotVerifiedError extends AppError {
   }
 }
 
+export class AccountInactiveError extends AppError {
+  constructor(message = 'Account is inactive') {
+    super(403, message, 'ACCOUNT_INACTIVE');
+    this.name = 'AccountInactiveError';
+  }
+}
+
 export class EmailAlreadyExistsError extends AppError {
   constructor(message = 'Email already exists') {
     super(409, message, 'EMAIL_ALREADY_EXISTS');
@@ -50,6 +57,13 @@ export class InvalidResetTokenError extends AppError {
   constructor(message = 'Invalid or expired reset token') {
     super(422, message, 'INVALID_RESET_TOKEN');
     this.name = 'InvalidResetTokenError';
+  }
+}
+
+export class AccountLockedError extends AppError {
+  constructor(message = 'Too many failed attempts. Try again later') {
+    super(429, message, 'ACCOUNT_LOCKED');
+    this.name = 'AccountLockedError';
   }
 }
 

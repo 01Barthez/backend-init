@@ -1,11 +1,13 @@
+import { config } from '@/app/config';
 import { MAIL } from '@/shared/constants/mail.constants';
 import { AppError } from '@/shared/domain/errors/app-error';
 import log from '@/shared/infrastructure/logging/logger';
 
-import { InvalidOtpError, OtpExpiredError } from '../../domain/errors/auth.errors';
+import { AccountLockedError, InvalidOtpError, OtpExpiredError } from '../../domain/errors/auth.errors';
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';
 import type { VerifyOtpInput, VerifyOtpResult } from '../dto/auth.dto';
 import type { MailerPort } from '../services/mailer.port';
+import { otpMatches } from '../services/otp-hash';
 import type { UserCachePort } from '../services/user-cache.port';
 
 export type VerifyOtpCommandDeps = {
@@ -16,6 +18,7 @@ export type VerifyOtpCommandDeps = {
 
 /**
  * Verifies signup OTP, activates the account, and queues a welcome email.
+ * Unknown emails return the same InvalidOtpError as a bad code (no enumeration).
  */
 export class VerifyOtpCommand {
   constructor(private readonly deps: VerifyOtpCommandDeps) {}
@@ -28,26 +31,31 @@ export class VerifyOtpCommand {
     }
 
     const user = await this.deps.userRepository.findByEmail(email);
-    if (!user) {
-      throw AppError.notFound('User not found');
+    if (!user || user.isVerified || !user.otp?.code) {
+      throw new InvalidOtpError();
     }
 
-    if (user.isVerified) {
-      throw AppError.conflict('User already verified');
+    if ((user.otpFailedAttempts ?? 0) >= config.security.lockout.maxOtpAttempts) {
+      throw new AccountLockedError();
     }
 
-    if (user.otp?.code !== otp) {
+    if (user.otp.expireAt && user.otp.expireAt < new Date()) {
+      throw new OtpExpiredError();
+    }
+
+    if (!otpMatches(email, otp, user.otp.code)) {
+      await this.deps.userRepository.update(user.id, {
+        otpFailedAttempts: (user.otpFailedAttempts ?? 0) + 1,
+      });
       throw new InvalidOtpError();
     }
 
     const now = new Date();
-    if (user.otp?.expireAt && user.otp.expireAt < now) {
-      throw new OtpExpiredError();
-    }
-
     await this.deps.userRepository.update(user.id, {
       isVerified: true,
+      isActive: true,
       otp: null,
+      otpFailedAttempts: 0,
       emailVerifiedAt: now,
     });
 
@@ -66,7 +74,6 @@ export class VerifyOtpCommand {
       });
 
     log.info('User verified successfully', { userId: user.id, email });
-
     return { email };
   }
 }

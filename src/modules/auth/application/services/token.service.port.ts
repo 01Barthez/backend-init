@@ -1,8 +1,7 @@
 import type { TokenPair, UserJwtPayload } from '../../domain/types/auth.types';
 
 /**
- * Application port for JWT issue / verify / rotate.
- * Implemented by infrastructure JwtTokenProvider.
+ * Application port for JWT issue / verify / rotate and opaque reset tokens.
  */
 export interface TokenServicePort {
   issueTokenPair(user: UserJwtPayload, permissions: string[], roles: string[]): TokenPair;
@@ -18,9 +17,10 @@ export interface TokenServicePort {
 
   verifyRefreshToken(token: string): UserJwtPayload & { familyId: string; jti: string };
 
-  generatePasswordResetToken(userId: string): string;
+  /** Opaque single-use reset token (hashed in Redis). */
+  createPasswordResetToken(userId: string): Promise<string>;
 
-  verifyPasswordResetToken(token: string): { userId: string; jti: string };
+  consumePasswordResetToken(token: string): Promise<{ userId: string }>;
 
   rotateRefreshToken(oldToken: string): Promise<TokenPair>;
 

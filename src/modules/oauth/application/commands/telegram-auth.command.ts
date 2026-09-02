@@ -53,6 +53,10 @@ export class TelegramAuthCommand {
       await this.deps.rbac.assignDefaultRole(user.id);
     }
 
+    if (!user.isActive) {
+      throw AppError.forbidden('Account is inactive');
+    }
+
     const { permissions, roles } = await this.deps.rbac.getUserAuthContext(user.id);
     const tokenPair = this.deps.tokenService.issueTokenPair(
       {
