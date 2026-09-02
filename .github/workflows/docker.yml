@@ -33,7 +33,7 @@ jobs:
             type=sha,prefix=sha-
 
       - name: Set up Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to GHCR
         if: ${{ !vars.CONTAINER_REGISTRY || vars.CONTAINER_REGISTRY == 'ghcr.io' }}
