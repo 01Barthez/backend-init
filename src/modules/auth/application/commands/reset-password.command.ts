@@ -1,6 +1,6 @@
-import log from '@/shared/infrastructure/logging/logger';
 import { AppError } from '@/shared/domain/errors/app-error';
-import { hash_password } from '@/shared/utils/password/hash-password';
+import log from '@/shared/infrastructure/logging/logger';
+import { hashPassword } from '@/shared/utils/crypto';
 
 import { InvalidResetTokenError } from '../../domain/errors/auth.errors';
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';
@@ -48,7 +48,7 @@ export class ResetPasswordCommand {
       throw AppError.notFound('User not found');
     }
 
-    const hashedPassword = await hash_password(newPassword);
+    const hashedPassword = await hashPassword(newPassword);
     if (!hashedPassword) {
       throw AppError.internal('Failed to hash password');
     }

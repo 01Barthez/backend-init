@@ -1,5 +1,5 @@
-import log from '@/shared/infrastructure/logging/logger';
 import { AppError } from '@/shared/domain/errors/app-error';
+import log from '@/shared/infrastructure/logging/logger';
 
 import { InvalidRefreshTokenError } from '../../domain/errors/auth.errors';
 import type { RefreshTokenInput, RefreshTokenResult } from '../dto/auth.dto';

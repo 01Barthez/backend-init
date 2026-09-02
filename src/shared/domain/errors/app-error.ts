@@ -4,8 +4,8 @@
  * Lives in `shared/domain` so every module can throw typed errors without
  * depending on Express or any infrastructure package.
  *
- * Presentation maps these to HTTP status codes; Application/Domain never
- * import Express Response helpers.
+ * Presentation maps these to HTTP via `formatErrorResponse` /
+ * `sendErrorResponse` — Domain never imports Response helpers.
  */
 export class AppError extends Error {
   constructor(
@@ -53,52 +53,3 @@ export class AppError extends Error {
 }
 
 export const isAppError = (error: unknown): error is AppError => error instanceof AppError;
-
-export type ErrorResponseBody = {
-  success: false;
-  message: string;
-  code?: string;
-  details?: unknown;
-  stack?: string;
-};
-
-/**
- * Convert any thrown value into a stable API error body.
- * Presentation-layer helper — keep Domain free of HTTP concerns.
- */
-export const formatErrorResponse = (
-  error: unknown,
-  includeStack = false,
-): { statusCode: number; body: ErrorResponseBody } => {
-  if (isAppError(error)) {
-    return {
-      statusCode: error.statusCode,
-      body: {
-        success: false,
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        ...(includeStack ? { stack: error.stack } : {}),
-      },
-    };
-  }
-
-  if (error instanceof Error && error.name === 'ValidationError') {
-    return {
-      statusCode: 400,
-      body: { success: false, message: error.message, code: 'VALIDATION_ERROR' },
-    };
-  }
-
-  const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-
-  return {
-    statusCode: 500,
-    body: {
-      success: false,
-      message: includeStack ? message : 'Internal server error',
-      code: 'INTERNAL_ERROR',
-      ...(includeStack && error instanceof Error ? { stack: error.stack } : {}),
-    },
-  };
-};

@@ -1,17 +1,17 @@
-import http from 'k6/http';
 import { check, sleep } from 'k6';
+import http from 'k6/http';
 import { Rate } from 'k6/metrics';
 
 // Configuration
 export const options = {
   stages: [
-    { duration: '30s', target: 20 },  // Monte en charge
-    { duration: '1m', target: 50 },   // Charge normale
+    { duration: '30s', target: 20 }, // Monte en charge
+    { duration: '1m', target: 50 }, // Charge normale
     { duration: '20s', target: 100 }, // Pic de charge
-    { duration: '10s', target: 0 },   // Ramp-down
+    { duration: '10s', target: 0 }, // Ramp-down
   ],
   thresholds: {
-    http_req_failed: ['rate<0.01'],   // Moins de 1% d'erreurs
+    http_req_failed: ['rate<0.01'], // Moins de 1% d'erreurs
     http_req_duration: ['p(95)<500'], // 95% des requêtes < 500ms
   },
 };

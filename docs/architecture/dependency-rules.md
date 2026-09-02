@@ -97,14 +97,15 @@ consumer appears.
 
 Prefer aliases over deep relative imports:
 
-| Alias          | Target           |
-| -------------- | ---------------- |
-| `@/`           | `src/`           |
-| `@/app`        | `src/app`        |
-| `@/modules`    | `src/modules`    |
-| `@/shared`     | `src/shared`     |
+| Alias       | Target        |
+| ----------- | ------------- |
+| `@/`        | `src/`        |
+| `@/app`     | `src/app`     |
+| `@/modules` | `src/modules` |
+| `@/shared`  | `src/shared`  |
 
-Use these aliases only. There are no legacy `@/services` / `@/controllers` paths.
+Use these aliases only. There are no legacy `@/services` / `@/controllers`
+paths.
 
 ## Related
 

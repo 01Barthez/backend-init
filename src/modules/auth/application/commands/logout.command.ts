@@ -1,5 +1,5 @@
-import log from '@/shared/infrastructure/logging/logger';
 import { AppError } from '@/shared/domain/errors/app-error';
+import log from '@/shared/infrastructure/logging/logger';
 
 import type { TokenRepositoryPort } from '../../domain/repositories/token.repository';
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';

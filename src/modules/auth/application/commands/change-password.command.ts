@@ -1,7 +1,7 @@
 import { MAIL } from '@/shared/constants/mail.constants';
-import log from '@/shared/infrastructure/logging/logger';
 import { AppError } from '@/shared/domain/errors/app-error';
-import { compare_password, hash_password } from '@/shared/utils/password/hash-password';
+import log from '@/shared/infrastructure/logging/logger';
+import { comparePassword, hashPassword } from '@/shared/utils/crypto';
 
 import { IncorrectPasswordError } from '../../domain/errors/auth.errors';
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';
@@ -37,12 +37,12 @@ export class ChangePasswordCommand {
       throw AppError.notFound('User not found');
     }
 
-    const isPasswordValid = await compare_password(currentPassword, dbUser.passwordHash || '');
+    const isPasswordValid = await comparePassword(currentPassword, dbUser.passwordHash || '');
     if (!isPasswordValid) {
       throw new IncorrectPasswordError();
     }
 
-    const hashedPassword = await hash_password(newPassword);
+    const hashedPassword = await hashPassword(newPassword);
     if (!hashedPassword) {
       throw AppError.internal('Failed to hash password');
     }

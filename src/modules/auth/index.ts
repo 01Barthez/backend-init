@@ -138,8 +138,8 @@ export type {
 export {
   BlacklistProvider,
   blacklistProvider,
-  hashToken,
 } from './infrastructure/providers/blacklist.provider';
+export { hashToken } from '@/shared/utils/crypto';
 export { JwtTokenProvider } from './infrastructure/providers/jwt-token.provider';
 export { PrismaTokenRepository } from './infrastructure/repositories/prisma-token.repository';
 export { PrismaUserRepository } from './infrastructure/repositories/prisma-user.repository';

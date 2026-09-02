@@ -1,16 +1,33 @@
 /**
  * Environment bootstrap.
  *
- * Loads `.env` once at process start and exposes a thin `env-var` wrapper.
- * Domain-specific settings live in `sections/` — do not scatter `process.env`
- * reads across the codebase.
+ * - Local/dev: load `.env` and validate against `.env.example` via dotenv-safe.
+ * - Docker/K8s: orchestrator injects env vars; if `.env.example` is missing we
+ *   skip file loading so startup does not crash (Compose already set process env).
+ *
+ * Domain settings live in `sections/` — do not read `process.env` elsewhere.
  */
 import dotenvSafe from 'dotenv-safe';
 import env from 'env-var';
+import fs from 'fs';
+import path from 'path';
 
-// Allow empty values so optional integrations (OAuth, Flagsmith, …) can be disabled
-// without forcing placeholder secrets into every environment.
-dotenvSafe.config({ allowEmptyValues: true });
+const examplePath = path.join(process.cwd(), '.env.example');
+const envPath = path.join(process.cwd(), '.env');
+
+/**
+ * Only run dotenv-safe when the example schema file exists.
+ * Docker images may omit `.env` (vars come from `env_file` / secrets) but should
+ * still ship `.env.example` for schema checks when desired.
+ */
+if (fs.existsSync(examplePath)) {
+  dotenvSafe.config({
+    allowEmptyValues: true,
+    example: examplePath,
+    // If `.env` is absent (typical in containers), validate against process env only.
+    ...(fs.existsSync(envPath) ? { path: envPath } : {}),
+  });
+}
 
 /**
  * Typed accessor for a single environment variable.
@@ -23,8 +40,8 @@ export const fromEnv = env;
  */
 export const envHelpers = {
   /** Build an absolute callback URL from SERVER_URL + path. */
-  oauthCallback(path: string): string {
+  oauthCallback(pathSuffix: string): string {
     const base = env.get('SERVER_URL').default('http://localhost:3000').asString();
-    return `${base}${path}`;
+    return `${base}${pathSuffix}`;
   },
 };

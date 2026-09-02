@@ -5,9 +5,9 @@
 import type { NextFunction, Response } from 'express';
 
 import blacklistService from '@/modules/auth/infrastructure/providers/blacklist.provider';
+import jwtService from '@/modules/auth/infrastructure/providers/jwt.service';
 import type { AuthenticatedRequest } from '@/modules/auth/presentation/types/authenticated-request';
 import rbacService from '@/modules/rbac';
-import jwtService from '@/modules/auth/infrastructure/providers/jwt.service';
 import { AppError } from '@/shared/domain/errors/app-error';
 import log from '@/shared/infrastructure/logging/logger';
 import { asyncHandler } from '@/shared/utils/http/responses/helpers';

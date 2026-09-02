@@ -1,7 +1,7 @@
-import log from '@/shared/infrastructure/logging/logger';
 import type { NextFunction, Request, Response } from 'express';
 
 import { config } from '@/app/config';
+import log from '@/shared/infrastructure/logging/logger';
 
 /**
  * Middleware: Request Logger

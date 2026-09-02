@@ -1,10 +1,10 @@
 import type { RevokeReason } from '@prisma/client';
 import { TokenFamily } from '@prisma/client';
-import crypto from 'crypto';
 
-import prisma from '@/shared/infrastructure/database/prisma.client';
 import redisClient from '@/shared/infrastructure/cache/clients/redis-client';
+import prisma from '@/shared/infrastructure/database/prisma.client';
 import log from '@/shared/infrastructure/logging/logger';
+import { hashToken } from '@/shared/utils/crypto';
 
 import type {
   PersistRefreshTokenInput,
@@ -18,9 +18,6 @@ import type {
 } from '../../domain/types/auth.types';
 
 const REDIS_PREFIX = 'blacklist:';
-
-export const hashToken = (token: string): string =>
-  crypto.createHash('sha256').update(token).digest('hex');
 
 const toPrismaFamily = (family: AuthTokenFamily): TokenFamily => family as TokenFamily;
 const toPrismaReason = (reason: AuthRevokeReason): RevokeReason => reason as RevokeReason;

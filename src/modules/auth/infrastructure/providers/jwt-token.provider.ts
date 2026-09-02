@@ -1,9 +1,9 @@
-import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 
 import { envs } from '@/app/config';
 import { AUTH_COOKIES } from '@/shared/constants/app.constants';
+import { hashToken, randomHex } from '@/shared/utils/crypto';
 import { readFileSync } from '@/shared/utils/fs-utils';
 
 import type { RbacPort } from '../../application/services/rbac.port';
@@ -11,10 +11,9 @@ import type { TokenServicePort } from '../../application/services/token.service.
 import type { TokenRepositoryPort } from '../../domain/repositories/token.repository';
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';
 import type { TokenPair, UserJwtPayload } from '../../domain/types/auth.types';
-import { hashToken } from '../repositories/prisma-token.repository';
 
 const generateJti = (): string => uuidv4();
-const generateFamilyId = (): string => crypto.randomBytes(16).toString('hex');
+const generateFamilyId = (): string => randomHex(16);
 
 export type JwtTokenProviderDeps = {
   userRepository: UserRepositoryPort;

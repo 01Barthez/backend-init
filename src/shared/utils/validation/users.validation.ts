@@ -1,6 +1,10 @@
 import { body, param, query } from 'express-validator';
 
-import { emailValidation, nameValidation, passwordValidation } from '@/shared/utils/validation-helpers';
+import {
+  emailValidation,
+  nameValidation,
+  passwordValidation,
+} from '@/shared/utils/validation-helpers';
 
 export const validate_user = {
   signup: [

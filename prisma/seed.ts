@@ -1,6 +1,6 @@
-import prisma from '../src/config/prisma/client';
-import { rbacService } from '../src/services/auth/rbac.service';
-import log from '../src/services/logging/logger';
+import { rbacService } from '@/modules/rbac';
+import prisma from '@/shared/infrastructure/database/prisma.client';
+import log from '@/shared/infrastructure/logging/logger';
 
 const main = async (): Promise<void> => {
   await rbacService.seedSystemRolesAndPermissions();

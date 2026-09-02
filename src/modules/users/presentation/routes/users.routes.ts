@@ -6,8 +6,8 @@ import {
   requirePermission,
   requireVerified,
 } from '@/app/middleware/authenticate.middleware';
-import { upload } from '@/modules/files';
 import { validationErrorHandler } from '@/app/middleware/validation-error.middleware';
+import { upload } from '@/modules/files';
 
 import type { UsersController } from '../controllers/users.controller';
 import { usersSchemas } from '../schemas/users.schemas';

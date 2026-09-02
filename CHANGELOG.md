@@ -28,13 +28,14 @@ and this project adheres to
   manual DI.
 - Root community files: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`,
   `LICENSE`.
-- ESLint bans on `process.env` (outside `app/config`) and application `console.log`.
+- ESLint bans on `process.env` (outside `app/config`) and application
+  `console.log`.
 
 ### Removed
 
-- Legacy trees `src/controllers`, `src/services`, `src/routes`, `src/middlewares`,
-  `src/utils`, `src/core`, and `src/config`. Source of truth is only
-  `src/app`, `src/modules`, and `src/shared`.
+- Legacy trees `src/controllers`, `src/services`, `src/routes`,
+  `src/middlewares`, `src/utils`, `src/core`, and `src/config`. Source of truth
+  is only `src/app`, `src/modules`, and `src/shared`.
 
 ## [1.0.0] - 2024-12-19
 

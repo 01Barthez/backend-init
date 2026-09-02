@@ -1,6 +1,6 @@
 import { MAIL } from '@/shared/constants/mail.constants';
-import log from '@/shared/infrastructure/logging/logger';
 import { AppError } from '@/shared/domain/errors/app-error';
+import log from '@/shared/infrastructure/logging/logger';
 import generateOtp from '@/shared/utils/otp/generate-otp';
 import { getOtpExpirationDate } from '@/shared/utils/otp/otp-expiration';
 

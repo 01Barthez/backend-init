@@ -25,12 +25,6 @@ export const displayStartupMessage = (_port: number = envs.PORT) => {
   const banner = `
 ${chalk.bgHex('#91f70c').white(' █████████████████████████████████████████████████████████████████████████')}
 ${chalk.bgHex('#91f70c').white(' ███')}${chalk.bgHex('#00ffff').bold('').padEnd(69)}${chalk.bgHex('##ff6f00').white('█')}
-${chalk.bgHex('#91f70c').white(' ███')}${chalk.hex('#0cf73f').bold('██╗  ██╗ ██╗     ██████╗     ').padStart(81).padEnd(100)}${chalk.bgHex('##ff6f00').white('█')}
-${chalk.bgHex('#91f70c').white(' ███')}${chalk.hex('#0cf73f').bold('██║ ██╔╝ ██║     ██╔══██╗    ').padStart(81).padEnd(100)}${chalk.bgHex('##ff6f00').white('█')}
-${chalk.bgHex('#91f70c').white(' ███')}${chalk.hex('#0cf73f').bold('█████╔╝  ██║     ██████╔╝    ').padStart(81).padEnd(100)}${chalk.bgHex('##ff6f00').white('█')}
-${chalk.bgHex('#91f70c').white(' ███')}${chalk.hex('#0cf73f').bold('██╔═██╗  ██║     ██╔══██╗    ').padStart(81).padEnd(100)}${chalk.bgHex('##ff6f00').white('█')}
-${chalk.bgHex('#91f70c').white(' ███')}${chalk.hex('#0cf73f').bold('██║  ██╗ ███████╗██████╔╝    ').padStart(81).padEnd(100)}${chalk.bgHex('##ff6f00').white('█')}
-${chalk.bgHex('#91f70c').white(' ███')}${chalk.hex('#0cf73f').bold('╚═╝  ╚═╝ ╚══════╝╚═════╝     ').padStart(81).padEnd(100)}${chalk.bgHex('##ff6f00').white('█')}
 ${chalk.bgHex('#91f70c').white(' ███')}${chalk.bgHex('#00ffff').bold('').padEnd(69)}${chalk.bgHex('##ff6f00').white('█')}
 ${chalk.bgHex('#91f70c').white(' ███')}${chalk.hex('#ff6f00').bold('██████╗  █████╗ ██████╗ ████████╗██╗  ██╗███████╗███████╗').padStart(95).padEnd(100)}${chalk.bgHex('##ff6f00').white('█')}
 ${chalk.bgHex('#91f70c').white(' ███')}${chalk.hex('#ff6f00').bold('██╔══██╗██╔══██╗██╔══██╗╚══██╔══╝██║  ██║██╔════╝╚══███╔╝').padStart(95).padEnd(100)}${chalk.bgHex('##ff6f00').white('█')}

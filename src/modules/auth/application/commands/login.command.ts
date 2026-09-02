@@ -1,7 +1,7 @@
 import { MAIL } from '@/shared/constants/mail.constants';
-import log from '@/shared/infrastructure/logging/logger';
 import { AppError } from '@/shared/domain/errors/app-error';
-import { compare_password } from '@/shared/utils/password/hash-password';
+import log from '@/shared/infrastructure/logging/logger';
+import { comparePassword } from '@/shared/utils/crypto';
 
 import { AccountNotVerifiedError, InvalidCredentialsError } from '../../domain/errors/auth.errors';
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';
@@ -39,7 +39,7 @@ export class LoginCommand {
       throw new AccountNotVerifiedError();
     }
 
-    const isPasswordValid = await compare_password(password, user.passwordHash || '');
+    const isPasswordValid = await comparePassword(password, user.passwordHash || '');
     if (!isPasswordValid) {
       throw new InvalidCredentialsError();
     }

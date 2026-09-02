@@ -1,7 +1,7 @@
 import { envs } from '@/app/config';
 import { MAIL } from '@/shared/constants/mail.constants';
-import log from '@/shared/infrastructure/logging/logger';
 import { AppError } from '@/shared/domain/errors/app-error';
+import log from '@/shared/infrastructure/logging/logger';
 
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';
 import type { ForgotPasswordInput, ForgotPasswordResult } from '../dto/auth.dto';

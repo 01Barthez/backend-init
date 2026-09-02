@@ -1,6 +1,8 @@
+import { hashToken } from '@/shared/utils/crypto';
+
 import type { TokenRepositoryPort } from '../../domain/repositories/token.repository';
 import type { AuthRevokeReason, AuthTokenFamily } from '../../domain/types/auth.types';
-import { PrismaTokenRepository, hashToken } from '../repositories/prisma-token.repository';
+import { PrismaTokenRepository } from '../repositories/prisma-token.repository';
 
 /**
  * Thin facade over TokenRepositoryPort blacklist operations.

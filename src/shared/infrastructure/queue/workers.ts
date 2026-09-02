@@ -4,13 +4,13 @@
  */
 import { Worker } from 'bullmq';
 
-import { runMongoBackup } from '@/modules/backup';
 import blacklistProvider from '@/modules/auth/infrastructure/providers/blacklist.provider';
-import { purgeUnverifiedUsers } from '@/shared/infrastructure/maintenance/user-cleanup.service';
+import { runMongoBackup } from '@/modules/backup';
 import { QUEUE_NAMES } from '@/shared/constants/app.constants';
 import log from '@/shared/infrastructure/logging/logger';
 import { sendMailDirect } from '@/shared/infrastructure/mail/mail.service';
 import type { MailJobPayload } from '@/shared/infrastructure/mail/mail.types';
+import { purgeUnverifiedUsers } from '@/shared/infrastructure/maintenance/user-cleanup.service';
 import { redisConnection } from '@/shared/infrastructure/queue/queue.service';
 
 let workersStarted = false;

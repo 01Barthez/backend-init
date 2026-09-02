@@ -1,12 +1,44 @@
-node_modules
-# Keep environment variables out of version control
-.env
+# Dependencies
+node_modules/
+
+# Build
 dist/
+coverage/
+*.tsbuildinfo
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
 logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+*.sublime-*
 
-#Ignore test folde for the moment
-tests/
+# Prisma
+prisma/*.db
+prisma/*.db-journal
+
+# Test artifacts
+coverage/
+.nyc_output/
+
+# Misc local notes (keep out of the template repo)
 TECHNICAL_ANALYSIS.md
-ISSUES_QUICK_REFERENCE.md 
+ISSUES_QUICK_REFERENCE.md
 OAUTH_README.md
+
+# Optional local Docker overrides
+docker-compose.override.yml

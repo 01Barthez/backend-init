@@ -3,7 +3,7 @@
  */
 import type { Response } from 'express';
 
-import { formatErrorResponse } from '@/shared/domain/errors/app-error';
+import { formatErrorResponse } from '@/shared/domain/errors/format-error-response';
 
 export const sendErrorResponse = (
   res: Response,

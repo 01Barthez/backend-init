@@ -5,8 +5,8 @@ import {
   requireActive,
   requireVerified,
 } from '@/app/middleware/authenticate.middleware';
-import { upload } from '@/modules/files';
 import { validationErrorHandler } from '@/app/middleware/validation-error.middleware';
+import { upload } from '@/modules/files';
 
 import type { AuthController } from '../controllers/auth.controller';
 import { authSchemas } from '../schemas/auth.schemas';

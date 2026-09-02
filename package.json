@@ -73,7 +73,7 @@
     "docker:tools": "docker compose --profile tools up -d",
     "docker:down": "docker compose down",
     "docker:ps": "docker compose ps",
-    "prisma:seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
+    "prisma:seed": "ts-node -r tsconfig-paths/register --project prisma/tsconfig.json prisma/seed.ts",
     "generate:openapi": "node docs/api/openapi.config.js",
     "postinstall": "npm run prisma:generate",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx --max-warnings=10 --fix",
@@ -201,7 +201,7 @@
     "vitest": "^3.2.4"
   },
   "prisma": {
-    "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts"
+    "seed": "ts-node -r tsconfig-paths/register --project prisma/tsconfig.json prisma/seed.ts"
   },
   "config": {
     "commitizen": {

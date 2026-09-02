@@ -1,9 +1,43 @@
+# Dependencies & build output
 node_modules
 dist
+coverage
+*.tsbuildinfo
+
+# Git / IDE
 .git
+.github
+.vscode
+.idea
+*.swp
+*.swo
+
+# Env & secrets (injected at runtime via Compose env_file / secrets)
+.env
+.env.*
+!.env.example
+
+# Local tooling / docs not needed in the image
+tests
+docs/architecture
+docs/development
+docs/deployment
+docs/guides
+*.md
+!docs/api/openapi.yaml
+!docs/openapi.yaml
+
+# Docker / compose files (not copied into the image context recursively as source)
 Dockerfile
-docker-compose.yml
+docker-compose*.yml
+infra/docker/docker-compose*.yml
 
-#Ignore test folde for the moment
-tests/
+# Logs & OS junk
+logs
+*.log
+.DS_Store
+Thumbs.db
 
+# Lockfiles for alternate package managers (npm lock is copied explicitly)
+bun.lock
+bun.lockb

@@ -2,11 +2,10 @@
  * OAuth Manager Service
  * Central service to manage all OAuth providers
  */
-import crypto from 'crypto';
-
 import { OAUTH_ERRORS, OAUTH_STATE_TTL } from '@/shared/constants/oauth.constants';
 import prisma from '@/shared/infrastructure/database/prisma.client';
 import log from '@/shared/infrastructure/logging/logger';
+import { randomHex } from '@/shared/utils/crypto';
 
 import type {
   IOAuthAccountData,
@@ -61,7 +60,7 @@ export class OAuthManager {
 
   generateState(redirectUrl?: string): IOAuthState {
     const state: IOAuthState = {
-      state: crypto.randomBytes(32).toString('hex'),
+      state: randomHex(32),
       redirectUrl,
       timestamp: Date.now(),
     };

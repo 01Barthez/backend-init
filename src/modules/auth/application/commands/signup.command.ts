@@ -1,9 +1,9 @@
 import { MAIL } from '@/shared/constants/mail.constants';
-import log from '@/shared/infrastructure/logging/logger';
 import { AppError } from '@/shared/domain/errors/app-error';
+import log from '@/shared/infrastructure/logging/logger';
 import generateOtp from '@/shared/utils/otp/generate-otp';
 import { getOtpExpirationDate } from '@/shared/utils/otp/otp-expiration';
-import { hash_password } from '@/shared/utils/password/hash-password';
+import { hashPassword } from '@/shared/utils/crypto';
 
 import { EmailAlreadyExistsError } from '../../domain/errors/auth.errors';
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';
@@ -41,7 +41,7 @@ export class SignupCommand {
     }
 
     const profileUrl = await this.deps.avatarUploader.upload(avatarFile);
-    const hashedPassword = await hash_password(password);
+    const hashedPassword = await hashPassword(password);
     if (!hashedPassword) {
       throw AppError.internal('Failed to hash password');
     }
