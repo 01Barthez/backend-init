@@ -85,5 +85,5 @@ export function createBlogRouter(overrides: Partial<BlogModuleDeps> = {}): Route
 
 export type { BlogEntity } from './domain/entities/blog.entity';
 export { PrismaBlogRepository } from './infrastructure/repositories/prisma-blog.repository';
-export { blogSchemas, validate_blog } from './presentation/schemas/blog.schemas';
+export { blogSchemas } from './presentation/schemas/blog.schemas';
 export { BlogSerializer } from './presentation/serializers/blog.serializer';

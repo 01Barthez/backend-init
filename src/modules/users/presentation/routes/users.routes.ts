@@ -73,7 +73,7 @@ export function createUsersRoutes(controller: UsersController): Router {
     controller.getUserById,
   );
 
-  /** PUT /:userId/role — Assign USER/ADMIN/MODERATOR (`user:role:assign`). */
+  /** PUT /:userId/role — Assign a system role slug (`user:role:assign`). */
   users.put(
     '/:userId/role',
     authenticate,
@@ -88,7 +88,7 @@ export function createUsersRoutes(controller: UsersController): Router {
     '/:userId',
     authenticate,
     requirePermission('user:delete:any'),
-    usersSchemas.deleteUser,
+    usersSchemas.byUserId,
     validationErrorHandler,
     controller.deleteUser,
   );
@@ -98,7 +98,7 @@ export function createUsersRoutes(controller: UsersController): Router {
     '/:userId/permanent',
     authenticate,
     requirePermission('user:delete:any'),
-    usersSchemas.deleteUser,
+    usersSchemas.byUserId,
     validationErrorHandler,
     controller.deleteUserPermanently,
   );
@@ -108,7 +108,7 @@ export function createUsersRoutes(controller: UsersController): Router {
     '/:userId/restore',
     authenticate,
     requirePermission('user:update:any'),
-    usersSchemas.deleteUser,
+    usersSchemas.byUserId,
     validationErrorHandler,
     controller.restoreUser,
   );

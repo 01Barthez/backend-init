@@ -13,8 +13,8 @@ import type { BlogController } from '../controllers/blog.controller';
 import { blogSchemas } from '../schemas/blog.schemas';
 
 /**
- * Blog HTTP routes — path contract mirrors the legacy `blogs.routes.ts`.
- * Mounted at `/api/v1/blogs`.
+ * Blog HTTP routes — mounted at `/api/v1/blogs`.
+ * Demo domain: enough validation to be credible, not a CMS.
  */
 export function createBlogRoutes(controller: BlogController): Router {
   const blogs = Router();
@@ -23,7 +23,7 @@ export function createBlogRoutes(controller: BlogController): Router {
   blogs.get('/', paginationMiddleware, controller.list);
 
   /** GET /:slug — Fetch a single blog post by URL slug. */
-  blogs.get('/:slug', controller.getBySlug);
+  blogs.get('/:slug', blogSchemas.getBySlug, validationErrorHandler, controller.getBySlug);
 
   /** POST / — Create a blog post (`blog:create`). */
   blogs.post(
@@ -32,7 +32,7 @@ export function createBlogRoutes(controller: BlogController): Router {
     requireVerified,
     requireActive,
     requirePermission('blog:create'),
-    blogSchemas.blog,
+    blogSchemas.create,
     validationErrorHandler,
     controller.create,
   );
@@ -44,7 +44,7 @@ export function createBlogRoutes(controller: BlogController): Router {
     requireVerified,
     requireActive,
     requirePermission('blog:update:own'),
-    blogSchemas.blog,
+    blogSchemas.update,
     validationErrorHandler,
     controller.update,
   );
@@ -56,6 +56,8 @@ export function createBlogRoutes(controller: BlogController): Router {
     requireVerified,
     requireActive,
     requirePermission('blog:publish'),
+    blogSchemas.byId,
+    validationErrorHandler,
     controller.publish,
   );
 
@@ -66,6 +68,8 @@ export function createBlogRoutes(controller: BlogController): Router {
     requireVerified,
     requireActive,
     requirePermission('blog:delete:own'),
+    blogSchemas.byId,
+    validationErrorHandler,
     controller.delete,
   );
 

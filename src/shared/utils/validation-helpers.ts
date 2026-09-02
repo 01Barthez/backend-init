@@ -2,35 +2,36 @@ import { body } from 'express-validator';
 
 import { validate } from '@/shared/constants/validator.constants';
 
-export const nameValidation = (field: string) => {
-  return body(field)
+/** Reusable field builders for express-validator chains. */
+
+export const nameValidation = (field: string) =>
+  body(field)
     .trim()
     .notEmpty()
-    .withMessage(`${field.replace('_', ' ')} is required!`)
+    .withMessage(`${field} is required`)
     .isString()
-    .withMessage(`${field.replace('_', ' ')} must be a string!`)
+    .withMessage(`${field} must be a string`)
     .isLength({
       min: validate.MIN_NAME,
       max: validate.MAX_NAME,
     })
     .withMessage(
-      `${field.replace('_', ' ')} must be between ${validate.MIN_NAME} and ${validate.MAX_NAME} characters`,
+      `${field} must be between ${validate.MIN_NAME} and ${validate.MAX_NAME} characters`,
     )
     .escape();
-};
 
-export const emailValidation = (field: string) => {
-  return body(field)
+export const emailValidation = (field = 'email') =>
+  body(field)
     .trim()
     .notEmpty()
-    .withMessage('email is required !')
+    .withMessage('Email is required')
     .isEmail()
-    .withMessage('invalid email address !')
+    .withMessage('Invalid email address')
+    .normalizeEmail()
     .escape();
-};
 
-export const passwordValidation = () => {
-  return body('password')
+export const passwordFieldValidation = (field: string) =>
+  body(field)
     .trim()
     .notEmpty()
     .withMessage('Password is required')
@@ -42,6 +43,8 @@ export const passwordValidation = () => {
       minSymbols: 1,
     })
     .withMessage(
-      'Password must be at least 8 characters long and include uppercase, lowercase, number, and symbol',
+      'Password must be at least 8 characters and include uppercase, lowercase, number, and symbol',
     );
-};
+
+/** Default login/signup password field (`password`). */
+export const passwordValidation = () => passwordFieldValidation('password');

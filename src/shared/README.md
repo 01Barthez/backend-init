@@ -18,7 +18,7 @@ shared/
 ├── infrastructure/   # database, cache, queue, storage, mail, logging, metrics
 ├── constants/        # Cross-module constants only
 ├── types/            # Ambient / shared TypeScript types
-└── utils/            # Pure helpers (crypto, otp, http, validation)
+└── utils/            # Pure helpers (crypto, otp, http, validation-helpers)
 ```
 
 ## Dependency direction
