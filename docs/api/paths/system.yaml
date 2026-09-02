@@ -1,0 +1,88 @@
+# System routes — application root (not under /api/v1)
+# Keep in sync with src/modules/system/presentation/routes and src/app/routes/index.ts
+
+/health:
+  get:
+    tags: [System]
+    summary: Health check
+    description: Liveness endpoint confirming the API process is responding.
+    responses:
+      '200': { description: Service is healthy }
+      '500': { description: Health check failed }
+
+/csrf-token:
+  get:
+    tags: [System]
+    summary: Issue CSRF token
+    description: Returns a CSRF token and sets the CSRF cookie used by mutating requests when CSRF protection is enabled.
+    responses:
+      '200':
+        description: CSRF token issued
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success: { type: boolean, example: true }
+                message: { type: string }
+                data:
+                  type: object
+                  properties:
+                    csrfToken: { type: string }
+      '500': { description: Unexpected server error }
+
+/metrics:
+  get:
+    tags: [System]
+    summary: Prometheus metrics
+    description: Exposes default Node.js process metrics in Prometheus text format.
+    responses:
+      '200':
+        description: Prometheus metrics scrape payload
+        content:
+          text/plain:
+            schema: { type: string }
+      '500': { description: Unexpected server error }
+
+/security/csp-violation:
+  get:
+    tags: [System]
+    summary: CSP violation report URI
+    description: >
+      Receives Content-Security-Policy violation reports. Mount path defaults to
+      `CSP_REPORT_URI` (`/security/csp-violation`). The Express route currently registers GET.
+    requestBody:
+      required: false
+      content:
+        application/csp-report:
+          schema:
+            type: object
+            properties:
+              csp-report:
+                type: object
+                properties:
+                  document-uri: { type: string }
+                  referrer: { type: string }
+                  blocked-uri: { type: string }
+                  violated-directive: { type: string }
+                  original-policy: { type: string }
+    responses:
+      '200': { description: Report accepted }
+      '204': { description: Report accepted (no content) }
+      '400': { description: Malformed report }
+      '500': { description: Unexpected server error }
+
+/admin/queues:
+  get:
+    tags: [System]
+    summary: Bull Board queue admin UI
+    description: >
+      Serves the Bull Board dashboard for mail, backup, maintenance, and heavy-task queues.
+      Requires HTTP Basic (`SWAGGER_USER` / `SWAGGER_PASSWORD`) plus a JWT for an admin user.
+    security:
+      - basicAuth: []
+      - bearerAuth: []
+    responses:
+      '200': { description: Bull Board HTML UI }
+      '401': { description: Basic auth or JWT missing/invalid }
+      '403': { description: Authenticated but not an admin }

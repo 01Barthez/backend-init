@@ -1,0 +1,191 @@
+# Authentication routes — /api/v1/auth
+# Keep in sync with src/modules/auth/presentation/routes/auth.routes.ts
+
+/api/v1/auth/signup:
+  post:
+    tags: [Authentication]
+    summary: Register a new user
+    description: Creates a user account and sends an email OTP for verification. Optional profile image via multipart field `profile`.
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required: [email, password, firstName, lastName, phone]
+            properties:
+              email: { type: string, format: email }
+              password: { type: string, minLength: 8 }
+              firstName: { type: string }
+              lastName: { type: string }
+              phone: { type: string, minLength: 5, maxLength: 20 }
+              profile: { type: string, format: binary }
+    responses:
+      '201': { description: User created; OTP sent to email }
+      '400': { description: Validation failed }
+      '409': { description: Email already exists }
+      '500': { description: Unexpected server error }
+
+/api/v1/auth/verify:
+  post:
+    tags: [Authentication]
+    summary: Verify account with OTP
+    description: Confirms the email OTP and returns an authenticated session (JWT pair).
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, otp]
+            properties:
+              email: { type: string, format: email }
+              otp: { type: string, minLength: 4, maxLength: 8 }
+    responses:
+      '200': { description: Account verified; tokens issued }
+      '400': { description: Validation failed }
+      '401': { description: Invalid OTP }
+      '500': { description: Unexpected server error }
+
+/api/v1/auth/resend-otp:
+  post:
+    tags: [Authentication]
+    summary: Resend verification OTP
+    description: Sends a new one-time password to the given email address.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email]
+            properties:
+              email: { type: string, format: email }
+    responses:
+      '200': { description: OTP resent successfully }
+      '400': { description: Validation failed }
+      '404': { description: User not found }
+      '500': { description: Unexpected server error }
+
+/api/v1/auth/login:
+  post:
+    tags: [Authentication]
+    summary: Login with email and password
+    description: Authenticates credentials and issues a JWT access token plus refresh cookie/token.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, password]
+            properties:
+              email: { type: string, format: email }
+              password: { type: string }
+    responses:
+      '200': { description: Login successful }
+      '400': { description: Validation failed }
+      '401': { description: Invalid credentials }
+      '403': { description: Account inactive or unverified }
+      '500': { description: Unexpected server error }
+
+/api/v1/auth/refresh:
+  post:
+    tags: [Authentication]
+    summary: Refresh access token
+    description: Issues a new access token using the refresh token from the HTTP-only cookie or JSON body field `refreshToken`.
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              refreshToken: { type: string }
+    responses:
+      '200': { description: Token refreshed }
+      '400': { description: Missing refresh token }
+      '401': { description: Invalid or expired refresh token }
+      '500': { description: Unexpected server error }
+
+/api/v1/auth/forgot-password:
+  post:
+    tags: [Authentication]
+    summary: Request password reset
+    description: Sends a password-reset link/token to the user email when the account exists.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email]
+            properties:
+              email: { type: string, format: email }
+    responses:
+      '200': { description: Reset instructions sent when the account exists }
+      '400': { description: Validation failed }
+      '404': { description: User not found }
+      '500': { description: Unexpected server error }
+
+/api/v1/auth/reset-password/{resetToken}:
+  post:
+    tags: [Authentication]
+    summary: Reset password with token
+    description: Sets a new password using the reset token from the email link. Express also accepts an optional path segment (`/reset-password/:resetToken?`).
+    parameters:
+      - name: resetToken
+        in: path
+        required: true
+        schema: { type: string }
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [new_password]
+            properties:
+              new_password: { type: string, minLength: 8 }
+    responses:
+      '200': { description: Password reset successful }
+      '400': { description: Validation failed }
+      '401': { description: Invalid or expired reset token }
+      '500': { description: Unexpected server error }
+
+/api/v1/auth/logout:
+  post:
+    tags: [Authentication]
+    summary: Logout and revoke session
+    description: Clears the refresh cookie and revokes the current session. Requires a verified, active user.
+    security:
+      - bearerAuth: []
+    responses:
+      '200': { description: Logged out }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Account not verified or inactive }
+      '500': { description: Unexpected server error }
+
+/api/v1/auth/change-password:
+  post:
+    tags: [Authentication]
+    summary: Change password (authenticated)
+    description: Updates the password for the current verified, active user.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [current_password, new_password]
+            properties:
+              current_password: { type: string }
+              new_password: { type: string, minLength: 8 }
+    responses:
+      '200': { description: Password changed }
+      '400': { description: Validation failed }
+      '401': { description: Missing authentication or wrong current password }
+      '403': { description: Account not verified or inactive }
+      '500': { description: Unexpected server error }

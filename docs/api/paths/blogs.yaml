@@ -1,0 +1,132 @@
+# Blog routes — /api/v1/blogs
+# Keep in sync with src/modules/blog/presentation/routes/blog.routes.ts
+
+/api/v1/blogs:
+  get:
+    tags: [Blogs]
+    summary: List blog posts
+    description: Returns a paginated list of blog posts (public listing).
+    parameters:
+      - name: page
+        in: query
+        schema: { type: integer, minimum: 1, default: 1 }
+      - name: limit
+        in: query
+        schema: { type: integer, minimum: 1, default: 10 }
+    responses:
+      '200': { description: Paginated blog list }
+      '500': { description: Unexpected server error }
+  post:
+    tags: [Blogs]
+    summary: Create blog post
+    description: Creates a blog post. Requires authentication and `blog:create`.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [title, content]
+            properties:
+              title: { type: string }
+              content: { type: string }
+              excerpt: { type: string }
+              coverImage: { type: string }
+              visibility:
+                type: string
+                enum: [PUBLIC, PRIVATE, MEMBERS_ONLY]
+    responses:
+      '201': { description: Blog created }
+      '400': { description: Validation failed }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Insufficient permission }
+      '500': { description: Unexpected server error }
+
+/api/v1/blogs/{slug}:
+  get:
+    tags: [Blogs]
+    summary: Get blog by slug
+    description: Returns a single blog post identified by its URL slug.
+    parameters:
+      - name: slug
+        in: path
+        required: true
+        schema: { type: string }
+        example: getting-started-with-nodejs
+    responses:
+      '200': { description: Blog details }
+      '404': { description: Blog not found }
+      '500': { description: Unexpected server error }
+
+/api/v1/blogs/{id}:
+  put:
+    tags: [Blogs]
+    summary: Update blog post
+    description: Updates an existing blog. Requires `blog:update:own`.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [title, content]
+            properties:
+              title: { type: string }
+              content: { type: string }
+              excerpt: { type: string }
+              coverImage: { type: string }
+              visibility:
+                type: string
+                enum: [PUBLIC, PRIVATE, MEMBERS_ONLY]
+    responses:
+      '200': { description: Blog updated }
+      '400': { description: Validation failed }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Insufficient permission }
+      '404': { description: Blog not found }
+      '500': { description: Unexpected server error }
+  delete:
+    tags: [Blogs]
+    summary: Delete blog post
+    description: Deletes a blog post. Requires `blog:delete:own`.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    responses:
+      '200': { description: Blog deleted }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Insufficient permission }
+      '404': { description: Blog not found }
+      '500': { description: Unexpected server error }
+
+/api/v1/blogs/{id}/publish:
+  patch:
+    tags: [Blogs]
+    summary: Publish blog post
+    description: Transitions a blog to published status. Requires `blog:publish`.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    responses:
+      '200': { description: Blog published }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Insufficient permission }
+      '404': { description: Blog not found }
+      '500': { description: Unexpected server error }

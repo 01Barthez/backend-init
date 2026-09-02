@@ -1,219 +1,217 @@
 # Backend Init
 
-Production-ready **Express + TypeScript** backend template for building secure REST APIs. Use it as a starting point, replace the reference `Blog` domain with your own business schema, and ship.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-green.svg)](./docs/api/openapi.yaml)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
-## Goals
+**Production-minded Express + TypeScript modular monolith** — an open-source
+backend template with JWT auth, OAuth, RBAC, uploads, queues, and observability
+wired the way you would actually ship.
 
-- Provide a **consistent, normalized codebase** (naming, structure, responses, validation)
-- Demonstrate **real-world patterns**: JWT (RS256), OAuth 2.0, OTP email verification, Redis cache, MinIO uploads, cron jobs, observability
-- Include a minimal **Blog** model to validate end-to-end wiring — swap it for your domain model later
-- Ship with **Docker**, **OpenAPI**, **Vitest**, and **CI-ready** scripts
+Replace the sample **Blog** domain with your own, keep the platform modules, and
+move fast without inheriting a spaghetti `controllers/` dump.
 
-## Tech Stack
+---
 
-| Layer | Technology |
-|-------|------------|
-| Runtime | Node.js 20+ |
-| Language | TypeScript |
-| Framework | Express 4 |
-| Database | MongoDB + Prisma ORM |
-| Cache | Redis + LRU (two-tier) |
-| Storage | MinIO (S3-compatible) |
-| Auth | JWT RS256, OAuth 2.0, OTP |
-| Email | Nodemailer + EJS templates |
-| Docs | OpenAPI 3 / Swagger UI |
-| Tests | Vitest + Supertest |
-| Infra | Docker Compose |
+## Why this template?
 
-## Project Structure
+| Goal                 | How we deliver it                                           |
+| -------------------- | ----------------------------------------------------------- |
+| Scalable by team     | Code is organized by **domain module**, not by file type    |
+| Extensible           | Add `modules/billing/` by copying the auth pattern          |
+| Customizable         | Swap MinIO↔S3, SMTP providers, repositories via ports + DI |
+| Testable             | Use cases take ports; Vitest mocks infra; 40+ API tests     |
+| Documentable         | OpenAPI 3 for every endpoint + architecture ADRs            |
+| Microservice-ready   | Modular monolith first — extract a module when it hurts     |
+| Open source friendly | MIT, CoC, SECURITY, CONTRIBUTING, English docs only         |
+
+---
+
+## Features
+
+- **Modular monolith** — `src/modules/*` with Presentation → Application →
+  Domain ← Infrastructure
+- **Auth** — RS256 JWT, refresh rotation / reuse detection, OTP email
+  verification, password flows
+- **OAuth 2.0** — Google, GitHub, Facebook, LinkedIn, Twitter, Instagram,
+  Telegram
+- **RBAC** — seeded roles & permissions (`super-admin`, `admin`, `user`,
+  `guest`)
+- **Users & Blog** — administration APIs + a reference domain to validate
+  end-to-end wiring
+- **Files** — validated uploads (MinIO), optional ClamAV scanning
+- **Storage** — MinIO or S3 via `STORAGE_PROVIDER` (port + adapters)
+- **Jobs** — BullMQ mail / backup / maintenance + Bull Board UI
+- **Ops** — health, Prometheus metrics, Winston (+ optional Loki), Docker
+  Compose stack
+- **Quality** — Vitest, OpenAPI, ESLint (`process.env` / `console` banned),
+  Prettier, Commitlint, Husky
+
+---
+
+## Architecture
 
 ```
 src/
-├── config/           # Environment, Prisma client, Swagger
-├── controllers/      # HTTP handlers (auth, oauth, users, blogs, system)
-├── core/             # Constants, interfaces, shared types
-├── middlewares/      # Auth, errors, upload, logging
-├── routes/           # Express route definitions
-├── services/         # JWT, cache, mail, oauth, upload, scheduler, validator
-├── utils/            # Helpers (responses, OTP, password, middleware setup)
-├── index.ts          # Server bootstrap
-└── server.ts         # Express app factory
+├── app/               # Composition root
+│   ├── config/        # Typed env (ONLY place that reads environment variables)
+│   ├── container/     # Manual DI wiring
+│   ├── middleware/    # Cross-cutting HTTP middleware
+│   ├── routes/        # Mounts module routers under /api/v1
+│   └── app.ts         # Express factory + bootstrap
+├── modules/           # Bounded contexts (auth, users, rbac, oauth, blog, files, …)
+│   └── <module>/
+│       ├── domain/
+│       ├── application/
+│       ├── infrastructure/
+│       └── presentation/
+└── shared/            # Cross-cutting infra (database, cache, mail, queue, storage, logging)
 ```
 
-## Naming Conventions
+```
+┌─────────────────┐
+│  Presentation   │  Express controllers / routes / schemas
+└────────┬────────┘
+         ↓
+┌─────────────────┐
+│   Application   │  Use cases (commands / queries) + DTOs
+└────────┬────────┘
+         ↓
+┌─────────────────┐
+│     Domain      │  Entities, ports, domain errors  (no Express / Prisma)
+└─────────────────┘
+         ↑
+┌────────┴────────┐
+│ Infrastructure  │  Prisma, Redis, MinIO/S3, SMTP, BullMQ
+└─────────────────┘
+```
 
-| Element | Convention | Example |
-|---------|------------|---------|
-| Folders | kebab-case | `health-check`, `csrf-token` |
-| Files | kebab-case | `login.ts`, `user-cache.ts` |
-| Functions | camelCase | `getUserById`, `generateOtp` |
-| Constants | UPPER_SNAKE_CASE | `OTP_DELAY` |
-| Prisma models | PascalCase | `User`, `Blog`, `OAuthAccount` |
-| Prisma fields | camelCase | `firstName`, `createdAt` |
+Deep dive: [docs/architecture/overview.md](./docs/architecture/overview.md) ·
+[dependency rules](./docs/architecture/dependency-rules.md) ·
+[add a module](./docs/architecture/extending.md)
 
-## Quick Start
+### Naming conventions
 
-### Prerequisites
+| Element       | Convention       | Example                             |
+| ------------- | ---------------- | ----------------------------------- |
+| Folders       | kebab-case       | `health-check`, `csrf-token`        |
+| Files         | kebab-case       | `login.command.ts`, `user-cache.ts` |
+| Functions     | camelCase        | `getUserById`, `generateOtp`        |
+| Constants     | UPPER_SNAKE_CASE | `OTP_DELAY`, `SYSTEM_ROLES`         |
+| Prisma models | PascalCase       | `User`, `Blog`, `OAuthAccount`      |
+| Prisma fields | camelCase        | `firstName`, `createdAt`            |
 
-- Node.js 20+
-- Docker & Docker Compose (recommended)
-- Copy `.env.example` to `.env`
+### Configuration rule
 
-### With Docker (recommended)
+**Never** read `process.env` outside `src/app/config`. Import `config` (or the
+legacy flat `envs` mirror) from `@/app/config`. ESLint enforces this.
+
+---
+
+## Quick start
 
 ```bash
+git clone https://github.com/barthez-kenwou/backend-init.git
+cd backend-init
 cp .env.example .env
-cd infra/docker && docker compose up -d && cd ../..
+
 npm install
+npm run docker:up
 npm run prisma:push
+npm run prisma:seed
 npm run dev
 ```
 
-API: `http://localhost:3000/api/v1`  
-Swagger: `http://localhost:3000/api-docs`  
-MailHog UI: `http://localhost:8025`
+| Surface       | URL                                |
+| ------------- | ---------------------------------- |
+| API           | http://localhost:3000/api/v1       |
+| Swagger UI    | http://localhost:3000/api-docs     |
+| Health        | http://localhost:3000/health       |
+| Metrics       | http://localhost:3000/metrics      |
+| Bull Board    | http://localhost:3000/admin/queues |
+| MailHog       | http://localhost:8025              |
+| MinIO Console | http://localhost:9001              |
 
-### Local development (without Docker)
+More detail:
+[docs/development/getting-started.md](./docs/development/getting-started.md)
 
-Ensure MongoDB and Redis are running, update `DATABASE_URL` and `REDIS_HOST` in `.env`, then:
+---
 
-```bash
-npm install
-npm run prisma:generate
-npm run prisma:push
-npm run dev
-```
+## API surface (documented in Swagger)
+
+| Tag            | Prefix                                  | Highlights                                    |
+| -------------- | --------------------------------------- | --------------------------------------------- |
+| Authentication | `/api/v1/auth`                          | signup, OTP, login, refresh, password         |
+| OAuth          | `/api/v1/auth/oauth`                    | provider authorize/callback, unlink, Telegram |
+| Users          | `/api/v1/users`                         | profile, list/search, roles, soft/hard delete |
+| Blogs          | `/api/v1/blogs`                         | public list/get + authenticated CRUD/publish  |
+| System         | `/health`, `/metrics`, `/csrf-token`, … | ops & security                                |
+
+Full contract: [docs/api/openapi.yaml](./docs/api/openapi.yaml)
+
+---
+
+## Documentation map
+
+| Section                             | Link                                                |
+| ----------------------------------- | --------------------------------------------------- |
+| Documentation home                  | [docs/README.md](./docs/README.md)                  |
+| Architecture & ADRs                 | [docs/architecture/](./docs/architecture/README.md) |
+| Development / testing / standards   | [docs/development/](./docs/development/README.md)   |
+| Docker & production                 | [docs/deployment/](./docs/deployment/README.md)     |
+| Guides (auth, OAuth, storage, jobs) | [docs/guides/](./docs/guides/README.md)             |
+| OpenAPI                             | [docs/api/](./docs/api/README.md)                   |
+
+---
 
 ## Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start dev server with hot reload (Bun) |
-| `npm run build` | Compile TypeScript to `dist/` |
-| `npm start` | Run production build |
-| `npm test` | Run Vitest test suite |
-| `npm run test:coverage` | Tests with coverage report |
-| `npm run type-check` | TypeScript validation |
-| `npm run lint` | ESLint with auto-fix |
-| `npm run validate` | Lint + type-check + tests + OpenAPI validation |
-| `npm run generate:openapi` | Regenerate `docs/openapi.yaml` |
-| `npm run prisma:generate` | Generate Prisma client |
-| `npm run prisma:push` | Push schema to MongoDB |
-| `npm run prisma:seed` | Seed RBAC roles and permissions |
+| Script                                      | Description                               |
+| ------------------------------------------- | ----------------------------------------- |
+| `npm run dev`                               | Dev server with hot reload (Bun)          |
+| `npm run build` / `npm start`               | Compile and run production build          |
+| `npm test` / `npm run test:coverage`        | Vitest (unit + integration)               |
+| `npm run validate`                          | Lint + types + tests + OpenAPI validation |
+| `npm run format` / `lint`                   | Prettier + ESLint                         |
+| `npm run generate:openapi`                  | Regenerate `docs/api/openapi.yaml`        |
+| `npm run docker:up` / `docker:rebuild`      | Compose lifecycle                         |
+| `npm run prisma:generate` / `push` / `seed` | Database tooling                          |
 
-## Infrastructure
+---
 
-Docker and ops files live under `infra/`:
+## Quality gates
 
-```
-infra/
-├── docker/           # Dockerfile, docker-compose.yml, docker-compose.monitoring.yml
-├── nginx/            # Reverse proxy config
-├── monitoring/       # Prometheus, Grafana, Loki, Alertmanager
-└── scripts/          # start/stop/status shell scripts
-```
-
-Start the full stack:
+Before opening a PR:
 
 ```bash
-./infra/scripts/full_start.sh
-```
-
-## API Overview
-
-Base URL: `/api/v1`
-
-### Authentication
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/auth/signup` | Register (sends OTP email) |
-| POST | `/auth/verify` | Verify OTP |
-| POST | `/auth/resend-otp` | Resend OTP |
-| POST | `/auth/login` | Login (JWT + refresh cookie) |
-| POST | `/auth/refresh` | Rotate refresh token |
-| POST | `/auth/logout` | Logout |
-| POST | `/auth/forgot-password` | Request password reset |
-| POST | `/auth/reset-password/:token` | Reset password |
-| POST | `/auth/change-password` | Change password (authenticated) |
-
-### OAuth
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/auth/oauth/:provider` | Start OAuth flow |
-| GET | `/auth/oauth/:provider/callback` | OAuth callback |
-| POST | `/auth/oauth/telegram` | Telegram widget auth |
-| GET | `/auth/oauth/accounts` | List linked accounts |
-| DELETE | `/auth/oauth/:provider/unlink` | Unlink provider |
-
-### Users
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/users` | List users |
-| GET | `/users/search` | Search users |
-| GET | `/users/:userId` | Get user |
-| PUT | `/users/profile` | Update own profile |
-| PUT | `/users/:userId/role` | Update role (admin) |
-| DELETE | `/users/:userId` | Soft delete |
-| DELETE | `/users/:userId/permanent` | Hard delete |
-
-### System
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Health check |
-| GET | `/metrics` | Prometheus metrics |
-| GET | `/api-docs` | Swagger UI |
-
-## Environment Variables
-
-See [`.env.example`](.env.example) for the full list. Key variables:
-
-- `DATABASE_URL` — MongoDB connection string
-- `REDIS_HOST`, `REDIS_PORT` — Redis cache
-- `MINIO_*` — Object storage
-- `JWT_*_KEY_PATH` — RS256 key pair paths
-- `GOOGLE_CLIENT_ID`, etc. — OAuth provider credentials
-
-## Database Schema
-
-Prisma models (MongoDB):
-
-- **User** — accounts, OTP, roles, soft delete
-- **OAuthAccount** — linked social logins
-- **Blacklist** — revoked JWT tokens
-- **Blog** — reference domain model (replace with your business entity)
-
-## Testing
-
-```
-tests/
-├── setup.ts              # Global Vitest setup
-├── helpers/              # Test server & utilities
-├── fixtures/             # Test data factories
-├── mocks/                # Module mocks
-├── unit/                 # Unit tests
-└── integration/          # API integration tests
-```
-
-```bash
+npm run format
+npm run lint:ci
+npm run type-check
 npm test
-npm run test:coverage
+npm run test:docs
 ```
 
-## Customization Guide
+Or simply: `npm run validate`.
 
-1. **Replace Blog** — edit `prisma/schema.prisma`, add controllers/routes/validators following the users module pattern
-2. **Add business modules** — mirror structure: `controllers/`, `routes/`, `services/validator/`
-3. **Configure OAuth** — set provider credentials in `.env`
-4. **Production** — inject secrets at runtime, enable auth middlewares, tune rate limits
+---
+
+## Tech stack
+
+Express 4 · TypeScript · MongoDB + Prisma · Redis · BullMQ · MinIO/S3 ·
+Nodemailer · Vitest · Docker Compose · OpenAPI 3 · Winston
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) and the
+[Code of Conduct](./CODE_OF_CONDUCT.md).  
+Security reports: [SECURITY.md](./SECURITY.md).  
+Changelog: [CHANGELOG.md](./CHANGELOG.md).
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
-
-## Author
-
-**Barthez Kenwou** — [github.com/barthez-kenwou](https://github.com/barthez-kenwou)
+MIT © 2024–2026 [Barthez Kenwou](https://github.com/barthez-kenwou) — see
+[LICENSE](./LICENSE).

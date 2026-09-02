@@ -1,0 +1,107 @@
+# OAuth routes — /api/v1/auth/oauth
+# Keep in sync with src/modules/oauth/presentation/routes/oauth.routes.ts
+
+/api/v1/auth/oauth/accounts:
+  get:
+    tags: [OAuth]
+    summary: List linked OAuth accounts
+    description: Returns social accounts linked to the authenticated user.
+    security:
+      - bearerAuth: []
+    responses:
+      '200': { description: Linked OAuth accounts }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Account not verified or inactive }
+      '500': { description: Unexpected server error }
+
+/api/v1/auth/oauth/telegram:
+  post:
+    tags: [OAuth]
+    summary: Authenticate with Telegram Login Widget
+    description: Validates Telegram Login Widget payload (`hash` required) and issues JWT credentials.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [hash]
+            properties:
+              id: { type: integer }
+              first_name: { type: string }
+              last_name: { type: string }
+              username: { type: string }
+              photo_url: { type: string }
+              auth_date: { type: integer }
+              hash: { type: string }
+    responses:
+      '200': { description: Telegram login successful }
+      '400': { description: Validation failed }
+      '401': { description: Invalid Telegram payload }
+      '500': { description: Unexpected server error }
+
+/api/v1/auth/oauth/{provider}:
+  get:
+    tags: [OAuth]
+    summary: Start OAuth authorization
+    description: Redirects the browser to the selected OAuth provider consent screen.
+    parameters:
+      - name: provider
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [google, github, facebook, instagram, twitter, linkedin, telegram]
+    responses:
+      '302': { description: Redirect to the OAuth provider }
+      '400': { description: Unsupported provider }
+      '500': { description: Unexpected server error }
+
+/api/v1/auth/oauth/{provider}/callback:
+  get:
+    tags: [OAuth]
+    summary: OAuth provider callback
+    description: Handles the provider redirect, exchanges the authorization code, and completes login or account linking.
+    parameters:
+      - name: provider
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [google, github, facebook, instagram, twitter, linkedin, telegram]
+      - name: code
+        in: query
+        schema: { type: string }
+      - name: state
+        in: query
+        schema: { type: string }
+      - name: error
+        in: query
+        schema: { type: string }
+    responses:
+      '302': { description: Redirect to the frontend success or error URL }
+      '400': { description: Invalid callback parameters }
+      '401': { description: OAuth exchange failed }
+      '500': { description: Unexpected server error }
+
+/api/v1/auth/oauth/{provider}/unlink:
+  delete:
+    tags: [OAuth]
+    summary: Unlink an OAuth provider
+    description: Removes the linked social account for the given provider from the current user.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: provider
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [google, github, facebook, instagram, twitter, linkedin, telegram]
+    responses:
+      '200': { description: Provider unlinked }
+      '400': { description: Invalid provider }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Account not verified or inactive }
+      '404': { description: Linked account not found }
+      '500': { description: Unexpected server error }

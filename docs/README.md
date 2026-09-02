@@ -1,112 +1,90 @@
-# Documentation de l'API GTA
+# Backend Init Documentation
 
-Bienvenue dans la documentation de l'API GTA. Cette documentation est générée
-avec OpenAPI (Swagger) et fournit une référence complète pour tous les points de
-terminaison de l'API.
+This documentation explains how **Backend Init** is structured, how to extend
+it, and how to run it in development and production. It is written for engineers
+who will fork the template, replace the sample domain, and ship a real API.
 
-## Accès à la documentation
+## Documentation philosophy
 
-La documentation de l'API est disponible à l'adresse suivante :
+Good template documentation does three jobs:
 
-- **Développement local** : http://localhost:3000/api-docs
-- **Staging** : https://api.staging.gtamarket.com/api-docs
-- **Production** : https://api.gtamarket.com/api-docs
+1. **Orient** — show where code lives and why, so a new contributor is
+   productive in under an hour.
+2. **Constrain** — state hard dependency rules so the modular monolith stays
+   maintainable as modules grow.
+3. **Enable** — give concrete recipes (new module, OAuth provider, storage swap)
+   without inventing APIs that do not exist.
 
-## Authentification
+Prefer the source of truth in `src/` when docs and code diverge. Module-level
+`README.md` files under `src/modules/*` are short, local contracts; this `docs/`
+tree is the cross-cutting narrative.
 
-La plupart des endpoints de l'API nécessitent une authentification. Voici
-comment s'authentifier :
+## Quick links
 
-1. **Authentification JWT**
-   - Obtenez un jeton JWT en vous connectant via `/auth/login`
-   - Utilisez le jeton dans l'en-tête `Authorization: Bearer <token>`
+| Audience            | Start here                                          |
+| ------------------- | --------------------------------------------------- |
+| First run           | [Getting started](./development/getting-started.md) |
+| Architecture        | [Overview](./architecture/overview.md)              |
+| Extend the template | [Extending](./architecture/extending.md)            |
+| Ship to production  | [Production](./deployment/production.md)            |
+| HTTP contract       | [OpenAPI](./api/README.md)                          |
 
-2. **OAuth 2.0**
-   - Plusieurs fournisseurs sont pris en charge (Google, GitHub, etc.)
-   - Voir la section OAuth pour plus de détails
+## Contents
 
-## Sections de la documentation
+### Architecture
 
-### Authentification
+- [Overview](./architecture/overview.md) — modular monolith, layers, folder map,
+  dependency flow
+- [Modules catalog](./architecture/modules.md) — auth, users, rbac, oauth, blog,
+  files, backup, notifications, system
+- [Dependency rules](./architecture/dependency-rules.md) — what is allowed, what
+  is forbidden
+- [Extending](./architecture/extending.md) — add a module end to end
+- [Configuration](./architecture/configuration.md) — `src/app/config` design
+- [Architecture Decision Records](./architecture/decisions/README.md)
 
-- Connexion/déconnexion
-- Rafraîchissement des jetons
-- Gestion des sessions
+### Development
 
-### Utilisateurs
+- [Getting started](./development/getting-started.md)
+- [Contributing](./development/contributing.md) — also see root
+  [CONTRIBUTING.md](../CONTRIBUTING.md)
+- [Testing](./development/testing.md)
+- [Coding standards](./development/coding-standards.md)
 
-- Création de compte
-- Profil utilisateur
-- Gestion des rôles (admin)
+### Deployment
 
-### Articles (Blogs)
+- [Docker](./deployment/docker.md)
+- [Production](./deployment/production.md)
+- [Observability](./deployment/observability.md)
 
-- Liste des articles
-- Détails d'un article
-- Création/édition (admin/auteurs)
+### Guides
 
-### Articles (Items)
+- [Authentication](./guides/authentication.md) — JWT, refresh rotation, OTP
+- [Storage providers](./guides/storage-providers.md) — MinIO vs S3
+- [Adding an OAuth provider](./guides/adding-oauth-provider.md)
+- [Background jobs](./guides/background-jobs.md) — BullMQ queues and crons
 
-- Gestion des produits
-- Catégories et étiquettes
-- Recherche et filtrage
+### API
 
-### Système
+- [OpenAPI layout](./api/README.md) — components, paths, security,
+  generate/validate
+- Spec file: [`openapi.yaml`](./api/openapi.yaml)
 
-- Vérification de l'état de l'API
-- Sécurité (CSP, CSRF)
-- Métriques
+## Related project files
 
-## Bonnes pratiques
+| File                                        | Purpose                          |
+| ------------------------------------------- | -------------------------------- |
+| [README.md](../README.md)                   | Project overview and quick start |
+| [CONTRIBUTING.md](../CONTRIBUTING.md)       | Contribution workflow            |
+| [SECURITY.md](../SECURITY.md)               | Vulnerability reporting          |
+| [CHANGELOG.md](../CHANGELOG.md)             | Release history                  |
+| [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md) | Community standards              |
+| [LICENSE](../LICENSE)                       | MIT                              |
 
-1. **Gestion des erreurs**
-   - Toutes les erreurs suivent un format standard
-   - Les codes d'état HTTP sont utilisés de manière appropriée
+## Conventions used in these docs
 
-2. **Pagination**
-   - Les listes sont paginées par défaut
-   - Utilisez les paramètres `page` et `limit` pour la navigation
-
-3. **Taux de requêtes**
-   - Limite de 100 requêtes par minute par adresse IP
-   - Les en-têtes de réponse incluent les limites actuelles
-
-## Exemples de requêtes
-
-### Connexion
-
-```http
-POST /auth/login
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "votre-mot-de-passe"
-}
-```
-
-### Création d'un article
-
-```http
-POST /blogs
-Authorization: Bearer votre-jeton
-Content-Type: application/json
-
-{
-  "title": "Nouvel article",
-  "content": "Contenu de l'article...",
-  "categories": ["Technologie"],
-  "tags": ["nodejs", "api"]
-}
-```
-
-## Support
-
-Pour toute question ou problème, veuillez contacter :
-
-- Email : support@gtamarket.com
-- Site web : https://gtamarket.com/support
-
----
-
-© 2023 GTA Market. Tous droits réservés.
+- Paths are repository-relative unless noted.
+- Code samples use TypeScript and the `@/` path aliases defined in
+  `tsconfig.json`.
+- “Module” means a bounded context under `src/modules/<name>/`.
+- Application code lives only under `src/app`, `src/modules`, and `src/shared`.

@@ -44,9 +44,10 @@
   "files": [
     "dist",
     "prisma",
-    "docs/openapi.yaml",
+    "docs/api/openapi.yaml",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=20.0.0",
@@ -54,13 +55,14 @@
   },
   "scripts": {
     "build": "rimraf dist/ && tsc --noEmitOnError --pretty && npm run copy:templates",
-    "copy:templates": "mkdir -p dist/services/mail/templates && cp -r src/services/mail/templates/*.ejs dist/services/mail/templates/",
+    "copy:templates": "mkdir -p dist/shared/infrastructure/mail/templates && cp -r src/shared/infrastructure/mail/templates/*.ejs dist/shared/infrastructure/mail/templates/",
     "dev": "bun --watch src/index.ts",
     "start": "node -r module-alias/register dist/index.js",
+    "start:prod": "NODE_ENV=production node -r module-alias/register dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:docs": "swagger-cli validate docs/openapi.yaml",
+    "test:docs": "swagger-cli validate docs/api/openapi.yaml",
     "validate": "npm run lint:ci && npm run type-check && npm test && npm run test:docs",
     "prisma:generate": "prisma generate --schema prisma/",
     "prisma:format": "prisma format --schema prisma/",
@@ -72,7 +74,7 @@
     "docker:down": "docker compose down",
     "docker:ps": "docker compose ps",
     "prisma:seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
-    "generate:openapi": "node docs/openapi.config.js",
+    "generate:openapi": "node docs/api/openapi.config.js",
     "postinstall": "npm run prisma:generate",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx --max-warnings=10 --fix",
     "lint:check": "eslint . --ext .ts,.tsx,.js,.jsx --max-warnings=10",
@@ -141,12 +143,9 @@
   },
   "_moduleAliases": {
     "@": "dist",
-    "@config": "dist/config",
-    "@services": "dist/services",
-    "@middlewares": "dist/middlewares",
-    "@routes": "dist/routes",
-    "@utils": "dist/utils",
-    "@controllers": "dist/controllers"
+    "@app": "dist/app",
+    "@modules": "dist/modules",
+    "@shared": "dist/shared"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

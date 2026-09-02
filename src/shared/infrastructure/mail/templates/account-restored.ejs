@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Account restored - <%= appName %></title>
+</head>
+<body>
+  <h2>Hello <%= name %>,</h2>
+  <p>Your account on <%= appName %> was restored on <%= date %>.</p>
+  <p>You can sign in again with your credentials.
+    <!-- Callers should pass clientUrl (app base URL) if a direct link is needed. -->
+    <% if (typeof clientUrl !== 'undefined' && clientUrl) { %><a href="<%= clientUrl %>">Sign in</a><% } %></p>
+  <p>If you have questions, contact
+    <a href="mailto:<%= typeof supportEmail !== 'undefined' && supportEmail ? supportEmail : 'support@example.com' %>"><%= typeof supportEmail !== 'undefined' && supportEmail ? supportEmail : 'support@example.com' %></a>.</p>
+  <p>&copy; <%= year %> <%= appName %>. All rights reserved.</p>
+</body>
+</html>
+
+<!--* Variables -->
+<!-- <%= name %>, <%= appName %>, <%= date %>, <%= year %>, <%= clientUrl %> (optional), <%= supportEmail %> (optional) -->

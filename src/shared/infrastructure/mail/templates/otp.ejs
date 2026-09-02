@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= appName %> - Verification code</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      background-color: #f8f9fb;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      background-color: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+      background-color: #8b0000;
+      background-image: linear-gradient(120deg, #8b0000, #b22222);
+      padding: 30px;
+      text-align: center;
+      color: #fff;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.8em;
+      letter-spacing: 1px;
+    }
+
+    .header p {
+      margin-top: 8px;
+      font-size: 0.95em;
+      opacity: 0.9;
+    }
+
+    .content {
+      padding: 40px 35px;
+      text-align: left;
+      line-height: 1.7;
+    }
+
+    .content h2 {
+      color: #8b0000;
+      font-size: 1.4em;
+      margin-bottom: 15px;
+    }
+
+    .otp-box {
+      background-color: #f4eaea;
+      border: 2px dashed #8b0000;
+      color: #8b0000;
+      font-weight: bold;
+      font-size: 2.2em;
+      letter-spacing: 8px;
+      text-align: center;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 25px 0;
+    }
+
+    .content p {
+      font-size: 0.95em;
+      color: #444;
+    }
+
+    .highlight {
+      color: #b22222;
+      font-weight: 600;
+    }
+
+    .cta {
+      text-align: center;
+      margin: 40px 0 10px 0;
+    }
+
+    .cta a {
+      background-color: #8b0000;
+      color: #fff;
+      padding: 12px 28px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.95em;
+      transition: background-color 0.3s ease;
+    }
+
+    .cta a:hover {
+      background-color: #a71d1d;
+    }
+
+    .footer {
+      background-color: #fafafa;
+      border-top: 1px solid #eee;
+      padding: 25px 30px;
+      text-align: center;
+      font-size: 0.85em;
+      color: #777;
+    }
+
+    .footer a {
+      color: #b22222;
+      text-decoration: none;
+    }
+
+    .social {
+      margin-top: 15px;
+    }
+
+    .social a {
+      margin: 0 8px;
+      display: inline-block;
+      text-decoration: none;
+      color: #8b0000;
+      font-weight: 500;
+    }
+
+    .social a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
+      .content {
+        padding: 25px 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1><%= appName %></h1>
+      <p>Account verification</p>
+    </div>
+
+    <div class="content">
+      <h2>Hello <%= name %>,</h2>
+      <p>To complete verification of your <strong><%= appName %></strong> account, please use the code below.</p>
+
+      <div class="otp-box">
+        <%= otp %>
+      </div>
+
+      <p>This code is <span class="highlight">valid for 10 minutes</span>.
+        If you did not request this, you can safely ignore this message.</p>
+
+      <div class="cta">
+        <!-- Callers should pass clientUrl (app base URL). Falls back to "#" if omitted. -->
+        <a href="<%= typeof clientUrl !== 'undefined' && clientUrl ? clientUrl : '#' %>">Open <%= appName %></a>
+      </div>
+
+      <p>Thank you for using <span class="highlight"><%= appName %></span>.</p>
+    </div>
+
+    <div class="footer">
+      <p>&copy; <%= typeof year !== 'undefined' ? year : new Date().getFullYear() %> <%= appName %>. All rights reserved.</p>
+      <p>Contact: <a href="mailto:<%= typeof supportEmail !== 'undefined' && supportEmail ? supportEmail : 'support@example.com' %>"><%= typeof supportEmail !== 'undefined' && supportEmail ? supportEmail : 'support@example.com' %></a></p>
+      <div class="social">
+        <a href="#">Facebook</a> |
+        <a href="#">Instagram</a> |
+        <a href="#">LinkedIn</a> |
+        <a href="#">YouTube</a>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>
+
+<!--* Variables -->
+<!-- <%= name %>, <%= otp %>, <%= appName %>, <%= clientUrl %> (optional), <%= supportEmail %> (optional), <%= year %> (optional) -->

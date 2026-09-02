@@ -1,9 +1,0 @@
-# Refresh Token Request Schema
-type: object
-required:
-  - refreshToken
-properties:
-  refreshToken:
-    type: string
-    description: The refresh token previously issued by the server
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'

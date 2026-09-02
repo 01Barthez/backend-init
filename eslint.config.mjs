@@ -1,4 +1,4 @@
-// eslint.config.js
+// eslint.config.mjs
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import importPlugin from 'eslint-plugin-import';
@@ -9,6 +9,12 @@ import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import sonarjsPlugin from 'eslint-plugin-sonarjs';
 import unusedImportsPlugin from 'eslint-plugin-unused-imports';
 import path from 'path';
+
+/** Forbid direct process.env access — use @/app/config instead. */
+const noProcessEnv = {
+  selector: "MemberExpression[object.name='process'][property.name='env']",
+  message: 'Use config from @/app/config instead of process.env',
+};
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
@@ -69,7 +75,7 @@ export default [
     },
     rules: {
       // Base
-      'no-console': 'off', // Désactivé (trop de bruit en dev)
+      'no-console': ['error', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
       'no-unused-vars': 'off',
       'no-return-await': 'error',
@@ -80,8 +86,9 @@ export default [
       'no-unreachable-loop': 'error',
       'no-unsafe-optional-chaining': 'warn',
       'no-useless-backreference': 'error',
+      'no-restricted-syntax': ['error', noProcessEnv],
 
-      // Import: Désactiver toutes les règles problématiques
+      // Import: disable noisy / false-positive rules under TypeScript
       'import/no-unresolved': 'off',
       'import/named': 'off',
       'import/namespace': 'off',
@@ -92,7 +99,7 @@ export default [
       'import/no-self-import': 'off',
       'import/no-useless-path-segments': 'off',
       'import/no-relative-parent-imports': 'off',
-      'import/no-deprecated': 'off', // Désactivé (faux positifs avec TS)
+      'import/no-deprecated': 'off',
 
       // Unused imports
       'unused-imports/no-unused-imports': 'error',
@@ -110,14 +117,14 @@ export default [
       'simple-import-sort/imports': 'off',
       'simple-import-sort/exports': 'error',
 
-      // TS rules: Assouplir les règles strictes
+      // TypeScript: keep practical defaults for a template codebase
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-explicit-any': 'off', // Désactivé (any n'est pas un crime)
+      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/consistent-type-imports': 'error',
-      '@typescript-eslint/no-require-imports': 'off', // Désactivé (compatible avec CommonJS)
+      '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
-      '@typescript-eslint/no-var-requires': 'off', // Désactivé (compatible avec CommonJS)
+      '@typescript-eslint/no-var-requires': 'off',
       '@typescript-eslint/no-empty-function': 'warn',
       '@typescript-eslint/ban-ts-comment': [
         'error',
@@ -129,15 +136,14 @@ export default [
           minimumDescriptionLength: 5,
         },
       ],
-      '@typescript-eslint/strict-boolean-expressions': 'off', // Désactivé (trop strict)
+      '@typescript-eslint/strict-boolean-expressions': 'off',
       '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/prefer-nullish-coalescing': 'off', // Désactivé (préférence personnelle)
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
       '@typescript-eslint/prefer-optional-chain': 'warn',
-      '@typescript-eslint/no-empty-function': 'warn',
 
-      // Performance: Assouplir les règles strictes
+      // Process / sync
       'no-process-exit': 'warn',
-      'no-sync': 'off', // Désactivé (sync n'est pas toujours un problème)
+      'no-sync': 'off',
 
       // Promise
       'promise/no-return-wrap': 'error',
@@ -159,6 +165,35 @@ export default [
       ],
     },
   },
+  // Application modules / shared: no console.* except logger bootstrap + CLI banner
+  {
+    files: ['src/modules/**/*.{ts,tsx}', 'src/shared/**/*.{ts,tsx}'],
+    ignores: ['src/shared/infrastructure/logging/logger.ts', 'src/shared/utils/startup-message.ts'],
+    rules: {
+      'no-console': 'error',
+    },
+  },
+  // CLI startup banner (intentional console UX)
+  {
+    files: ['src/index.ts', 'src/shared/utils/startup-message.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  // Logger bootstrap: chicken-egg before Winston exists — warn/error only
+  {
+    files: ['src/shared/infrastructure/logging/logger.ts'],
+    rules: {
+      'no-console': ['error', { allow: ['warn', 'error'] }],
+    },
+  },
+  // Config layer: process.env is allowed here only
+  {
+    files: ['src/app/config/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': 'off',
+    },
+  },
   {
     files: ['**/*.spec.ts', '**/*.test.ts', '**/__tests__/**/*.ts'],
     rules: {
@@ -168,6 +203,7 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
       'no-process-exit': 'off',
+      'no-restricted-syntax': 'off',
     },
   },
 ];

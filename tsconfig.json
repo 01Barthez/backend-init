@@ -1,3 +1,6 @@
+/**
+ * TypeScript compiler configuration for the modular backend template.
+ */
 {
   "compilerOptions": {
     "target": "ES2020",
@@ -13,12 +16,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@config/*": ["src/config/*"],
-      "@services/*": ["src/services/*"],
-      "@middlewares/*": ["src/middlewares/*"],
-      "@routes/*": ["src/routes/*"],
-      "@controllers/*": ["src/controllers/*"],
-      "@utils/*": ["src/utils/*"]
+      "@app/*": ["src/app/*"],
+      "@modules/*": ["src/modules/*"],
+      "@shared/*": ["src/shared/*"]
     },
     "resolveJsonModule": true
   },

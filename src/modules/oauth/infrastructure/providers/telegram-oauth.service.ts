@@ -1,0 +1,82 @@
+/**
+ * Telegram OAuth Service
+ * Handles Telegram Login Widget authentication
+ * Note: Telegram uses a different flow (widget-based) rather than standard OAuth2.0
+ */
+import crypto from 'crypto';
+
+import { envs } from '@/app/config';
+import log from '@/shared/infrastructure/logging/logger';
+
+import { type IOAuthUserProfile, OAuthProvider } from '../../domain/types/oauth.types';
+
+interface TelegramAuthData {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+  auth_date: number;
+  hash: string;
+}
+
+export class TelegramOAuthService {
+  private botToken: string;
+
+  constructor() {
+    this.botToken = envs.TELEGRAM_BOT_TOKEN;
+  }
+
+  /**
+   * Verify Telegram authentication data
+   * Telegram uses HMAC-SHA256 for verification
+   */
+  verifyTelegramAuth(authData: TelegramAuthData): boolean {
+    const { hash, ...data } = authData;
+
+    // Create data check string
+    const dataCheckString = Object.keys(data)
+      .sort()
+      .map((key) => `${key}=${data[key as keyof typeof data]}`)
+      .join('\n');
+
+    // Create secret key from bot token
+    const secretKey = crypto.createHash('sha256').update(this.botToken).digest();
+
+    // Calculate HMAC
+    const hmac = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+
+    // Check if auth_date is not too old (e.g., 1 day)
+    const authAge = Date.now() / 1000 - authData.auth_date;
+    if (authAge > 86400) {
+      log.warn('Telegram auth data is too old');
+      return false;
+    }
+
+    return hmac === hash;
+  }
+
+  /**
+   * Parse Telegram user data into normalized profile
+   */
+  getUserProfile(authData: TelegramAuthData): IOAuthUserProfile {
+    return {
+      provider: OAuthProvider.TELEGRAM,
+      providerUserId: authData.id.toString(),
+      email: '',
+      emailVerified: false,
+      firstName: authData.first_name,
+      lastName: authData.last_name || '',
+      fullName: `${authData.first_name} ${authData.last_name || ''}`.trim(),
+      avatarUrl: authData.photo_url,
+      rawProfile: authData,
+    };
+  }
+
+  /**
+   * Generate Telegram login widget URL
+   */
+  getLoginWidgetUrl(redirectUrl: string): string {
+    return `https://oauth.telegram.org/auth?bot_id=${this.botToken.split(':')[0]}&origin=${redirectUrl}&return_to=${redirectUrl}`;
+  }
+}

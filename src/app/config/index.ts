@@ -1,0 +1,171 @@
+/**
+ * Aggregated application configuration.
+ *
+ * Import from `@/app/config` everywhere — never reach into `sections/` directly
+ * from modules. This keeps the public API stable when we reshuffle internals.
+ */
+import { appConfig } from './sections/app';
+import { authConfig } from './sections/auth';
+import { databaseConfig } from './sections/database';
+import { featuresConfig } from './sections/features';
+import { mailConfig } from './sections/mail';
+import { oauthConfig } from './sections/oauth';
+import { observabilityConfig } from './sections/observability';
+import { queueConfig } from './sections/queue';
+import { redisConfig } from './sections/redis';
+import { securityConfig } from './sections/security';
+import { storageConfig } from './sections/storage';
+
+/**
+ * Frozen configuration object.
+ * Mutations at runtime are intentional no-ops (Object.freeze).
+ */
+export const config = Object.freeze({
+  app: appConfig,
+  database: databaseConfig,
+  auth: authConfig,
+  redis: redisConfig,
+  storage: storageConfig,
+  mail: mailConfig,
+  security: securityConfig,
+  oauth: oauthConfig,
+  queue: queueConfig,
+  features: featuresConfig,
+  observability: observabilityConfig,
+});
+
+export type AppConfiguration = typeof config;
+
+/**
+ * Backward-compatible flat `envs` mirror.
+ * Prefer `config.*` in new code; this exists so gradual migration stays green.
+ */
+export const envs = {
+  PORT: config.app.port,
+  API_PREFIX: config.app.apiPrefix,
+  NODE_ENV: config.app.nodeEnv,
+  APP_TZ: config.app.timezone,
+  TIMEZONE: config.app.timezone,
+  APP_LOCALE: config.app.locale,
+  DB_TYPE: config.database.type,
+  APP_NAME: config.app.name,
+  APP_VERSION: config.app.version,
+  APP_DESCRIPTION: config.app.description,
+  APP_AUTHOR: config.app.author,
+  APP_LICENSE: config.app.license,
+  DISABLE_CONSOLE_LOGS: config.app.disableConsoleLogs,
+  DATABASE_URL: config.database.url,
+  MONGO_USER: config.database.mongo.user,
+  MONGO_URL: config.database.mongo.url,
+  MONGO_PASSWORD: config.database.mongo.password,
+  MONGO_DB: config.database.mongo.database,
+  LOG_TO_MONGODB: config.database.logToMongodb,
+  MINIO_ACCESS_KEY: config.storage.minio.accessKey,
+  MINIO_SECRET_KEY: config.storage.minio.secretKey,
+  MINIO_PORT: config.storage.minio.port,
+  MINIO_USE_SSL: config.storage.minio.useSsl,
+  MINIO_ENDPOINT: config.storage.minio.endpoint,
+  MINIO_APP_BUCKET: config.storage.minio.appBucket,
+  MINIO_BASE_PATH: config.storage.minio.basePath,
+  MINIO_PUBLIC_URL: config.storage.minio.publicUrl,
+  BACKUP_RETENTION_DAYS: config.queue.backup.retentionDays,
+  BACKUP_ENCRYPTION_KEY: config.queue.backup.encryptionKey,
+  MAIL_FROM_NAME: config.mail.fromName,
+  BACKUP_CRON: config.queue.backup.cron,
+  MAINTENANCE_CRON: config.queue.maintenanceCron,
+  BLACKLIST_PURGE_CRON: config.queue.blacklistPurgeCron,
+  STORAGE_PROVIDER: config.storage.provider,
+  S3_REGION: config.storage.s3.region,
+  S3_ACCESS_KEY: config.storage.s3.accessKey,
+  S3_SECRET_KEY: config.storage.s3.secretKey,
+  S3_BUCKET: config.storage.s3.bucket,
+  S3_ENDPOINT: config.storage.s3.endpoint,
+  S3_PORT: config.storage.s3.port,
+  S3_USE_SSL: config.storage.s3.useSsl,
+  S3_PUBLIC_URL: config.storage.s3.publicUrl,
+  REDIS_HOST: config.redis.host,
+  REDIS_PORT: config.redis.port,
+  REDIS_USERNAME: config.redis.username,
+  REDIS_PASSWORD: config.redis.password,
+  SMTP_HOST: config.mail.host,
+  SMTP_PORT: config.mail.port,
+  SMTP_USER: config.mail.user,
+  SMTP_PASS: config.mail.pass,
+  USER_EMAIL: config.mail.fromAddress,
+  BACKUP_NAME: config.queue.backup.name,
+  BACKUP_SERVICE_EMAIL: config.queue.backup.serviceEmail,
+  BACKUP_ADMIN_EMAIL: config.queue.backup.adminEmail,
+  LOG_LEVEL: config.observability.logLevel,
+  LOG_TO_FILE: config.observability.logToFile,
+  RATE_LIMIT_WINDOW_MS: config.security.rateLimit.windowMs,
+  RATE_LIMIT_MAX_REQUESTS: config.security.rateLimit.maxRequests,
+  HSTS_MAX_AGE: config.security.hstsMaxAge,
+  MAX_GLOBAL_QUERY_NUMBER: config.security.rateLimit.globalMax,
+  MAX_GLOBAL_QUERY_WINDOW: config.security.rateLimit.globalWindowMs,
+  MAX_UNIQ_QUERY_NUMBER: config.security.rateLimit.uniqueMax,
+  MAX_UNIQ_QUERY_WINDOW: config.security.rateLimit.uniqueWindowMs,
+  JWT_SECRET: config.auth.jwt.secret,
+  JWT_EXPIRES_IN: config.auth.jwt.expiresIn,
+  JWT_COOKIE_SECURITY: config.auth.cookies.secure,
+  JWT_COOKIE_HTTP_STATUS: config.auth.cookies.httpOnly,
+  JWT_ACCESS_EXPIRES_IN: config.auth.jwt.accessExpiresIn,
+  JWT_REFRESH_EXPIRES_IN: config.auth.jwt.refreshExpiresIn,
+  JWT_ALGORITHM: config.auth.jwt.algorithm,
+  JWT_PRIVATE_KEY_PATH: config.auth.jwt.privateKeyPath,
+  JWT_PUBLIC_KEY_PATH: config.auth.jwt.publicKeyPath,
+  JWT_REFRESH_PRIVATE_KEY_PATH: config.auth.jwt.refreshPrivateKeyPath,
+  JWT_REFRESH_PUBLIC_KEY_PATH: config.auth.jwt.refreshPublicKeyPath,
+  REFRESH_TOKEN_COOKIE: config.auth.cookies.refreshTokenName,
+  CLAMAV_HOST: config.storage.clamav.host,
+  CLAMAV_PORT: config.storage.clamav.port,
+  CLAMAV_TIMEOUT: config.storage.clamav.timeoutMs,
+  CLIENT_URL: config.app.clientUrl,
+  SERVER_URL: config.app.serverUrl,
+  LOKI_ENABLED: config.observability.lokiEnabled,
+  CSRF_COOKIE_NAME: config.security.csrf.cookieName,
+  CSRF_HEADER_NAME: config.security.csrf.headerName,
+  CSRF_EXPIRES_IN: config.security.csrf.expiresIn,
+  ALLOW_CSRF_PROTECTION: config.security.csrf.enabled,
+  CSP_REPORT_URI: config.security.cspReportUri,
+  COOKIE_DOMAIN: config.security.cookie.domain,
+  COOKIE_SECURE: config.security.cookie.secure,
+  COOKIE_HTTP_STATUS: config.security.cookie.httpOnly,
+  COOKIE_SAME_SITE: config.security.cookie.sameSite,
+  COOKIE_EXPIRES_IN: config.security.cookie.expiresIn,
+  SWAGGER_ENABLED: config.security.swagger.enabled,
+  SWAGGER_USER: config.security.swagger.user,
+  SWAGGER_PASSWORD: config.security.swagger.password,
+  LOCAL_CACHE_MAX_ITEMS: config.redis.localCache.maxItems,
+  LOCAL_CACHE_TTL: config.redis.localCache.ttlMs,
+  COMPRESSION_THRESHOLD: config.redis.compressionThreshold,
+  OTP_DELAY: config.auth.otpDelayMs,
+  GOOGLE_CLIENT_ID: config.oauth.google.clientId,
+  GOOGLE_CLIENT_SECRET: config.oauth.google.clientSecret,
+  GOOGLE_REDIRECT_URI: config.oauth.google.redirectUri,
+  GITHUB_CLIENT_ID: config.oauth.github.clientId,
+  GITHUB_CLIENT_SECRET: config.oauth.github.clientSecret,
+  GITHUB_REDIRECT_URI: config.oauth.github.redirectUri,
+  FACEBOOK_CLIENT_ID: config.oauth.facebook.clientId,
+  FACEBOOK_CLIENT_SECRET: config.oauth.facebook.clientSecret,
+  FACEBOOK_REDIRECT_URI: config.oauth.facebook.redirectUri,
+  INSTAGRAM_CLIENT_ID: config.oauth.instagram.clientId,
+  INSTAGRAM_CLIENT_SECRET: config.oauth.instagram.clientSecret,
+  INSTAGRAM_REDIRECT_URI: config.oauth.instagram.redirectUri,
+  TWITTER_CLIENT_ID: config.oauth.twitter.clientId,
+  TWITTER_CLIENT_SECRET: config.oauth.twitter.clientSecret,
+  TWITTER_REDIRECT_URI: config.oauth.twitter.redirectUri,
+  LINKEDIN_CLIENT_ID: config.oauth.linkedin.clientId,
+  LINKEDIN_CLIENT_SECRET: config.oauth.linkedin.clientSecret,
+  LINKEDIN_REDIRECT_URI: config.oauth.linkedin.redirectUri,
+  TELEGRAM_BOT_TOKEN: config.oauth.telegram.botToken,
+  TELEGRAM_BOT_USERNAME: config.oauth.telegram.botUsername,
+  FLAGSMITH_API_KEY: config.features.flagsmith.apiKey,
+  FLAGSMITH_API_URL: config.features.flagsmith.apiUrl,
+  FLAGSMITH_DEFAULTS: config.features.flagsmith.defaults,
+  INFISICAL_CLIENT_ID: config.features.infisical.clientId,
+  INFISICAL_CLIENT_SECRET: config.features.infisical.clientSecret,
+  INFISICAL_PROJECT_ID: config.features.infisical.projectId,
+  INFISICAL_ENVIRONMENT: config.features.infisical.environment,
+} as const;
+
+export default config;
