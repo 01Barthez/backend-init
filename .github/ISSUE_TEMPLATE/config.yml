@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/barthez-kenwou/backend-init/security/advisories/new
+    about: Please report vulnerabilities privately via GitHub Security Advisories.
+  - name: Discussions
+    url: https://github.com/barthez-kenwou/backend-init/discussions
+    about: Questions and ideas that are not bugs or features.

@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose an enhancement for the template
+title: '[feature]: '
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What gap does this fill for consumers of the template?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Concrete behavior or API change
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Impact areas
+      options:
+        - label: Auth / OAuth
+        - label: Users / RBAC
+        - label: Infrastructure (DB, Redis, MinIO, queue)
+        - label: CI / Docker / Deploy
+        - label: Docs / OpenAPI

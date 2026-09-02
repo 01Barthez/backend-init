@@ -1,0 +1,60 @@
+name: Deploy VPS
+
+on:
+  workflow_run:
+    workflows: [Docker]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Image tag to deploy (default sha of main)
+        required: false
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Resolve image reference
+        id: image
+        run: |
+          REGISTRY="${{ vars.CONTAINER_REGISTRY || 'ghcr.io' }}"
+          IMAGE="${REGISTRY}/${{ github.repository }}"
+          TAG="${{ inputs.image_tag || format('sha-{0}', github.sha) }}"
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            TAG="main"
+          fi
+          echo "ref=${IMAGE}:${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.VPS_APP_PATH }}"
+
+            # Prefer compose pull of the published image (GHCR / Harbor / …).
+            # Fallback: classic git pull + build if IMAGE_REF is unset on the host.
+            export IMAGE_REF="${{ steps.image.outputs.ref }}"
+
+            if [ -f docker-compose.prod.yml ]; then
+              docker compose -f docker-compose.prod.yml pull
+              docker compose -f docker-compose.prod.yml up -d
+            else
+              git fetch origin main
+              git reset --hard origin/main
+              npm ci
+              npm run prisma:generate
+              npm run build
+              pm2 reload backend-init --update-env || pm2 start dist/index.js --name backend-init
+            fi

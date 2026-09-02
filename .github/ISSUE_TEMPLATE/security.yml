@@ -1,0 +1,27 @@
+name: Security concern
+description: Non-critical security improvement (use Advisories for vulnerabilities)
+title: '[security]: '
+labels: ['security']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not post exploit details or secrets here.**
+        For vulnerabilities, use [Security Advisories](https://github.com/barthez-kenwou/backend-init/security/advisories/new).
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Estimated severity
+      options: [Low, Medium, High, Critical]
+    validations:
+      required: true
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Suggested mitigation

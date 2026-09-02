@@ -1,0 +1,7 @@
+# Default owners for this template — replace with your org/team.
+* @barthez-kenwou
+
+/.github/ @barthez-kenwou
+/src/modules/auth/ @barthez-kenwou
+/src/modules/users/ @barthez-kenwou
+/infra/ @barthez-kenwou

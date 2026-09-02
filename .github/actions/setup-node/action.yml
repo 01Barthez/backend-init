@@ -1,0 +1,24 @@
+name: Setup Node
+description: Checkout-ready Node.js, npm ci, and Prisma client generate
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci
+
+    - name: Generate Prisma client
+      shell: bash
+      run: npm run prisma:generate
+
+inputs:
+  node-version:
+    description: Node.js version
+    required: false
+    default: '22'
