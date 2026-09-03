@@ -88,6 +88,25 @@ export class PrismaBlogRepository implements BlogRepositoryPort {
     };
   }
 
+  async findPublicByIds(ids: string[]): Promise<BlogEntity[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const rows = await prisma.blog.findMany({
+      where: {
+        id: { in: ids },
+        deletedAt: null,
+        status: 'PUBLISHED',
+        visibility: 'PUBLIC',
+      },
+      include: { author: { select: authorSelect } },
+    });
+
+    const byId = new Map(rows.map((row) => [row.id, BlogMapper.toDomain(row)]));
+    return ids.map((id) => byId.get(id)).filter((blog): blog is BlogEntity => Boolean(blog));
+  }
+
   async update(id: string, data: UpdateBlogInput): Promise<BlogEntity> {
     const updated = await prisma.blog.update({
       where: { id },

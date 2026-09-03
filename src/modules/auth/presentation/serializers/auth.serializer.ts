@@ -1,4 +1,7 @@
+import type { EnrollTotpResult } from '../../application/commands/enroll-totp.command';
 import type { LoginResult, SignupResult } from '../../application/dto/auth.dto';
+import type { GetCurrentUserResult } from '../../application/queries/get-current-user.query';
+import type { AuthSessionSummary } from '../../domain/types/auth.types';
 
 /**
  * Maps use-case results to the public API response shape.
@@ -43,5 +46,20 @@ export const AuthSerializer = {
 
   forgotPassword(emailSent: boolean) {
     return { emailSent };
+  },
+
+  me(profile: GetCurrentUserResult) {
+    return profile;
+  },
+
+  sessions(items: AuthSessionSummary[]) {
+    return items;
+  },
+
+  totpEnroll(result: EnrollTotpResult) {
+    return {
+      otpauthUrl: result.otpauthUrl,
+      secret: result.secret,
+    };
   },
 };

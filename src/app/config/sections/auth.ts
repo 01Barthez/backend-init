@@ -1,7 +1,7 @@
 /**
  * Authentication & token configuration.
  * Key paths point to RSA material used for RS256 JWT signing.
- * In production, mount keys via secrets — never bake them into the image.
+ * Generate with `npm run keys:generate`. Never bake keys into the image.
  */
 import { fromEnv } from '../env';
 import { parseDurationMs } from '../parse-duration';
@@ -20,19 +20,19 @@ export const authConfig = {
 
     privateKeyPath: fromEnv
       .get('JWT_PRIVATE_KEY_PATH')
-      .default('src/app/config/keys/private.key')
+      .default('keys/jwt-access-private.pem')
       .asString(),
     publicKeyPath: fromEnv
       .get('JWT_PUBLIC_KEY_PATH')
-      .default('src/app/config/keys/public.key')
+      .default('keys/jwt-access-public.pem')
       .asString(),
     refreshPrivateKeyPath: fromEnv
       .get('JWT_REFRESH_PRIVATE_KEY_PATH')
-      .default('src/app/config/keys/refreshPrivate.key')
+      .default('keys/jwt-refresh-private.pem')
       .asString(),
     refreshPublicKeyPath: fromEnv
       .get('JWT_REFRESH_PUBLIC_KEY_PATH')
-      .default('src/app/config/keys/refreshPublic.key')
+      .default('keys/jwt-refresh-public.pem')
       .asString(),
   },
 
@@ -46,8 +46,8 @@ export const authConfig = {
   otpDelayMs: fromEnv.get('OTP_DELAY').default(900000).asInt(),
 
   /**
-   * AES-256-GCM key for OAuth provider tokens at rest.
-   * 64-char hex or any passphrase (scrypt). Empty = provider tokens are not stored.
+   * AES-256-GCM key for OAuth provider tokens and TOTP secrets at rest.
+   * 64-char hex or any passphrase (scrypt). Empty = secrets are not stored.
    */
   encryptionKey: fromEnv.get('AUTH_ENCRYPTION_KEY').default('').asString(),
 } as const;

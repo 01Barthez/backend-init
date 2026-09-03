@@ -8,7 +8,19 @@ import type { MinioUploader } from '../minio-uploader';
 export class MinioUploaderAdapter implements UploaderPort {
   constructor(private readonly uploader: MinioUploader) {}
 
-  uploadBuffer(buffer: Buffer, meta: FileMeta, _opts?: UploadOptions): Promise<UploadResult> {
-    return this.uploader.uploadBuffer(buffer, meta);
+  uploadBuffer(buffer: Buffer, meta: FileMeta, opts?: UploadOptions): Promise<UploadResult> {
+    return this.uploader.uploadBuffer(buffer, { ...meta, profile: opts?.profile }, opts);
+  }
+
+  presignPut(input: {
+    filename: string;
+    contentType: string;
+    size: number;
+  }): Promise<{ url: string; key: string; expiresIn: number }> {
+    return this.uploader.presignPut(input);
+  }
+
+  presignGet(key: string): Promise<{ url: string; expiresIn: number }> {
+    return this.uploader.presignGet(key);
   }
 }

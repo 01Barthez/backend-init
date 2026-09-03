@@ -28,6 +28,8 @@ export type FileMeta = {
   size?: number;
   /** Object key prefix inside the bucket, e.g. users/avatars */
   category?: string;
+  /** Validation profile name (e.g. `avatar`). */
+  profile?: string;
 };
 
 export type ValidationPolicy = {

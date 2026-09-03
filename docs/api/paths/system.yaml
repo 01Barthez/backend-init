@@ -1,20 +1,41 @@
-# System routes — application root (not under /api/v1)
+# System routes — application root + admin audit
 # Keep in sync with src/modules/system/presentation/routes and src/app/routes/index.ts
 
 /health:
   get:
     tags: [System]
-    summary: Health check
-    description: Liveness endpoint confirming the API process is responding.
+    summary: Readiness (Mongo + Redis)
+    description: >
+      Used by Docker HEALTHCHECK. Returns 503 if a dependency is down.
+      Prefer `/health/live` for process-only liveness.
     responses:
-      '200': { description: Service is healthy }
-      '500': { description: Health check failed }
+      '200': { description: Ready }
+      '503': { description: Dependency check failed }
+
+/health/live:
+  get:
+    tags: [System]
+    summary: Liveness
+    description: Process is up. Does not check Mongo or Redis.
+    responses:
+      '200': { description: Live }
+
+/health/ready:
+  get:
+    tags: [System]
+    summary: Readiness alias
+    description: Same checks as `GET /health`.
+    responses:
+      '200': { description: Ready }
+      '503': { description: Dependency check failed }
 
 /csrf-token:
   get:
     tags: [System]
     summary: Issue CSRF token
-    description: Returns a CSRF token in JSON. The httpOnly csurf secret cookie is owned by middleware — this endpoint does not overwrite it.
+    description: >
+      Returns a CSRF token in JSON. The httpOnly csurf secret cookie is owned by
+      middleware — this endpoint does not overwrite it.
     responses:
       '200':
         description: CSRF token issued
@@ -35,22 +56,29 @@
   get:
     tags: [System]
     summary: Prometheus metrics
-    description: Exposes default Node.js process metrics in Prometheus text format.
+    description: >
+      Exposes default Node.js process metrics in Prometheus text format.
+      Requires HTTP Basic (`ADMIN_BASIC_*`, fallback `SWAGGER_*`) except in tests.
+      Not published through public Nginx.
+    security:
+      - basicAuth: []
     responses:
       '200':
         description: Prometheus metrics scrape payload
         content:
           text/plain:
             schema: { type: string }
+      '401': { description: Basic auth missing or invalid }
       '500': { description: Unexpected server error }
 
 /security/csp-violation:
-  get:
+  post:
     tags: [System]
     summary: CSP violation report URI
     description: >
-      Receives Content-Security-Policy violation reports. Mount path defaults to
-      `CSP_REPORT_URI` (`/security/csp-violation`). The Express route currently registers GET.
+      Receives Content-Security-Policy violation reports from browsers (POST).
+      Mount path defaults to `CSP_REPORT_URI` (`/security/csp-violation`).
+      GET is also accepted for legacy clients.
     requestBody:
       required: false
       content:
@@ -68,9 +96,43 @@
                   original-policy: { type: string }
     responses:
       '200': { description: Report accepted }
-      '204': { description: Report accepted (no content) }
       '400': { description: Malformed report }
       '500': { description: Unexpected server error }
+  get:
+    tags: [System]
+    summary: CSP violation report URI (legacy GET)
+    description: Same handler as POST for clients that send reports with GET. Prefer POST.
+    responses:
+      '200': { description: Report accepted }
+      '500': { description: Unexpected server error }
+
+/api/v1/admin/audit:
+  get:
+    tags: [System]
+    summary: List audit log entries
+    description: Requires `audit:read`. Paginated; limit capped at 100.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: actorId
+        in: query
+        schema: { type: string }
+      - name: action
+        in: query
+        schema: { type: string }
+      - name: resource
+        in: query
+        schema: { type: string }
+      - name: page
+        in: query
+        schema: { type: integer, minimum: 1, default: 1 }
+      - name: limit
+        in: query
+        schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    responses:
+      '200': { description: Audit entries }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Insufficient permission }
 
 /admin/queues:
   get:
@@ -78,7 +140,8 @@
     summary: Bull Board queue admin UI
     description: >
       Serves the Bull Board dashboard for mail, backup, maintenance, and heavy-task queues.
-      Requires HTTP Basic (`SWAGGER_USER` / `SWAGGER_PASSWORD`) plus a JWT for an admin user.
+      Requires HTTP Basic (`ADMIN_BASIC_*`, fallback `SWAGGER_*`) plus a JWT for an
+      admin or super-admin user. Not published through public Nginx.
     security:
       - basicAuth: []
       - bearerAuth: []

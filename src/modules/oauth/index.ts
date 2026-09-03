@@ -8,14 +8,17 @@ import {
   createMailerAdapter,
   createRbacAdapter,
 } from '@/modules/auth/infrastructure/providers/legacy-adapters';
+import { type AuditPort, auditRepository } from '@/shared/infrastructure/audit';
 
 import { AuthorizeCommand } from './application/commands/authorize.command';
 import { CallbackCommand } from './application/commands/callback.command';
 import { ListAccountsQuery } from './application/commands/list-accounts.command';
 import { TelegramAuthCommand } from './application/commands/telegram-auth.command';
 import { UnlinkCommand } from './application/commands/unlink.command';
+import type { OAuthFeatureFlagPort } from './application/services/oauth-feature-flag.port';
 import type { OAuthManager } from './infrastructure/manager/oauth-manager.service';
 import { oauthManager as defaultOAuthManager } from './infrastructure/manager/oauth-manager.service';
+import { oauthFeatureFlagAdapter } from './infrastructure/providers/oauth-feature-flag.adapter';
 import {
   type OAuthController,
   createOAuthController,
@@ -31,6 +34,8 @@ export type OAuthModuleDeps = {
   rbac: RbacPort;
   mailer: MailerPort;
   clientUrl?: string;
+  featureFlags?: OAuthFeatureFlagPort;
+  audit?: AuditPort;
 };
 
 export type OAuthModule = {
@@ -58,6 +63,8 @@ export function createDefaultOAuthDeps(overrides: Partial<OAuthModuleDeps> = {})
     rbac: overrides.rbac ?? createRbacAdapter(),
     mailer: overrides.mailer ?? createMailerAdapter(),
     clientUrl: overrides.clientUrl ?? envs.CLIENT_URL,
+    featureFlags: overrides.featureFlags ?? oauthFeatureFlagAdapter,
+    audit: overrides.audit ?? auditRepository,
   };
 }
 

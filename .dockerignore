@@ -16,6 +16,8 @@ coverage
 .env
 .env.*
 !.env.example
+keys/*.pem
+keys/*.key
 
 # Local tooling / docs not needed in the image
 tests
@@ -25,7 +27,6 @@ docs/deployment
 docs/guides
 *.md
 !docs/api/openapi.yaml
-!docs/openapi.yaml
 
 # Docker / compose files (not copied into the image context recursively as source)
 Dockerfile

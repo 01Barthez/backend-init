@@ -1,5 +1,6 @@
 import { MAIL } from '@/shared/constants/mail.constants';
 import { AppError } from '@/shared/domain/errors/app-error';
+import type { AuditPort } from '@/shared/infrastructure/audit';
 import log from '@/shared/infrastructure/logging/logger';
 
 import type { UsersRepositoryPort } from '../../domain/repositories/users.repository';
@@ -12,6 +13,7 @@ export type UpdateUserRoleDeps = {
   rbac: RbacPort;
   userCache: UserCachePort;
   mailer: MailerPort;
+  audit?: AuditPort;
 };
 
 export type UpdateUserRoleInput = {
@@ -39,6 +41,13 @@ export class UpdateUserRoleCommand {
 
     await this.deps.rbac.assignRole(userId, roleSlug);
     await this.deps.userCache.invalidate(userId, user.email);
+
+    await this.deps.audit?.record({
+      action: 'user.role_update',
+      resource: 'user',
+      resourceId: userId,
+      metadata: { roleSlug },
+    });
 
     const userFullName = `${user.lastName} ${user.firstName}`;
     this.deps.mailer

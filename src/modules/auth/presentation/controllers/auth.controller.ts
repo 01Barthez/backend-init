@@ -6,14 +6,20 @@ import { asyncHandler, response } from '@/shared/utils/http/responses/helpers';
 import setSafeCookie from '@/shared/utils/http/set-safe-cookie';
 
 import type { ChangePasswordCommand } from '../../application/commands/change-password.command';
+import type { ConfirmTotpCommand } from '../../application/commands/confirm-totp.command';
+import type { DisableTotpCommand } from '../../application/commands/disable-totp.command';
+import type { EnrollTotpCommand } from '../../application/commands/enroll-totp.command';
 import type { ForgotPasswordCommand } from '../../application/commands/forgot-password.command';
 import type { LoginCommand } from '../../application/commands/login.command';
 import type { LogoutCommand } from '../../application/commands/logout.command';
 import type { RefreshTokenCommand } from '../../application/commands/refresh-token.command';
 import type { ResendOtpCommand } from '../../application/commands/resend-otp.command';
 import type { ResetPasswordCommand } from '../../application/commands/reset-password.command';
+import type { RevokeSessionCommand } from '../../application/commands/revoke-session.command';
 import type { SignupCommand } from '../../application/commands/signup.command';
 import type { VerifyOtpCommand } from '../../application/commands/verify-otp.command';
+import type { GetCurrentUserQuery } from '../../application/queries/get-current-user.query';
+import type { ListSessionsQuery } from '../../application/queries/list-sessions.query';
 import type { TokenServicePort } from '../../application/services/token.service.port';
 import { AuthSerializer } from '../serializers/auth.serializer';
 import type { AuthenticatedRequest } from '../types/authenticated-request';
@@ -28,6 +34,12 @@ export type AuthControllerDeps = {
   forgotPassword: ForgotPasswordCommand;
   resetPassword: ResetPasswordCommand;
   changePassword: ChangePasswordCommand;
+  getCurrentUser: GetCurrentUserQuery;
+  listSessions: ListSessionsQuery;
+  revokeSession: RevokeSessionCommand;
+  enrollTotp: EnrollTotpCommand;
+  confirmTotp: ConfirmTotpCommand;
+  disableTotp: DisableTotpCommand;
   tokenService: TokenServicePort;
 };
 
@@ -46,6 +58,7 @@ export function createAuthController(deps: AuthControllerDeps) {
     const result = await deps.login.execute({
       email: req.body.email,
       password: req.body.password,
+      totpCode: req.body.totpCode,
     });
 
     res.setHeader('authorization', `Bearer ${result.accessToken}`);
@@ -157,6 +170,52 @@ export function createAuthController(deps: AuthControllerDeps) {
     return response.ok(req, res, null, 'Password changed successfully');
   });
 
+  const me = asyncHandler(async (req: Request, res: Response) => {
+    const user = (req as AuthenticatedRequest).user;
+    const profile = await deps.getCurrentUser.execute(user?.id ?? '');
+    return response.ok(req, res, AuthSerializer.me(profile), 'Current user');
+  });
+
+  const listSessions = asyncHandler(async (req: Request, res: Response) => {
+    const user = (req as AuthenticatedRequest).user;
+    const sessions = await deps.listSessions.execute(user?.id ?? '');
+    return response.ok(req, res, AuthSerializer.sessions(sessions), 'Sessions');
+  });
+
+  const revokeSession = asyncHandler(async (req: Request, res: Response) => {
+    const user = (req as AuthenticatedRequest).user;
+    await deps.revokeSession.execute({
+      userId: user?.id ?? '',
+      familyId: req.params.familyId,
+    });
+    return response.ok(req, res, null, 'Session revoked');
+  });
+
+  const enrollTotp = asyncHandler(async (req: Request, res: Response) => {
+    const user = (req as AuthenticatedRequest).user;
+    const result = await deps.enrollTotp.execute({ userId: user?.id ?? '' });
+    return response.ok(req, res, AuthSerializer.totpEnroll(result), 'TOTP enrollment started');
+  });
+
+  const confirmTotp = asyncHandler(async (req: Request, res: Response) => {
+    const user = (req as AuthenticatedRequest).user;
+    await deps.confirmTotp.execute({
+      userId: user?.id ?? '',
+      totpCode: req.body.totpCode,
+    });
+    return response.ok(req, res, null, 'TOTP enabled');
+  });
+
+  const disableTotp = asyncHandler(async (req: Request, res: Response) => {
+    const user = (req as AuthenticatedRequest).user;
+    await deps.disableTotp.execute({
+      userId: user?.id ?? '',
+      totpCode: req.body.totpCode,
+      currentPassword: req.body.current_password,
+    });
+    return response.ok(req, res, null, 'TOTP disabled');
+  });
+
   return {
     login,
     signup,
@@ -167,6 +226,12 @@ export function createAuthController(deps: AuthControllerDeps) {
     forgotPassword,
     resetPassword,
     changePassword,
+    me,
+    listSessions,
+    revokeSession,
+    enrollTotp,
+    confirmTotp,
+    disableTotp,
   };
 }
 

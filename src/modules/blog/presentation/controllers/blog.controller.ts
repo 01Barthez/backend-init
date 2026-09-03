@@ -9,6 +9,7 @@ import type { PublishBlogCommand } from '../../application/commands/publish-blog
 import type { UpdateBlogCommand } from '../../application/commands/update-blog.command';
 import type { GetBlogQuery } from '../../application/queries/get-blog.query';
 import type { ListPublicBlogsQuery } from '../../application/queries/list-public-blogs.query';
+import type { SearchBlogsQuery } from '../../application/queries/search-blogs.query';
 import type { BlogRbacPort } from '../../application/services/rbac.port';
 import { BlogSerializer } from '../serializers/blog.serializer';
 
@@ -24,6 +25,7 @@ export type BlogControllerDeps = {
   publishBlog: PublishBlogCommand;
   listPublicBlogs: ListPublicBlogsQuery;
   getBlog: GetBlogQuery;
+  searchBlogs: SearchBlogsQuery;
   rbac: BlogRbacPort;
 };
 
@@ -39,6 +41,14 @@ export function createBlogController(deps: BlogControllerDeps) {
     const limit = req.pagination?.limit ?? 10;
     const result = await deps.listPublicBlogs.execute({ page, limit });
     return response.ok(req, res, BlogSerializer.list(result), 'Blogs retrieved successfully');
+  });
+
+  const search = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const page = req.pagination?.page ?? 1;
+    const limit = req.pagination?.limit ?? 10;
+    const query = String(req.query.q ?? '').trim();
+    const result = await deps.searchBlogs.execute({ query, page, limit });
+    return response.ok(req, res, BlogSerializer.list(result), 'Blog search completed');
   });
 
   const getBySlug = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
@@ -61,11 +71,16 @@ export function createBlogController(deps: BlogControllerDeps) {
 
   const update = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const admin = await isAdmin(req.user!.id);
+    const { title, content, excerpt, coverImage, visibility } = req.body;
     const blog = await deps.updateBlog.execute({
       id: req.params.id,
       authorId: req.user!.id,
       isAdmin: admin,
-      ...req.body,
+      title,
+      content,
+      excerpt,
+      coverImage,
+      visibility,
     });
     return response.ok(req, res, BlogSerializer.one(blog), 'Blog updated successfully');
   });
@@ -90,7 +105,7 @@ export function createBlogController(deps: BlogControllerDeps) {
     return response.ok(req, res, null, 'Blog deleted successfully');
   });
 
-  return { list, getBySlug, create, update, publish, delete: deleteBlog };
+  return { list, search, getBySlug, create, update, publish, delete: deleteBlog };
 }
 
 export type BlogController = ReturnType<typeof createBlogController>;

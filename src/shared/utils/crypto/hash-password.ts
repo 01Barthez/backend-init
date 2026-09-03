@@ -6,8 +6,7 @@ const BCRYPT_ROUNDS = 12;
  * Valid bcrypt hash used only to equalize login timing when the email is unknown.
  * The compare result is discarded — never treat it as a successful login.
  */
-export const DUMMY_PASSWORD_HASH =
-  '$2b$12$npDp9EBaAgXjJSV6mkXJ9OY73/SSu6WBHvGwXS3UULtuzgVvZ5hRq';
+export const DUMMY_PASSWORD_HASH = '$2b$12$npDp9EBaAgXjJSV6mkXJ9OY73/SSu6WBHvGwXS3UULtuzgVvZ5hRq';
 
 /**
  * Hash a plaintext password with bcrypt (12 rounds).

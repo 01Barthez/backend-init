@@ -18,11 +18,15 @@ Participation is governed by [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md).
 
 ```bash
 npm install
+npm run keys:generate
 npm run docker:up
 npm run prisma:generate
 npm run prisma:push
 npm run dev
 ```
+
+Boot fails closed without JWT PEMs. `npm run validate` also needs keys generated
+when any path loads runtime config.
 
 Before opening a pull request:
 
@@ -69,6 +73,7 @@ docs(modules): document backup worker entry point
 
 ### Review checklist (author)
 
+- [ ] `npm run keys:generate` has been run locally
 - [ ] No secrets committed
 - [ ] Domain layer free of Express/Prisma imports
 - [ ] New modules registered in container + routes when applicable
@@ -76,8 +81,8 @@ docs(modules): document backup worker entry point
 
 ## Architecture expectations
 
-- Prefer extending `src/modules/*` and `src/shared/*` over growing legacy
-  `controllers/` / `services/` trees.
+- Prefer extending `src/modules/*` and `src/shared/*` over growing a type-based
+  dump (`controllers/`, `services/` only).
 - New bounded contexts: follow
   [docs/architecture/extending.md](./docs/architecture/extending.md).
 - Significant technical shifts need an ADR under `docs/architecture/decisions/`.

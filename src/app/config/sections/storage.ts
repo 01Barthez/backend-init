@@ -35,6 +35,21 @@ export const storageConfig = {
     host: fromEnv.get('CLAMAV_HOST').default('clamav').asString(),
     port: fromEnv.get('CLAMAV_PORT').required().asPortNumber(),
     timeoutMs: fromEnv.get('CLAMAV_TIMEOUT').default(20000).asInt(),
+    /** When true, uploads fail if ClamAV is unreachable. */
+    required: fromEnv.get('CLAMAV_REQUIRED').default('false').asBool(),
+  },
+
+  /** Multipart through the API is for avatars only. Larger files use presigned PUT. */
+  upload: {
+    apiMaxBytes: fromEnv
+      .get('API_UPLOAD_MAX_BYTES')
+      .default(2 * 1024 * 1024)
+      .asInt(),
+    presignMaxBytes: fromEnv
+      .get('PRESIGN_UPLOAD_MAX_BYTES')
+      .default(50 * 1024 * 1024)
+      .asInt(),
+    presignTtlSeconds: fromEnv.get('PRESIGN_TTL_SECONDS').default(300).asInt(),
   },
 } as const;
 

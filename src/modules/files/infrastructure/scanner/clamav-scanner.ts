@@ -28,8 +28,10 @@ export class ClamAVScanner implements Scanner {
       log.warn('Initial ClamAV initialization failed', { error: err.message });
     });
 
-    // Periodic health check
-    setInterval(() => this.checkAvailability(), this.CHECK_INTERVAL_MS);
+    // Periodic health check — skip in tests so Vitest does not leak timers.
+    if (!config.app.isTest) {
+      setInterval(() => this.checkAvailability(), this.CHECK_INTERVAL_MS);
+    }
   }
 
   private async initializeScanner(): Promise<void> {
@@ -160,7 +162,7 @@ export class ClamAVScanner implements Scanner {
               });
 
               stream.on('end', () => {
-                writeStream.write(Buffer.from([0, 0, 0, 0])); // Signal de fin
+                writeStream.write(Buffer.from([0, 0, 0, 0])); // INSTREAM terminator
               });
 
               stream.on('error', (err: Error) => {

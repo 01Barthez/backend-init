@@ -39,12 +39,16 @@ export class UploadAvatarCommand {
     if (!file) return '';
 
     try {
-      const result = await this.deps.uploader.uploadBuffer(file.buffer, {
-        filename: file.originalname,
-        contentType: file.mimetype,
-        size: file.size,
-        category: STORAGE_PATHS.USER_AVATARS,
-      });
+      const result = await this.deps.uploader.uploadBuffer(
+        file.buffer,
+        {
+          filename: file.originalname,
+          contentType: file.mimetype,
+          size: file.size,
+          category: STORAGE_PATHS.USER_AVATARS,
+        },
+        { profile: 'avatar' },
+      );
 
       if (!result?.key) {
         throw new Error('No file key returned from uploader');

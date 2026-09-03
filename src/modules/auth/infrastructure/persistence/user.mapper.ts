@@ -18,6 +18,8 @@ type PrismaUserLike = Pick<
   | 'failedLoginAttempts'
   | 'lockedUntil'
   | 'otpFailedAttempts'
+  | 'totpSecret'
+  | 'totpEnabled'
   | 'createdAt'
   | 'updatedAt'
 > & {
@@ -50,6 +52,8 @@ export const UserMapper = {
       failedLoginAttempts: row.failedLoginAttempts,
       lockedUntil: row.lockedUntil,
       otpFailedAttempts: row.otpFailedAttempts,
+      totpSecret: row.totpSecret,
+      totpEnabled: row.totpEnabled,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

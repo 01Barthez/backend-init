@@ -8,6 +8,7 @@ import { envs } from '@/app/config';
 import log from '@/shared/infrastructure/logging/logger';
 import { getMailFromAddress, renderTemplate } from '@/shared/infrastructure/mail/template.service';
 import { mailQueue } from '@/shared/infrastructure/queue/queue.service';
+import { getRequestContext } from '@/shared/infrastructure/request-context';
 
 import type { MailPayload, MailerPort } from './mail.port';
 import type { MailJobPayload, SendMailOptions } from './mail.types';
@@ -44,9 +45,14 @@ export const sendMailDirect = async (payload: MailJobPayload): Promise<void> => 
 };
 
 export const queueMail = async (options: SendMailOptions): Promise<void> => {
-  await mailQueue.add('send-mail', options, {
-    priority: options.priority ?? 5,
-  });
+  const requestId = getRequestContext()?.requestId;
+  await mailQueue.add(
+    'send-mail',
+    { ...options, requestId },
+    {
+      priority: options.priority ?? 5,
+    },
+  );
 };
 
 /** Adapter implementing MailerPort against the SMTP + queue stack. */

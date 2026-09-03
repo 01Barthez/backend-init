@@ -1,14 +1,22 @@
 import type { Router } from 'express';
 
+import { type AuditPort, auditRepository } from '@/shared/infrastructure/audit';
+
 import { ChangePasswordCommand } from './application/commands/change-password.command';
+import { ConfirmTotpCommand } from './application/commands/confirm-totp.command';
+import { DisableTotpCommand } from './application/commands/disable-totp.command';
+import { EnrollTotpCommand } from './application/commands/enroll-totp.command';
 import { ForgotPasswordCommand } from './application/commands/forgot-password.command';
 import { LoginCommand } from './application/commands/login.command';
 import { LogoutCommand } from './application/commands/logout.command';
 import { RefreshTokenCommand } from './application/commands/refresh-token.command';
 import { ResendOtpCommand } from './application/commands/resend-otp.command';
 import { ResetPasswordCommand } from './application/commands/reset-password.command';
+import { RevokeSessionCommand } from './application/commands/revoke-session.command';
 import { SignupCommand } from './application/commands/signup.command';
 import { VerifyOtpCommand } from './application/commands/verify-otp.command';
+import { GetCurrentUserQuery } from './application/queries/get-current-user.query';
+import { ListSessionsQuery } from './application/queries/list-sessions.query';
 import type { AvatarUploaderPort } from './application/services/avatar-uploader.port';
 import type { MailerPort } from './application/services/mailer.port';
 import type { RbacPort } from './application/services/rbac.port';
@@ -43,6 +51,7 @@ export type AuthModuleDeps = {
   rbac: RbacPort;
   avatarUploader: AvatarUploaderPort;
   userCache?: UserCachePort;
+  audit?: AuditPort;
 };
 
 export type AuthModule = {
@@ -57,6 +66,12 @@ export type AuthModule = {
     forgotPassword: ForgotPasswordCommand;
     resetPassword: ResetPasswordCommand;
     changePassword: ChangePasswordCommand;
+    getCurrentUser: GetCurrentUserQuery;
+    listSessions: ListSessionsQuery;
+    revokeSession: RevokeSessionCommand;
+    enrollTotp: EnrollTotpCommand;
+    confirmTotp: ConfirmTotpCommand;
+    disableTotp: DisableTotpCommand;
   };
   controller: AuthController;
   router: Router;
@@ -85,18 +100,12 @@ export function createDefaultAuthDeps(overrides: Partial<AuthModuleDeps> = {}): 
     rbac,
     avatarUploader,
     userCache,
+    audit: overrides.audit ?? auditRepository,
   };
 }
 
 /**
  * Composition root for the auth bounded context.
- *
- * Container note:
- * ```ts
- * // src/app/container/index.ts (future)
- * const auth = createAuthModule(createDefaultAuthDeps());
- * register('auth.router', auth.router);
- * ```
  */
 export function createAuthModule(deps: AuthModuleDeps): AuthModule {
   const useCases = {
@@ -109,6 +118,12 @@ export function createAuthModule(deps: AuthModuleDeps): AuthModule {
     forgotPassword: new ForgotPasswordCommand(deps),
     resetPassword: new ResetPasswordCommand(deps),
     changePassword: new ChangePasswordCommand(deps),
+    getCurrentUser: new GetCurrentUserQuery(deps),
+    listSessions: new ListSessionsQuery(deps),
+    revokeSession: new RevokeSessionCommand(deps),
+    enrollTotp: new EnrollTotpCommand(deps),
+    confirmTotp: new ConfirmTotpCommand(deps),
+    disableTotp: new DisableTotpCommand(deps),
   };
 
   const controller = createAuthController({
@@ -126,11 +141,11 @@ export function createAuthRouter(overrides: Partial<AuthModuleDeps> = {}): Route
   return createAuthModule(createDefaultAuthDeps(overrides)).router;
 }
 
-// Public re-exports for consumers / tests
 export type { TokenServicePort } from './application/services/token.service.port';
 export type { UserEntity } from './domain/entities/user.entity';
 export type {
   AuthRevokeReason,
+  AuthSessionSummary,
   AuthTokenFamily,
   TokenPair,
   UserJwtPayload,
@@ -139,10 +154,10 @@ export {
   BlacklistProvider,
   blacklistProvider,
 } from './infrastructure/providers/blacklist.provider';
-export { hashToken } from '@/shared/utils/crypto';
 export { JwtTokenProvider } from './infrastructure/providers/jwt-token.provider';
 export { PrismaTokenRepository } from './infrastructure/repositories/prisma-token.repository';
 export { PrismaUserRepository } from './infrastructure/repositories/prisma-user.repository';
 export { authSchemas } from './presentation/schemas/auth.schemas';
 export { AuthSerializer } from './presentation/serializers/auth.serializer';
 export type { AuthenticatedRequest } from './presentation/types/authenticated-request';
+export { hashToken } from '@/shared/utils/crypto';

@@ -24,6 +24,8 @@ export type UserEntity = {
   failedLoginAttempts?: number;
   lockedUntil?: Date | null;
   otpFailedAttempts?: number;
+  totpSecret?: string | null;
+  totpEnabled?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -54,4 +56,6 @@ export type UpdateUserInput = Partial<{
   otpFailedAttempts: number;
   lastLoginAt: Date | null;
   lastPasswordChange: Date | null;
+  totpSecret: string | null;
+  totpEnabled: boolean;
 }>;

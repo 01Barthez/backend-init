@@ -35,7 +35,7 @@ const cookieOptions = {
  */
 export function createOAuthController(deps: OAuthControllerDeps) {
   const oauthAuthorize = asyncHandler(async (req: Request, res: Response) => {
-    const result = deps.authorize.execute({
+    const result = await deps.authorize.execute({
       provider: req.params.provider,
       redirectUrl: req.query.redirectUrl as string | undefined,
     });

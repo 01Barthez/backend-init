@@ -1,21 +1,18 @@
 /**
- * Application Winston logger — rotating files, optional Loki, process-level handlers.
+ * Application Winston logger — rotating files and optional Loki.
  *
- * Used across infrastructure adapters; import from
- * `@/shared/infrastructure/logging/logger` (or the legacy shim under services/logging).
+ * Process-level `uncaughtException` / `unhandledRejection` handlers live in
+ * `registerProcessHandlers()` (entrypoint), not here. Winston must not swallow
+ * those events while also registering Node listeners (double-handling).
  */
 import path from 'path';
 import { createLogger, format, transports } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import LokiTransport from 'winston-loki';
 
-import { envs } from '@/app/config';
+import { config } from '@/app/config';
 import { ensureDirectoryExists } from '@/shared/utils/fs-utils';
 
-/**
- * Ensure the logs directory exists. In restricted environments (CI sandboxes,
- * read-only mounts) we degrade gracefully to console-only transports.
- */
 const logsDir = path.join(process.cwd(), 'logs');
 let canWriteLogs = true;
 try {
@@ -25,11 +22,10 @@ try {
   console.warn('Logs directory unavailable — falling back to console transports only.', error);
 }
 
-const logLevel = envs.NODE_ENV === 'production' ? 'warn' : 'debug';
+const logLevel = config.app.isProduction ? 'warn' : 'debug';
 
-/** Build a daily-rotating file transport for a given severity. */
-const createTransport = (filename: string, level: string, maxFiles: number) => {
-  const transport = new DailyRotateFile({
+const createTransport = (filename: string, level: string, maxFiles: number) =>
+  new DailyRotateFile({
     filename: `logs/${filename}-%DATE%.log`,
     datePattern: 'YYYY-MM-DD',
     zippedArchive: true,
@@ -39,27 +35,8 @@ const createTransport = (filename: string, level: string, maxFiles: number) => {
   }).on('error', (err) => {
     console.error(`Error in transport ${filename}:`, err);
   });
-  return transport;
-};
 
-const lokiTransport = new LokiTransport({
-  host: 'http://loki:3100',
-  labels: {
-    app: 'backend',
-    env: envs.NODE_ENV,
-    service: 'api',
-    version: '1.0.0',
-  },
-  json: true,
-  replaceTimestamp: true,
-  onConnectionError: (err) => {
-    console.error('Failed to connect to Loki:', err);
-  },
-}).on('error', (err) => {
-  console.error(`Error in loki transport:`, err);
-});
-
-const transportsList = canWriteLogs
+const fileTransports = canWriteLogs
   ? [
       createTransport('application', 'info', 14),
       createTransport('warns', 'warn', 21),
@@ -68,11 +45,27 @@ const transportsList = canWriteLogs
     ]
   : [];
 
-const _httpFormat = format.printf(
-  ({ timestamp, level, _message, method, url, status, responseTime, ..._meta }) => {
-    return `${timestamp} [${level}]: ${method} ${url} ${status} - ${responseTime}ms`;
-  },
-);
+/** Construct Loki only when enabled — otherwise the client probes a dead host. */
+const lokiTransports = config.observability.lokiEnabled
+  ? [
+      new LokiTransport({
+        host: config.observability.lokiHost,
+        labels: {
+          app: config.app.name,
+          env: config.app.nodeEnv,
+          service: 'api',
+          version: config.app.version,
+        },
+        json: true,
+        replaceTimestamp: true,
+        onConnectionError: (err) => {
+          console.error('Failed to connect to Loki:', err);
+        },
+      }).on('error', (err) => {
+        console.error('Error in loki transport:', err);
+      }),
+    ]
+  : [];
 
 const errorFormatter = format((info) => {
   if (info instanceof Error) {
@@ -97,7 +90,7 @@ const log = createLogger({
   ),
   transports: [
     new transports.Console({
-      level: envs.NODE_ENV === 'production' ? 'info' : 'debug',
+      level: config.app.isProduction ? 'info' : 'debug',
       format: format.combine(
         format.colorize({ all: true }),
         format.printf(({ level, message, timestamp, ...meta }) => {
@@ -109,51 +102,12 @@ const log = createLogger({
         }),
       ),
     }),
-
-    ...(envs.LOKI_ENABLED === true ? [lokiTransport] : []),
-
-    ...transportsList,
+    ...lokiTransports,
+    ...fileTransports,
   ],
-
-  handleExceptions: true,
-  handleRejections: true,
+  handleExceptions: false,
+  handleRejections: false,
   exitOnError: false,
-
-  exceptionHandlers: canWriteLogs ? [new transports.File({ filename: 'logs/exceptions.log' })] : [],
-  rejectionHandlers: canWriteLogs ? [new transports.File({ filename: 'logs/rejections.log' })] : [],
-});
-
-process.on('uncaughtException', (error) => {
-  log.error('Uncaught Exception', {
-    error: {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-      ...('cause' in error && error.cause !== undefined ? { cause: (error as any).cause } : {}),
-    },
-  });
-  throw new Error(`Uncaught Exception: ${error}`);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  const error =
-    reason instanceof Error
-      ? {
-          name: reason.name,
-          message: reason.message,
-          stack: reason.stack,
-          ...('cause' in reason && (reason as any).cause !== undefined
-            ? { cause: (reason as any).cause }
-            : {}),
-        }
-      : { message: String(reason) };
-
-  log.error('Unhandled Rejection', {
-    error,
-    promise: {
-      promise: promise,
-    },
-  });
 });
 
 export default log;

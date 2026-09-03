@@ -43,6 +43,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    /** Must be set before app config loads so operator auth guards stay disabled in tests. */
+    env: {
+      NODE_ENV: 'test',
+    },
     exclude: ['node_modules', 'dist', 'coverage', 'tests/load/**'],
     coverage,
     projects: [

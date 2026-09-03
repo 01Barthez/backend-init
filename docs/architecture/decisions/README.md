@@ -11,11 +11,13 @@ Suggested sections: **Status**, **Context**, **Decision**, **Consequences**.
 
 ## Index
 
-| ADR                                  | Title                               | Status   |
-| ------------------------------------ | ----------------------------------- | -------- |
-| [001](./001-modular-monolith.md)     | Modular monolith over microservices | Accepted |
-| [002](./002-database.md)             | Prisma + MongoDB                    | Accepted |
-| [003](./003-dependency-injection.md) | Manual container over DI frameworks | Accepted |
+| ADR                                    | Title                               | Status   |
+| -------------------------------------- | ----------------------------------- | -------- |
+| [001](./001-modular-monolith.md)       | Modular monolith over microservices | Accepted |
+| [002](./002-database.md)               | Prisma + MongoDB                    | Accepted |
+| [003](./003-dependency-injection.md)   | Manual container over DI frameworks | Accepted |
+| [004](./004-process-roles.md)          | Split `api` / `worker` / `all`      | Accepted |
+| [005](./005-jwt-keys-outside-image.md) | PEMs mounted, never baked in image  | Accepted |
 
 ## When to write an ADR
 

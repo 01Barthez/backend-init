@@ -1,9 +1,9 @@
 /**
  * Contract project setup — OpenAPI / envelope checks (no Express app required).
  */
-import './env';
-
 import { vi } from 'vitest';
+
+import './env';
 
 vi.setConfig({
   testTimeout: 15_000,

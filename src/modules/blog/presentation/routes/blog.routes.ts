@@ -19,6 +19,15 @@ import { blogSchemas } from '../schemas/blog.schemas';
 export function createBlogRoutes(controller: BlogController): Router {
   const blogs = Router();
 
+  /** GET /search — Full-text search over published public blogs. */
+  blogs.get(
+    '/search',
+    paginationMiddleware,
+    blogSchemas.search,
+    validationErrorHandler,
+    controller.search,
+  );
+
   /** GET / — List blog posts (paginated, public). */
   blogs.get('/', paginationMiddleware, controller.list);
 

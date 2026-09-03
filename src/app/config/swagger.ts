@@ -1,6 +1,6 @@
 /**
  * Swagger / OpenAPI UI setup.
- * Spec lives under `docs/api/openapi.yaml` (with a root fallback for migration).
+ * Spec lives under `docs/api/openapi.yaml`. Disabled in production by default.
  */
 import type { Express } from 'express';
 import fs from 'fs';
@@ -9,18 +9,17 @@ import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 
 import { config } from '@/app/config';
+import { adminBasicAuth } from '@/app/middleware/admin-basic-auth.middleware';
 import log from '@/shared/infrastructure/logging/logger';
 
 const resolveSpecPath = (): string | null => {
-  const candidates = [
-    path.resolve(process.cwd(), 'docs/api/openapi.yaml'),
-    path.resolve(process.cwd(), 'docs/openapi.yaml'),
-  ];
-  return candidates.find((p) => fs.existsSync(p)) ?? null;
+  const specPath = path.resolve(process.cwd(), 'docs/api/openapi.yaml');
+  return fs.existsSync(specPath) ? specPath : null;
 };
 
 /**
  * Mounts Swagger UI and exposes the raw OpenAPI JSON document.
+ * Behind Basic auth outside tests — the spec is a map of the attack surface.
  */
 const setupSwagger = (app: Express): void => {
   if (!config.security.swagger.enabled) {
@@ -29,7 +28,7 @@ const setupSwagger = (app: Express): void => {
 
   const specPath = resolveSpecPath();
   if (!specPath) {
-    log.error('OpenAPI spec not found under docs/api/ or docs/');
+    log.error('OpenAPI spec not found under docs/api/openapi.yaml');
     return;
   }
 
@@ -45,9 +44,11 @@ const setupSwagger = (app: Express): void => {
     },
   };
 
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, uiOptions));
+  const specGuards = config.app.isTest ? [] : [adminBasicAuth];
 
-  app.get('/api-docs.json', (_req, res) => {
+  app.use('/api-docs', ...specGuards, swaggerUi.serve, swaggerUi.setup(swaggerDocument, uiOptions));
+
+  app.get('/api-docs.json', ...specGuards, (_req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(swaggerDocument);
   });

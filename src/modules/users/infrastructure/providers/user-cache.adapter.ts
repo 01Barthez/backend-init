@@ -8,11 +8,7 @@ import log from '@/shared/infrastructure/logging/logger';
 
 import type { UserCachePort } from '../../application/services/user-cache.port';
 import type { UsersRepositoryPort } from '../../domain/repositories/users.repository';
-import type {
-  UserListFilters,
-  UserListResult,
-  UserPublicProfile,
-} from '../../domain/types/users.types';
+import type { UserListFilters, UserListResult } from '../../domain/types/users.types';
 import { UserCacheKeys } from '../cache/user-cache.keys';
 
 /**
@@ -35,14 +31,14 @@ export class UserCacheAdapter implements UserCachePort {
     );
   }
 
-  getSearch(term: string): Promise<UserPublicProfile[] | UserPublicProfile | null> {
-    const cacheKey = UserCacheKeys.usersSearch(term.toLowerCase());
+  getSearch(term: string, page: number, limit: number): Promise<UserListResult> {
+    const cacheKey = UserCacheKeys.usersSearch(`${term.toLowerCase()}:${page}:${limit}`);
 
     return cacheData(
       cacheKey,
       async () => {
-        log.debug(`Searching users from DB: ${term}`);
-        return this.usersRepository.search(term);
+        log.debug(`Searching users from DB: ${term}`, { page, limit });
+        return this.usersRepository.search(term, page, limit);
       },
       CacheTTL.SHORT,
     );

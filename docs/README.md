@@ -35,6 +35,8 @@ tree is the cross-cutting narrative.
 
 - [Overview](./architecture/overview.md) — modular monolith, layers, folder map,
   dependency flow
+- [Platform kernel](./architecture/platform-kernel.md) — bootstrap, audit,
+  flags, uploads, process roles
 - [Modules catalog](./architecture/modules.md) — auth, users, rbac, oauth, blog,
   files, backup, notifications, system
 - [Dependency rules](./architecture/dependency-rules.md) — what is allowed, what
@@ -59,10 +61,12 @@ tree is the cross-cutting narrative.
 
 ### Guides
 
-- [Authentication](./guides/authentication.md) — JWT, refresh rotation, OTP
-- [Storage providers](./guides/storage-providers.md) — MinIO vs S3
+- [Authentication](./guides/authentication.md) — JWT, refresh rotation, OTP,
+  TOTP
+- [Storage providers](./guides/storage-providers.md) — MinIO vs S3, presign
 - [Adding an OAuth provider](./guides/adding-oauth-provider.md)
 - [Background jobs](./guides/background-jobs.md) — BullMQ queues and crons
+- [Backups](./guides/backup.md) — encrypted Mongo dumps
 
 ### API
 

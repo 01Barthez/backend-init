@@ -57,6 +57,7 @@ export class PrismaRbacRepository implements RbacRepositoryPort {
           'blog:update:any',
           'blog:delete:any',
           'blog:publish',
+          'audit:read',
         ],
       },
       {

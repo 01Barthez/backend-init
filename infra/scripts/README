@@ -1,28 +1,41 @@
-# Application Management Scripts
+# Application management scripts
 
-This folder contains scripts to **start, stop, and monitor** your application and its monitoring stack in a **reliable and orderly** way.
+Shell helpers to start, stop, and inspect **Docker Compose** stacks (API +
+optional monitoring). They do not set Node `PROCESS_ROLE`; that comes from
+`.env` / the process environment.
 
----
+Run these from **this directory** (`infra/scripts/`) or with a path from the
+repo root.
 
-## Script Structure
+## Scripts
 
-| Script                                         | Description                                                                                                                        |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| [`start_app.sh`](./start_app.sh)               | Starts **only the main services** (backend, MongoDB, Redis, etc.).                                                                 |
-| [`start_monitoring.sh`](./start_monitoring.sh) | Starts **only the monitoring services** (Prometheus, Grafana, Loki). **Requires the application to already be running**.           |
-| [`stop_app.sh`](./stop_app.sh)                 | **Cleanly stops the main services**.                                                                                               |
-| [`stop_monitoring.sh`](./stop_monitoring.sh)   | **Cleanly stops the monitoring services**.                                                                                         |
-| [`status.sh`](./status.sh)                     | Shows the **status of all services** (application + monitoring).                                                                   |
-| [`full_start.sh`](./full_start.sh)             | **Master script**: Starts everything in the correct order (first the application, then monitoring).                                |
-| [`full_stop.sh`](./full_stop.sh)               | **Cleanly stops everything** (first monitoring, then the application).                                                             |
-
----
+| Script                   | Description                                              |
+| ------------------------ | -------------------------------------------------------- |
+| `start_app.sh`           | Core services (backend, Mongo, Redis, …)                 |
+| `start_monitoring.sh`    | Prometheus / Grafana / Loki (app should already be up)   |
+| `stop_app.sh`            | Stop core services                                       |
+| `stop_monitoring.sh`     | Stop monitoring services                                 |
+| `status.sh`              | Status of application + monitoring                       |
+| `full_start.sh`          | App first, then monitoring                               |
+| `full_stop.sh`           | Monitoring first, then app                               |
+| `start-mongo.sh`         | Mongo container entrypoint (replica set)                 |
+| `init-minio.sh`          | Bucket bootstrap                                         |
+| `init-clamav.sh`         | ClamAV helper                                            |
 
 ## Usage
 
-### **1. Start everything (recommended)**
+From the repository root:
 
 ```bash
-chmod +x scripts/*.sh  # Make the scripts executable (only once)
+chmod +x infra/scripts/*.sh
+./infra/scripts/full_start.sh
+```
+
+From this folder:
+
+```bash
+chmod +x ./*.sh
 ./full_start.sh
 ```
+
+Everyday development: `npm run docker:up` / `npm run docker:tools`.

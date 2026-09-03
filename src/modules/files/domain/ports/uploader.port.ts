@@ -6,4 +6,10 @@ import type { FileMeta, UploadOptions, UploadResult } from '../types/upload.type
  */
 export interface UploaderPort {
   uploadBuffer(buffer: Buffer, meta: FileMeta, opts?: UploadOptions): Promise<UploadResult>;
+  presignPut(input: {
+    filename: string;
+    contentType: string;
+    size: number;
+  }): Promise<{ url: string; key: string; expiresIn: number }>;
+  presignGet(key: string): Promise<{ url: string; expiresIn: number }>;
 }

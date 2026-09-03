@@ -4,6 +4,8 @@
  * - Local/dev: load `.env` and validate against `.env.example` via dotenv-safe.
  * - Docker/K8s: orchestrator injects env vars; if `.env.example` is missing we
  *   skip file loading so startup does not crash (Compose already set process env).
+ * - Vitest: load `.env` for required secrets/URLs, then re-pin `NODE_ENV=test`
+ *   so operator guards and bootstrap skips stay consistent (see vitest.config.ts).
  *
  * Domain settings live in `sections/` — do not read `process.env` elsewhere.
  */
@@ -27,6 +29,11 @@ if (fs.existsSync(examplePath)) {
     // If `.env` is absent (typical in containers), validate against process env only.
     ...(fs.existsSync(envPath) ? { path: envPath } : {}),
   });
+}
+
+/** Local `.env` often sets NODE_ENV=development; Vitest must stay in test profile. */
+if (process.env.VITEST === 'true') {
+  process.env.NODE_ENV = 'test';
 }
 
 /**

@@ -62,4 +62,21 @@ describe('Auth API', () => {
     expect(response.status).toBe(401);
     expect(response.body.success).toBe(false);
   });
+
+  it('GET /api/v1/auth/me returns 401 without token', async () => {
+    const response = await request(app).get('/api/v1/auth/me');
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+  });
+
+  it('GET /api/v1/auth/sessions returns 401 without token', async () => {
+    const response = await request(app).get('/api/v1/auth/sessions');
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+  });
+
+  it('POST /api/v1/auth/totp/enroll returns 401 without token', async () => {
+    const response = await request(app).post('/api/v1/auth/totp/enroll');
+    expect(response.status).toBe(401);
+  });
 });

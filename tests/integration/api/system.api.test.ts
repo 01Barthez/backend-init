@@ -9,6 +9,16 @@ describe('System API', () => {
     expect(response.body).toBeDefined();
   });
 
+  it('GET /health/live returns 200', async () => {
+    const response = await request(app).get('/health/live').expect(200);
+    expect(response.body).toBeDefined();
+  });
+
+  it('GET /health/ready returns 200 when dependencies respond', async () => {
+    const response = await request(app).get('/health/ready').expect(200);
+    expect(response.body).toBeDefined();
+  });
+
   it('GET /api-docs.json returns OpenAPI document', async () => {
     const response = await request(app).get('/api-docs.json').expect(200);
     expect(response.body).toHaveProperty('openapi');

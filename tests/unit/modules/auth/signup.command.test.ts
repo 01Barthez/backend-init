@@ -7,6 +7,7 @@ import type { RbacPort } from '@/modules/auth/application/services/rbac.port';
 import { EmailAlreadyExistsError } from '@/modules/auth/domain/errors/auth.errors';
 import type { UserRepositoryPort } from '@/modules/auth/domain/repositories/user.repository';
 import { hashPassword } from '@/shared/utils/crypto';
+
 import { buildSignupPayload, buildUserEntity } from '../../../factories/user.factory';
 
 vi.mock('@/shared/utils/crypto', () => ({

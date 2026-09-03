@@ -43,6 +43,7 @@ export const SYSTEM_PERMISSIONS = [
   { name: 'blog:delete:own', resource: 'blog', action: 'delete:own' },
   { name: 'blog:delete:any', resource: 'blog', action: 'delete:any' },
   { name: 'blog:publish', resource: 'blog', action: 'publish' },
+  { name: 'audit:read', resource: 'audit', action: 'read' },
 ] as const;
 
 /** Logical storage buckets created at bootstrap. */

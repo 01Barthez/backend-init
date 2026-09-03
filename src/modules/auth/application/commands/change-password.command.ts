@@ -1,5 +1,6 @@
 import { MAIL } from '@/shared/constants/mail.constants';
 import { AppError } from '@/shared/domain/errors/app-error';
+import type { AuditPort } from '@/shared/infrastructure/audit';
 import log from '@/shared/infrastructure/logging/logger';
 import { comparePassword, hashPassword } from '@/shared/utils/crypto';
 
@@ -15,6 +16,7 @@ export type ChangePasswordCommandDeps = {
   tokenRepository: TokenRepositoryPort;
   mailer: MailerPort;
   userCache?: UserCachePort;
+  audit?: AuditPort;
 };
 
 /**
@@ -52,6 +54,13 @@ export class ChangePasswordCommand {
 
     await this.deps.tokenRepository.revokeAllForUser(userId, 'PASSWORD_CHANGE');
     await this.deps.userCache?.invalidate(userId, dbUser.email);
+
+    await this.deps.audit?.record({
+      actorId: userId,
+      action: 'password.change',
+      resource: 'user',
+      resourceId: userId,
+    });
 
     const userFullName = `${dbUser.lastName} ${dbUser.firstName}`;
     this.deps.mailer

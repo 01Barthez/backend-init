@@ -2,13 +2,15 @@ import { AppError } from '@/shared/domain/errors/app-error';
 
 import type { UsersRepositoryPort } from '../../domain/repositories/users.repository';
 import type { UserPublicProfile } from '../../domain/types/users.types';
+import type { RbacPort } from '../services/rbac.port';
 
 export type GetUserByIdDeps = {
   usersRepository: UsersRepositoryPort;
+  rbac: RbacPort;
 };
 
 /**
- * Fetch a single non-deleted user by id for admin views.
+ * Fetch a single non-deleted user by id for admin views (includes role slugs).
  */
 export class GetUserByIdQuery {
   constructor(private readonly deps: GetUserByIdDeps) {}
@@ -23,6 +25,7 @@ export class GetUserByIdQuery {
       throw AppError.notFound('User not found');
     }
 
-    return user;
+    const roles = await this.deps.rbac.getRoles(userId);
+    return { ...user, roles };
   }
 }

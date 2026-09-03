@@ -1,7 +1,7 @@
 # Blog module
 
-Vertical slice for blog posts: create, update, publish, soft-delete, and public
-listing.
+Reference domain: create, update, publish, soft-delete, public listing and
+search. Replace this module with your product domain when forking.
 
 ## Layout
 
@@ -9,11 +9,26 @@ listing.
 blog/
 ├── domain/            # Blog entity, repository port, domain errors
 ├── application/       # Commands / queries + cache / RBAC ports
-├── infrastructure/    # Prisma repo, mapper, legacy adapters
+├── infrastructure/    # Prisma repo, mapper
 ├── presentation/      # Thin Express controllers, routes, validators, serializers
 ├── index.ts           # createBlogModule / createBlogRouter
 └── README.md
 ```
+
+## HTTP (mounted at `{API_PREFIX}/blogs`)
+
+| Method | Path           | Auth              |
+| ------ | -------------- | ----------------- |
+| GET    | `/search`      | Public            |
+| GET    | `/`            | Public            |
+| GET    | `/:slug`       | Public            |
+| POST   | `/`            | `blog:create`     |
+| PUT    | `/:id`         | `blog:update:own` |
+| PATCH  | `/:id/publish` | `blog:publish`    |
+| DELETE | `/:id`         | `blog:delete:own` |
+
+Author on `Blog` has **no cascade**. GDPR user hard-delete keeps a stub author
+when posts exist.
 
 ## Dependency rules
 
@@ -29,8 +44,6 @@ blog/
 ```ts
 import { createBlogRouter, createBlogModule, createDefaultBlogDeps } from '@/modules/blog';
 
-app.use(`${prefix}/blogs`, createBlogRouter());
-
 const blog = createBlogModule(
   createDefaultBlogDeps({
     cache: undefined, // skip caching in tests
@@ -42,11 +55,4 @@ const blog = createBlogModule(
 
 1. **BlogRepositoryPort** — replace Prisma with another store.
 2. **BlogCachePort** — swap Redis/local cache or disable for tests.
-3. **BlogRbacPort** — point at the future rbac module.
-
-## Compatibility
-
-- `src/routes/blogs/blogs.routes.ts` re-exports `createBlogRouter()`.
-- Legacy `src/services/blog/blog.service.ts` re-exports module use cases via a
-  thin facade.
-- Legacy `src/services/validator/validate/blogs.ts` re-exports `blogSchemas`.
+3. **BlogRbacPort** — point at `@/modules/rbac`.

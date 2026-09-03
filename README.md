@@ -34,18 +34,21 @@ move fast without inheriting a spaghetti `controllers/` dump.
 - **Modular monolith** — `src/modules/*` with Presentation → Application →
   Domain ← Infrastructure
 - **Auth** — RS256 JWT, refresh rotation / reuse detection, OTP email
-  verification, password flows
+  verification, optional TOTP, sessions (`/me`, list/revoke)
 - **OAuth 2.0** — Google, GitHub, Facebook, LinkedIn, Twitter, Instagram,
   Telegram
 - **RBAC** — seeded roles & permissions (`super-admin`, `admin`, `user`,
   `guest`)
 - **Users & Blog** — administration APIs + a reference domain to validate
   end-to-end wiring
-- **Files** — validated uploads (MinIO), optional ClamAV scanning
+- **Files** — 2MB avatar multipart, magic-byte checks, optional ClamAV
+  (`CLAMAV_REQUIRED` to fail closed), presigned PUT/GET for large objects
 - **Storage** — MinIO or S3 via `STORAGE_PROVIDER` (port + adapters)
-- **Jobs** — BullMQ mail / backup / maintenance + Bull Board UI
-- **Ops** — health, Prometheus metrics, Winston (+ optional Loki), Docker
-  Compose stack
+- **Jobs** — BullMQ mail / backup / audit purge / maintenance + Bull Board UI
+- **Process roles** — `PROCESS_ROLE=all|api|worker`; fail-closed bootstrap;
+  graceful shutdown
+- **Ops** — health live/ready, Prometheus metrics (Basic auth), Winston (+
+  optional Loki), Docker Compose; Nginx publishes `/health` and `/api/` only
 - **Quality** — Vitest, OpenAPI, ESLint (`process.env` / `console` banned),
   Prettier, Commitlint, Husky
 
@@ -118,22 +121,23 @@ cd backend-init
 cp .env.example .env
 
 npm install
+npm run keys:generate
 npm run docker:up
 npm run prisma:push
 npm run prisma:seed
 npm run dev
 ```
 
-| Surface       | URL                                |
-| ------------- | ---------------------------------- |
-| API           | http://localhost:3000/api/v1       |
-| Swagger UI    | http://localhost:3000/api-docs     |
-| Health        | http://localhost:3000/health       |
-| Metrics       | http://localhost:3000/metrics      |
-| Bull Board    | http://localhost:3000/admin/queues |
-| MailHog       | http://localhost:8025              |
-| MinIO Console | http://localhost:9001              |
-| Prisma Studio | http://localhost:5555 (dev only)   |
+| Surface       | URL                                | Notes                                     |
+| ------------- | ---------------------------------- | ----------------------------------------- |
+| API           | http://localhost:3000/api/v1       | Versioned REST                            |
+| Swagger UI    | http://localhost:3000/api-docs     | HTTP Basic; not on public Nginx           |
+| Health        | http://localhost:3000/health       | Mongo + Redis (`/live` process-only)      |
+| Metrics       | http://localhost:3000/metrics      | HTTP Basic; scrape on the private network |
+| Bull Board    | http://localhost:3000/admin/queues | Basic + JWT admin; not on public Nginx    |
+| MailHog       | http://localhost:8025              | Dev SMTP UI                               |
+| MinIO Console | http://localhost:9001              | Object storage                            |
+| Prisma Studio | http://localhost:5555              | Dev only                                  |
 
 More detail:
 [docs/development/getting-started.md](./docs/development/getting-started.md)
@@ -142,13 +146,14 @@ More detail:
 
 ## API surface (documented in Swagger)
 
-| Tag            | Prefix                                  | Highlights                                    |
-| -------------- | --------------------------------------- | --------------------------------------------- |
-| Authentication | `/api/v1/auth`                          | signup, OTP, login, refresh, password         |
-| OAuth          | `/api/v1/auth/oauth`                    | provider authorize/callback, unlink, Telegram |
-| Users          | `/api/v1/users`                         | profile, list/search, roles, soft/hard delete |
-| Blogs          | `/api/v1/blogs`                         | public list/get + authenticated CRUD/publish  |
-| System         | `/health`, `/metrics`, `/csrf-token`, … | ops & security                                |
+| Tag            | Prefix                                  | Highlights                                            |
+| -------------- | --------------------------------------- | ----------------------------------------------------- |
+| Authentication | `/api/v1/auth`                          | signup, OTP, login, `/me`, sessions, TOTP, password   |
+| OAuth          | `/api/v1/auth/oauth`                    | provider authorize/callback, unlink, Telegram         |
+| Users          | `/api/v1/users`                         | profile, invite, lifecycle, list/search/export, roles |
+| Blogs          | `/api/v1/blogs`                         | public list/search/get + authenticated CRUD/publish   |
+| Files          | `/api/v1/files`                         | presigned PUT/GET (auth)                              |
+| System         | `/health`, `/metrics`, `/csrf-token`, … | ops; `GET /api/v1/admin/audit` (`audit:read`)         |
 
 Full contract: [docs/api/openapi.yaml](./docs/api/openapi.yaml)
 
@@ -169,19 +174,21 @@ Full contract: [docs/api/openapi.yaml](./docs/api/openapi.yaml)
 
 ## Scripts
 
-| Script                                      | Description                               |
-| ------------------------------------------- | ----------------------------------------- |
-| `npm run dev`                               | Dev server with hot reload (Bun)          |
-| `npm run build` / `npm start`               | Compile and run production build          |
-| `npm test` / `test:ci` / `test:coverage`    | Vitest (unit, integration, e2e, contract) |
-| `npm run test:unit` / `integration` / `e2e` | Individual Vitest projects                |
-| `npm run test:contract` / `test:docs`       | OpenAPI contract + swagger-cli            |
-| `npm run validate`                          | Lint + types + test:ci + OpenAPI          |
-| `npm run format` / `lint`                   | Prettier + ESLint                         |
-| `npm run generate:openapi`                  | Regenerate `docs/api/openapi.yaml`        |
-| `npm run docker:up` / `docker:build`        | Compose / local image build               |
-| `npm run prisma:generate` / `push` / `seed` | Database tooling                          |
-| `npm run prisma:studio`                     | Browse Mongo data (dev; localhost:5555)   |
+| Script                                      | Description                                   |
+| ------------------------------------------- | --------------------------------------------- |
+| `npm run dev`                               | Dev server with hot reload (`tsx watch`)      |
+| `npm run dev:api` / `dev:worker`            | Split HTTP vs BullMQ (`PROCESS_ROLE`)         |
+| `npm run keys:generate`                     | Create RS256 PEMs under `keys/`               |
+| `npm run build` / `npm start`               | Compile and run production build              |
+| `npm test` / `test:ci` / `test:coverage`    | Vitest (unit, integration, e2e, contract)     |
+| `npm run test:unit` / `integration` / `e2e` | Individual Vitest projects                    |
+| `npm run test:contract` / `test:docs`       | OpenAPI contract + swagger-cli                |
+| `npm run validate`                          | Lint + types + test:ci + OpenAPI              |
+| `npm run format` / `lint`                   | Prettier + ESLint                             |
+| `npm run generate:openapi`                  | Regenerate `docs/api/openapi.yaml`            |
+| `npm run docker:up` / `docker:build`        | Compose / local image build                   |
+| `npm run prisma:generate` / `push` / `seed` | Database tooling                              |
+| `npm run prisma:studio`                     | Browse Mongo data (dev; localhost:5555)       |
 | `npm run docker:tools`                      | Optional tools profile (Studio, RedisInsight) |
 
 ---

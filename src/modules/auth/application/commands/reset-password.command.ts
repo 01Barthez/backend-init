@@ -1,4 +1,5 @@
 import { AppError } from '@/shared/domain/errors/app-error';
+import type { AuditPort } from '@/shared/infrastructure/audit';
 import log from '@/shared/infrastructure/logging/logger';
 import { hashPassword } from '@/shared/utils/crypto';
 
@@ -14,6 +15,7 @@ export type ResetPasswordCommandDeps = {
   tokenService: TokenServicePort;
   tokenRepository: TokenRepositoryPort;
   userCache?: UserCachePort;
+  audit?: AuditPort;
 };
 
 /**
@@ -52,6 +54,13 @@ export class ResetPasswordCommand {
 
     await this.deps.tokenRepository.revokeAllForUser(userId, 'PASSWORD_CHANGE');
     await this.deps.userCache?.invalidate(userId, user.email);
+
+    await this.deps.audit?.record({
+      actorId: userId,
+      action: 'password.reset',
+      resource: 'user',
+      resourceId: userId,
+    });
 
     log.info('Password reset successfully', { userId });
   }

@@ -1,4 +1,4 @@
-import { body, param } from 'express-validator';
+import { body, param, query } from 'express-validator';
 
 const VISIBILITY = ['PUBLIC', 'PRIVATE', 'MEMBERS_ONLY'] as const;
 
@@ -64,11 +64,22 @@ const blogSlugParam = param('slug')
   .matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i)
   .withMessage('Slug must be URL-safe (letters, numbers, hyphens)');
 
+const searchQueryRule = query('q')
+  .trim()
+  .notEmpty()
+  .withMessage('Search query (q) is required')
+  .isString()
+  .withMessage('q must be a string')
+  .isLength({ min: 2, max: 200 })
+  .withMessage('q must be between 2 and 200 characters');
+
 /**
  * Blog express-validator rules — presentation boundary only.
  * Lives in the blog module; do not re-export from `shared/utils/validation`.
  */
 export const blogSchemas = {
+  search: [searchQueryRule],
+
   create: [titleRule(), contentRule(), optionalExcerpt, optionalCoverImage, optionalVisibility],
 
   update: [

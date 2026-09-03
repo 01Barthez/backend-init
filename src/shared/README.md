@@ -15,7 +15,8 @@ Code that is genuinely transversal across modules.
 ```
 shared/
 ├── domain/           # AppError, Result helpers, base types
-├── infrastructure/   # database, cache, queue, storage, mail, logging, metrics
+├── infrastructure/   # database, cache, queue, storage, mail, logging, metrics,
+│                     # audit, lock, search, request-context, lifecycle, http
 ├── constants/        # Cross-module constants only
 ├── types/            # Ambient / shared TypeScript types
 └── utils/            # Pure helpers (crypto, otp, http, validation-helpers)
@@ -27,3 +28,7 @@ shared/
 modules/*  →  shared/*
 shared     ✗→  modules/*   (forbidden)
 ```
+
+Workers may import module public APIs (e.g. `@/modules/backup`) — that is the
+composition edge for background jobs, not a reverse `shared → modules` leak
+inside adapters.

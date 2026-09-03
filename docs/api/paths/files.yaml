@@ -1,0 +1,44 @@
+# Files routes — /api/v1/files
+# Keep in sync with src/modules/files/presentation/routes/files.routes.ts
+# Avatars remain multipart on auth/users (API_UPLOAD_MAX_BYTES, 2MB).
+
+/api/v1/files/presign:
+  post:
+    tags: [Files]
+    summary: Create a presigned upload URL
+    description: >
+      Authenticated. Use for objects larger than the 2MB API multipart cap.
+      `size` must not exceed `PRESIGN_UPLOAD_MAX_BYTES`.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [filename, contentType, size]
+            properties:
+              filename: { type: string }
+              contentType: { type: string }
+              size: { type: integer, minimum: 1 }
+    responses:
+      '200': { description: Presigned PUT URL }
+      '400': { description: Validation failed }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Account not verified or inactive }
+  get:
+    tags: [Files]
+    summary: Create a presigned download URL
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: key
+        in: query
+        required: true
+        schema: { type: string }
+    responses:
+      '200': { description: Presigned GET URL }
+      '400': { description: Validation failed }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Account not verified or inactive }

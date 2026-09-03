@@ -1,8 +1,9 @@
 import { config } from '@/app/config';
 import { MAIL } from '@/shared/constants/mail.constants';
 import { AppError } from '@/shared/domain/errors/app-error';
+import { TotpInvalidError, TotpRequiredError } from '@/shared/domain/errors/security.errors';
 import log from '@/shared/infrastructure/logging/logger';
-import { comparePassword, DUMMY_PASSWORD_HASH } from '@/shared/utils/crypto';
+import { DUMMY_PASSWORD_HASH, comparePassword } from '@/shared/utils/crypto';
 
 import {
   AccountInactiveError,
@@ -15,6 +16,7 @@ import type { LoginInput, LoginResult } from '../dto/auth.dto';
 import type { MailerPort } from '../services/mailer.port';
 import type { RbacPort } from '../services/rbac.port';
 import type { TokenServicePort } from '../services/token.service.port';
+import { decryptTotpSecret, isValidTotpCode } from '../services/totp';
 
 export type LoginCommandDeps = {
   userRepository: UserRepositoryPort;
@@ -51,7 +53,7 @@ export class LoginCommand {
     const passwordHash = user?.passwordHash || DUMMY_PASSWORD_HASH;
     const isPasswordValid = await comparePassword(password, passwordHash);
 
-    if (!user || !user.passwordHash || !isPasswordValid) {
+    if (!user?.passwordHash || !isPasswordValid) {
       if (user) {
         await this.registerFailure(user.id, user.failedLoginAttempts ?? 0);
       }
@@ -64,6 +66,16 @@ export class LoginCommand {
 
     if (!user.isActive) {
       throw new AccountInactiveError();
+    }
+
+    if (user.totpEnabled && user.totpSecret) {
+      if (!input.totpCode) {
+        throw TotpRequiredError();
+      }
+      const secret = decryptTotpSecret(user.totpSecret);
+      if (!isValidTotpCode(secret, input.totpCode)) {
+        throw TotpInvalidError();
+      }
     }
 
     await this.deps.userRepository.update(user.id, {

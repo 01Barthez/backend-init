@@ -1,9 +1,14 @@
+import FileType from 'file-type';
 import { lookup as mimeLookup } from 'mime-types';
 
 import { ValidationError } from '../core/errors';
 import { extFromFilename } from '../core/utils';
 import type { FileMeta, ValidationPolicy } from '../core/validation-policy';
 
+/**
+ * Size / MIME / extension checks, plus magic-byte sniffing when a buffer is
+ * provided so a renamed `.exe` cannot pass as `image/jpeg`.
+ */
 export class Validator {
   constructor(
     private defaultPolicy: ValidationPolicy,
@@ -11,16 +16,24 @@ export class Validator {
   ) {}
 
   private getPolicy(profile?: string): ValidationPolicy {
-    if (profile && this.profiles[profile])
+    if (profile && this.profiles[profile]) {
       return { ...this.defaultPolicy, ...this.profiles[profile] };
+    }
     return this.defaultPolicy;
   }
 
-  validate(meta: FileMeta, profile?: string): true {
-    const policy = this.getPolicy(profile);
+  async validate(meta: FileMeta, buffer?: Buffer, profile?: string): Promise<true> {
+    const policy = this.getPolicy(profile ?? meta.profile);
     const ext = extFromFilename(meta.filename);
-    const detectedMime =
-      meta.contentType || mimeLookup(meta.filename) || 'application/octet-stream';
+    let detectedMime = meta.contentType || mimeLookup(meta.filename) || 'application/octet-stream';
+
+    if (buffer && buffer.length > 0) {
+      const magic = await FileType.fromBuffer(buffer);
+      if (!magic) {
+        throw new ValidationError('magic_bytes_unknown', { filename: meta.filename });
+      }
+      detectedMime = magic.mime;
+    }
 
     if (policy.maxSizeBytes && meta.size && meta.size > policy.maxSizeBytes) {
       throw new ValidationError('file_too_large', { max: policy.maxSizeBytes, actual: meta.size });

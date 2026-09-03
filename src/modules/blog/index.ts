@@ -1,11 +1,15 @@
 import type { Router } from 'express';
 
+import { type AuditPort, auditRepository } from '@/shared/infrastructure/audit';
+import { type SearchPort, mongoSearchAdapter } from '@/shared/infrastructure/search';
+
 import { CreateBlogCommand } from './application/commands/create-blog.command';
 import { DeleteBlogCommand } from './application/commands/delete-blog.command';
 import { PublishBlogCommand } from './application/commands/publish-blog.command';
 import { UpdateBlogCommand } from './application/commands/update-blog.command';
 import { GetBlogQuery } from './application/queries/get-blog.query';
 import { ListPublicBlogsQuery } from './application/queries/list-public-blogs.query';
+import { SearchBlogsQuery } from './application/queries/search-blogs.query';
 import type { BlogCachePort } from './application/services/blog-cache.port';
 import type { BlogRbacPort } from './application/services/rbac.port';
 import type { BlogRepositoryPort } from './domain/repositories/blog.repository';
@@ -27,6 +31,8 @@ export type BlogModuleDeps = {
   blogRepository: BlogRepositoryPort;
   rbac: BlogRbacPort;
   cache?: BlogCachePort;
+  audit?: AuditPort;
+  search?: SearchPort;
 };
 
 export type BlogModule = {
@@ -38,6 +44,7 @@ export type BlogModule = {
     publishBlog: PublishBlogCommand;
     listPublicBlogs: ListPublicBlogsQuery;
     getBlog: GetBlogQuery;
+    searchBlogs: SearchBlogsQuery;
   };
   controller: BlogController;
   router: Router;
@@ -52,6 +59,8 @@ export function createDefaultBlogDeps(overrides: Partial<BlogModuleDeps> = {}): 
     blogRepository: overrides.blogRepository ?? new PrismaBlogRepository(),
     rbac: overrides.rbac ?? createBlogRbacAdapter(),
     cache: overrides.cache ?? createBlogCacheAdapter(),
+    audit: overrides.audit ?? auditRepository,
+    search: overrides.search ?? mongoSearchAdapter,
   };
 }
 
@@ -66,6 +75,7 @@ export function createBlogModule(deps: BlogModuleDeps): BlogModule {
     publishBlog: new PublishBlogCommand(deps),
     listPublicBlogs: new ListPublicBlogsQuery(deps),
     getBlog: new GetBlogQuery(deps),
+    searchBlogs: new SearchBlogsQuery(deps),
   };
 
   const controller = createBlogController({

@@ -1,5 +1,6 @@
 # Users routes — /api/v1/users
 # Keep in sync with src/modules/users/presentation/routes/users.routes.ts
+# Own identity with roles/permissions: GET /api/v1/auth/me
 
 /api/v1/users/profile:
   put:
@@ -21,16 +22,56 @@
               profile: { type: string, format: binary }
     responses:
       '200': { description: Profile updated }
-      '400': { description: Validation failed }
       '401': { description: Missing or invalid authentication }
-      '403': { description: Account not verified or inactive }
-      '500': { description: Unexpected server error }
+
+/api/v1/users/profile/avatar:
+  delete:
+    tags: [Users]
+    summary: Remove own avatar
+    security:
+      - bearerAuth: []
+    responses:
+      '200': { description: Avatar removed }
+
+/api/v1/users/me:
+  delete:
+    tags: [Users]
+    summary: Delete own account
+    description: Soft-deletes the authenticated account and revokes sessions.
+    security:
+      - bearerAuth: []
+    responses:
+      '200': { description: Account deleted }
+
+/api/v1/users/invite:
+  post:
+    tags: [Users]
+    summary: Invite a user
+    description: Creates a verified+active user and emails a set-password link. Requires `user:update:any`.
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, firstName, lastName]
+            properties:
+              email: { type: string, format: email }
+              firstName: { type: string }
+              lastName: { type: string }
+              phone: { type: string }
+              role: { type: string, enum: [admin, user, guest], default: user }
+    responses:
+      '201': { description: User invited }
+      '409': { description: Email already exists }
 
 /api/v1/users:
   get:
     tags: [Users]
     summary: List users
-    description: Returns a paginated user list. Requires `user:read:any`.
+    description: Paginated list. Requires `user:read:any`. Limit max 100.
     security:
       - bearerAuth: []
     parameters:
@@ -49,61 +90,58 @@
       - name: isDeleted
         in: query
         schema: { type: boolean }
+      - name: search
+        in: query
+        schema: { type: string }
     responses:
       '200': { description: Paginated user list }
-      '401': { description: Missing or invalid authentication }
-      '403': { description: Insufficient permission }
-      '500': { description: Unexpected server error }
 
 /api/v1/users/search:
   get:
     tags: [Users]
     summary: Search users
-    description: Searches users by name or email. Requires `user:read:any`.
+    description: Paginated free-text search. Requires `user:read:any`. Limit max 50.
     security:
       - bearerAuth: []
     parameters:
       - name: search
         in: query
+        required: true
         schema: { type: string, minLength: 1, maxLength: 100 }
+      - name: page
+        in: query
+        schema: { type: integer, minimum: 1, default: 1 }
+      - name: limit
+        in: query
+        schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
     responses:
-      '200': { description: Matching users }
-      '400': { description: Validation failed }
-      '401': { description: Missing or invalid authentication }
-      '403': { description: Insufficient permission }
-      '500': { description: Unexpected server error }
+      '200': { description: Paginated search results }
 
 /api/v1/users/export:
   get:
     tags: [Users]
     summary: Export users
-    description: Exports users (typically CSV/file download). Requires `user:export`.
+    description: CSV export max 10_000 rows. Requires `user:export`.
     security:
       - bearerAuth: []
+    parameters:
+      - name: isActive
+        in: query
+        schema: { type: boolean }
+      - name: isVerified
+        in: query
+        schema: { type: boolean }
+      - name: search
+        in: query
+        schema: { type: string }
     responses:
-      '200': { description: Export payload or file download }
-      '401': { description: Missing or invalid authentication }
-      '403': { description: Insufficient permission }
-      '500': { description: Unexpected server error }
-
-/api/v1/users/clear-all:
-  delete:
-    tags: [Users]
-    summary: Clear all users
-    description: Destructive admin operation that clears user records. Requires `user:delete:any`.
-    security:
-      - bearerAuth: []
-    responses:
-      '200': { description: Users cleared }
-      '401': { description: Missing or invalid authentication }
-      '403': { description: Insufficient permission }
-      '500': { description: Unexpected server error }
+      '200': { description: CSV download }
 
 /api/v1/users/{userId}:
   get:
     tags: [Users]
     summary: Get user by ID
-    description: Returns a single user. Requires `user:read:any`.
+    description: Admin detail with roles. Requires `user:read:any`.
     security:
       - bearerAuth: []
     parameters:
@@ -113,14 +151,23 @@
         schema: { type: string }
     responses:
       '200': { description: User details }
-      '401': { description: Missing or invalid authentication }
-      '403': { description: Insufficient permission }
-      '404': { description: User not found }
-      '500': { description: Unexpected server error }
+  patch:
+    tags: [Users]
+    summary: Admin update user profile
+    description: Requires `user:update:any`. Does not change email or password.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema: { type: string }
+    responses:
+      '200': { description: User updated }
   delete:
     tags: [Users]
     summary: Soft-delete user
-    description: Soft-deletes the user. Requires `user:delete:any`.
+    description: Requires `user:delete:any`.
     security:
       - bearerAuth: []
     parameters:
@@ -130,16 +177,12 @@
         schema: { type: string }
     responses:
       '200': { description: User soft-deleted }
-      '401': { description: Missing or invalid authentication }
-      '403': { description: Insufficient permission }
-      '404': { description: User not found }
-      '500': { description: Unexpected server error }
 
 /api/v1/users/{userId}/role:
   put:
     tags: [Users]
     summary: Assign user role
-    description: Updates the role for a user. Requires `user:role:assign`.
+    description: Assignable slugs `admin` | `user` | `guest`. Requires `user:role:assign`.
     security:
       - bearerAuth: []
     parameters:
@@ -157,20 +200,86 @@
             properties:
               role:
                 type: string
-                enum: [USER, ADMIN, MODERATOR]
+                enum: [admin, user, guest]
     responses:
       '200': { description: Role updated }
-      '400': { description: Validation failed }
-      '401': { description: Missing or invalid authentication }
-      '403': { description: Insufficient permission }
-      '404': { description: User not found }
-      '500': { description: Unexpected server error }
+
+/api/v1/users/{userId}/activate:
+  post:
+    tags: [Users]
+    summary: Activate user
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema: { type: string }
+    responses:
+      '200': { description: User activated }
+
+/api/v1/users/{userId}/deactivate:
+  post:
+    tags: [Users]
+    summary: Deactivate user
+    description: Also revokes all sessions.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema: { type: string }
+    responses:
+      '200': { description: User deactivated }
+
+/api/v1/users/{userId}/verify-email:
+  post:
+    tags: [Users]
+    summary: Mark email verified
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema: { type: string }
+    responses:
+      '200': { description: Email verified }
+
+/api/v1/users/{userId}/unlock:
+  post:
+    tags: [Users]
+    summary: Unlock login lockout
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema: { type: string }
+    responses:
+      '200': { description: User unlocked }
+
+/api/v1/users/{userId}/revoke-sessions:
+  post:
+    tags: [Users]
+    summary: Revoke all sessions
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema: { type: string }
+    responses:
+      '200': { description: Sessions revoked }
 
 /api/v1/users/{userId}/permanent:
   delete:
     tags: [Users]
     summary: Permanently delete user
-    description: Hard-deletes the user record. Requires `user:delete:any`.
+    description: GDPR anonymize + conditional row drop. Requires `user:delete:any`.
     security:
       - bearerAuth: []
     parameters:
@@ -180,16 +289,12 @@
         schema: { type: string }
     responses:
       '200': { description: User permanently deleted }
-      '401': { description: Missing or invalid authentication }
-      '403': { description: Insufficient permission }
-      '404': { description: User not found }
-      '500': { description: Unexpected server error }
 
 /api/v1/users/{userId}/restore:
   post:
     tags: [Users]
     summary: Restore soft-deleted user
-    description: Restores a previously soft-deleted user. Requires `user:update:any`.
+    description: Reactivates when verified. Requires `user:update:any`.
     security:
       - bearerAuth: []
     parameters:
@@ -199,7 +304,3 @@
         schema: { type: string }
     responses:
       '200': { description: User restored }
-      '401': { description: Missing or invalid authentication }
-      '403': { description: Insufficient permission }
-      '404': { description: User not found }
-      '500': { description: Unexpected server error }

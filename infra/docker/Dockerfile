@@ -50,14 +50,9 @@ RUN npm prune --omit=dev --ignore-scripts && npm cache clean --force
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY docs/api/openapi.yaml ./docs/api/openapi.yaml
-COPY docs/openapi.yaml ./docs/openapi.yaml
-
-# Example env schema (optional validation) + JWT key material for local Compose.
-# Production should mount keys via secrets and inject env from the orchestrator.
 COPY .env.example ./.env.example
-COPY src/app/config/keys ./src/app/config/keys
 
-# JWT keys must be mounted at runtime via secrets in production when not baked in.
+# JWT keys are mounted at runtime (`./keys:/app/keys`). Never bake PEMs into the image.
 RUN mkdir -p /app/keys && chown -R nodejs:nodejs /app
 
 USER nodejs

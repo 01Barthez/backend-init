@@ -14,6 +14,8 @@ import type { IOAuthState } from '../../domain/types/oauth.types';
 import { OAuthProvider } from '../../domain/types/oauth.types';
 import type { OAuthManager } from '../../infrastructure/manager/oauth-manager.service';
 import type { CallbackInput, CallbackResult } from '../dto/oauth.dto';
+import { assertOAuthEnabled } from '../services/assert-oauth-enabled';
+import type { OAuthFeatureFlagPort } from '../services/oauth-feature-flag.port';
 
 export type CallbackCommandDeps = {
   oauthManager: OAuthManager;
@@ -21,6 +23,7 @@ export type CallbackCommandDeps = {
   rbac: RbacPort;
   mailer: MailerPort;
   clientUrl?: string;
+  featureFlags?: OAuthFeatureFlagPort;
 };
 
 /**
@@ -30,6 +33,8 @@ export class CallbackCommand {
   constructor(private readonly deps: CallbackCommandDeps) {}
 
   async execute(input: CallbackInput): Promise<CallbackResult> {
+    await assertOAuthEnabled(this.deps.featureFlags);
+
     const providerUpper = input.provider.toUpperCase() as OAuthProvider;
     if (!Object.values(OAuthProvider).includes(providerUpper)) {
       throw new OAuthInvalidProviderError();

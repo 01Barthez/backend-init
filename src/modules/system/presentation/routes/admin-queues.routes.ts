@@ -1,9 +1,10 @@
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
-import type { Express, NextFunction, Request, Response } from 'express';
+import type { Express } from 'express';
 
-import { config, envs } from '@/app/config';
+import { config } from '@/app/config';
+import { adminBasicAuth } from '@/app/middleware/admin-basic-auth.middleware';
 import { isAdmin } from '@/app/middleware/auth.middleware';
 import { authenticate } from '@/app/middleware/authenticate.middleware';
 import {
@@ -13,25 +14,8 @@ import {
   maintenanceQueue,
 } from '@/shared/infrastructure/queue';
 
-const basicAuth = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Basic ')) {
-    res.setHeader('WWW-Authenticate', 'Basic realm="Bull Board"');
-    return res.status(401).send('Authentication required');
-  }
-
-  const credentials = Buffer.from(authHeader.slice(6), 'base64').toString();
-  const [username, password] = credentials.split(':');
-
-  if (username === envs.SWAGGER_USER && password === envs.SWAGGER_PASSWORD) {
-    return next();
-  }
-
-  return res.status(401).send('Invalid credentials');
-};
-
 /**
- * Mounts Bull Board UI at `/admin/queues` (Basic + JWT admin).
+ * Mounts Bull Board UI at `/admin/queues` (HTTP Basic + JWT admin).
  */
 export const setupBullBoard = (app: Express): void => {
   if (config.app.isTest) return;
@@ -49,8 +33,7 @@ export const setupBullBoard = (app: Express): void => {
     serverAdapter,
   });
 
-  /** GET /admin/queues — Bull Board dashboard (HTTP Basic + JWT admin). */
-  app.use('/admin/queues', basicAuth, authenticate, isAdmin, serverAdapter.getRouter());
+  app.use('/admin/queues', adminBasicAuth, authenticate, isAdmin, serverAdapter.getRouter());
 };
 
 export default setupBullBoard;

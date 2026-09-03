@@ -8,6 +8,7 @@ extension points.
 | Document                                  | Purpose                              |
 | ----------------------------------------- | ------------------------------------ |
 | [Overview](./overview.md)                 | Folder map, layers, request flow     |
+| [Platform kernel](./platform-kernel.md)   | Bootstrap, audit, flags, uploads     |
 | [Modules catalog](./modules.md)           | Bounded contexts under `src/modules` |
 | [Dependency rules](./dependency-rules.md) | Allowed and forbidden imports        |
 | [Extending](./extending.md)               | Add a module end to end              |

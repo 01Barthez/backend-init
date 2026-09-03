@@ -20,6 +20,7 @@ const templateFiles: Record<MailTemplateName, string> = {
   'account-restored': 'account-restored.ejs',
   'password-changed': 'password-changed.ejs',
   'role-changed': 'role-changed.ejs',
+  'user-invited': 'user-invited.ejs',
   'db-notification-success': 'db-notification-success.ejs',
   'db-notification-error': 'db-notification-error.ejs',
 };

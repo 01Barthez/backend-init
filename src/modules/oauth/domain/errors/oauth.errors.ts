@@ -34,3 +34,10 @@ export class OAuthProviderNotConfiguredError extends AppError {
     this.name = 'OAuthProviderNotConfiguredError';
   }
 }
+
+export class OAuthFeatureDisabledError extends AppError {
+  constructor(message = 'OAuth is currently disabled') {
+    super(503, message, 'OAUTH_FEATURE_DISABLED');
+    this.name = 'OAuthFeatureDisabledError';
+  }
+}

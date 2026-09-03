@@ -54,16 +54,18 @@ Mark them **required** before merge.
 
 ## Secrets
 
-| Secret | Used by | Purpose |
-|--------|---------|---------|
-| `VPS_HOST` / `VPS_USER` / `VPS_SSH_KEY` / `VPS_APP_PATH` | deploy-vps | SSH deploy |
-| `CONTAINER_REGISTRY` | docker (optional) | Override default `ghcr.io` (e.g. Harbor) |
-| `REGISTRY_USERNAME` / `REGISTRY_PASSWORD` | docker (optional) | Non-GHCR registries |
-| `SNYK_TOKEN` | optional | Not required; prefer native npm audit + CodeQL |
+| Secret                                                   | Used by           | Purpose                                        |
+| -------------------------------------------------------- | ----------------- | ---------------------------------------------- |
+| `VPS_HOST` / `VPS_USER` / `VPS_SSH_KEY` / `VPS_APP_PATH` | deploy-vps        | SSH deploy                                     |
+| `CONTAINER_REGISTRY`                                     | docker (optional) | Override default `ghcr.io` (e.g. Harbor)       |
+| `REGISTRY_USERNAME` / `REGISTRY_PASSWORD`                | docker (optional) | Non-GHCR registries                            |
+| `SNYK_TOKEN`                                             | optional          | Not required; prefer native npm audit + CodeQL |
 
 `GITHUB_TOKEN` is enough for GHCR pushes with `packages: write`.
 
 ## Switching registries / clouds
 
-- **Harbor / Docker Hub / ECR**: set `CONTAINER_REGISTRY` + login secrets in `docker.yml`.
-- **AWS / K8s later**: replace `deploy-vps.yml` with your CD job; keep `docker.yml` as the image producer.
+- **Harbor / Docker Hub / ECR**: set `CONTAINER_REGISTRY` + login secrets in
+  `docker.yml`.
+- **AWS / K8s later**: replace `deploy-vps.yml` with your CD job; keep
+  `docker.yml` as the image producer.

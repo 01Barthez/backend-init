@@ -25,6 +25,9 @@ services:
       MINIO_PORT: '9000'
       CLAMAV_PORT: '3310'
       REDIS_PASSWORD: ''
+    volumes:
+      # RSA PEMs generated on the host (`npm run keys:generate`). Read-only in the container.
+      - ../../keys:/app/keys:ro
     ports:
       - '${PORT:-3000}:3000'
     networks:

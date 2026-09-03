@@ -3,7 +3,11 @@ import { MAIL } from '@/shared/constants/mail.constants';
 import { AppError } from '@/shared/domain/errors/app-error';
 import log from '@/shared/infrastructure/logging/logger';
 
-import { AccountLockedError, InvalidOtpError, OtpExpiredError } from '../../domain/errors/auth.errors';
+import {
+  AccountLockedError,
+  InvalidOtpError,
+  OtpExpiredError,
+} from '../../domain/errors/auth.errors';
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';
 import type { VerifyOtpInput, VerifyOtpResult } from '../dto/auth.dto';
 import type { MailerPort } from '../services/mailer.port';

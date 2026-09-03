@@ -8,6 +8,7 @@ export type MailTemplateName =
   | 'account-restored'
   | 'password-changed'
   | 'role-changed'
+  | 'user-invited'
   | 'db-notification-success'
   | 'db-notification-error';
 
@@ -16,6 +17,8 @@ export interface MailJobPayload {
   subject: string;
   template: MailTemplateName;
   data: Record<string, unknown>;
+  /** Correlates async mail delivery with the HTTP request that enqueued it. */
+  requestId?: string;
 }
 
 export interface SendMailOptions extends MailJobPayload {

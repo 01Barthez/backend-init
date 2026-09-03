@@ -30,7 +30,17 @@ export const authSchemas = {
     phoneRequired,
   ],
 
-  login: [emailValidation(), passwordValidation()],
+  login: [
+    emailValidation(),
+    passwordValidation(),
+    body('totpCode')
+      .optional()
+      .trim()
+      .isString()
+      .withMessage('TOTP code must be a string')
+      .isLength({ min: 6, max: 8 })
+      .withMessage('TOTP code must be 6 to 8 digits'),
+  ],
 
   verifyAccount: [
     emailValidation(),
@@ -56,5 +66,24 @@ export const authSchemas = {
   changePassword: [
     body('current_password').trim().notEmpty().withMessage('Current password is required'),
     passwordFieldValidation('new_password'),
+  ],
+
+  totpConfirm: [
+    body('totpCode')
+      .trim()
+      .notEmpty()
+      .withMessage('TOTP code is required')
+      .isLength({ min: 6, max: 8 })
+      .withMessage('TOTP code must be 6 to 8 digits'),
+  ],
+
+  totpDisable: [
+    body('totpCode')
+      .trim()
+      .notEmpty()
+      .withMessage('TOTP code is required')
+      .isLength({ min: 6, max: 8 })
+      .withMessage('TOTP code must be 6 to 8 digits'),
+    body('current_password').trim().notEmpty().withMessage('Current password is required'),
   ],
 };

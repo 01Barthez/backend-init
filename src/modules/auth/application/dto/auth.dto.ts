@@ -6,6 +6,8 @@
 export type LoginInput = {
   email: string;
   password: string;
+  /** Required when the account has TOTP enabled. */
+  totpCode?: string;
 };
 
 export type LoginResult = {

@@ -1,11 +1,16 @@
-import type { OAuthProvider as PrismaOAuthProvider } from '@prisma/client';
-
-export { OAuthProvider } from '@prisma/client';
-
 /**
  * OAuth domain types and provider port.
- * No Express / Prisma client usage beyond the provider enum.
+ * Provider enum values mirror Prisma `OAuthProvider` — kept local to avoid ORM imports in domain.
  */
+export enum OAuthProvider {
+  GOOGLE = 'GOOGLE',
+  GITHUB = 'GITHUB',
+  FACEBOOK = 'FACEBOOK',
+  INSTAGRAM = 'INSTAGRAM',
+  TWITTER = 'TWITTER',
+  LINKEDIN = 'LINKEDIN',
+  TELEGRAM = 'TELEGRAM',
+}
 
 export interface IOAuthProviderConfig {
   clientId: string;
@@ -27,7 +32,7 @@ export interface IOAuthTokenResponse {
 }
 
 export interface IOAuthUserProfile {
-  provider: PrismaOAuthProvider;
+  provider: OAuthProvider;
   providerUserId: string;
   email: string;
   emailVerified?: boolean;
@@ -43,7 +48,7 @@ export interface IOAuthUserProfile {
 
 export interface IOAuthAccountData {
   userId: string;
-  provider: PrismaOAuthProvider;
+  provider: OAuthProvider;
   providerUserId: string;
   providerEmail?: string;
   accessToken?: string;

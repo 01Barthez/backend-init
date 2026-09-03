@@ -1,0 +1,19 @@
+// Audit trail — append-only security events
+
+model AuditLog {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  actorId    String?  @db.ObjectId
+  action     String
+  resource   String
+  resourceId String?
+  ip         String?
+  userAgent  String?
+  requestId  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([resource, resourceId])
+  @@index([requestId])
+  @@index([createdAt])
+}

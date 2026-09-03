@@ -71,11 +71,15 @@ export class PrismaUserRepository implements UserRepositoryPort {
           ? { failedLoginAttempts: data.failedLoginAttempts }
           : {}),
         ...(data.lockedUntil !== undefined ? { lockedUntil: data.lockedUntil } : {}),
-        ...(data.otpFailedAttempts !== undefined ? { otpFailedAttempts: data.otpFailedAttempts } : {}),
+        ...(data.otpFailedAttempts !== undefined
+          ? { otpFailedAttempts: data.otpFailedAttempts }
+          : {}),
         ...(data.lastLoginAt !== undefined ? { lastLoginAt: data.lastLoginAt } : {}),
         ...(data.lastPasswordChange !== undefined
           ? { lastPasswordChange: data.lastPasswordChange }
           : {}),
+        ...(data.totpSecret !== undefined ? { totpSecret: data.totpSecret } : {}),
+        ...(data.totpEnabled !== undefined ? { totpEnabled: data.totpEnabled } : {}),
         ...(data.otp !== undefined
           ? data.otp === null
             ? { otp: null }

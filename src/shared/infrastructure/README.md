@@ -1,7 +1,8 @@
 # Shared Infrastructure
 
 Cross-cutting technical adapters used by every module: database, cache, queue,
-storage, mail, logging, metrics, and feature flags.
+storage, mail, logging, metrics, feature flags, audit, locks, search, HTTP
+client, request context, and process lifecycle.
 
 ## Layout
 
@@ -13,8 +14,15 @@ infrastructure/
 ├── storage/          # StorageProvider port, MinIO / S3
 ├── mail/             # MailerPort, SMTP, EJS templates
 ├── queue/            # BullMQ queues + workers
-├── metrics/          # Prometheus scrape endpoint
-└── feature-flags/    # Flagsmith client
+├── metrics/          # Prometheus scrape endpoint (Basic auth)
+├── feature-flags/    # Flagsmith client
+├── audit/            # AuditPort + Prisma AuditLog
+├── lock/             # Redis distributed locks for crons
+├── search/           # SearchPort (Mongo contains adapter)
+├── request-context/  # AsyncLocalStorage (request id, user, traceparent)
+├── http/             # createSafeHttpClient
+├── lifecycle/        # graceful shutdown
+└── maintenance/      # unverified-user purge helpers
 ```
 
 ## Ports vs adapters
@@ -26,16 +34,16 @@ infrastructure/
 
 ## Configuration
 
-All adapters read environment via `@/app/config` (`envs` / `config`). Do not
-import the legacy `src/config/env/env.ts` from new code — that file is a shim.
+All adapters read environment via `@/app/config` (`envs` / `config`). Never
+`process.env` here.
 
 ## Dependency rules
 
 ```
 modules/*  →  shared/infrastructure/*
-shared/infrastructure  ✗→  modules/*   (forbidden once migrations complete)
+shared/infrastructure  ✗→  modules/*
 ```
 
-Workers currently call a few legacy `src/services/*` handlers (backup,
-maintenance, blacklist) until those domains move under `modules/`. Treat those
-imports as temporary.
+Workers (composition) import public module APIs such as `@/modules/backup` and
+auth blacklist purge. That is allowed from `queue/workers.ts` as the process
+composition root for background work — not from domain or random adapters.

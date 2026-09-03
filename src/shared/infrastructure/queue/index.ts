@@ -1,6 +1,7 @@
 /** Queue infrastructure — BullMQ queues and workers. */
 export {
   backupQueue,
+  closeQueues,
   createQueue,
   default,
   getRedisConnection,
@@ -10,4 +11,4 @@ export {
   redisConnection,
   registerRepeatableJobs,
 } from './queue.service';
-export { startWorkers } from './workers';
+export { startWorkers, stopWorkers } from './workers';

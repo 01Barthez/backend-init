@@ -18,6 +18,7 @@ Prefer short-lived branches and small pull requests.
 
 ## Pull request checklist
 
+- [ ] `npm run keys:generate` has been run (boot fails closed without PEMs)
 - [ ] Change is scoped; no drive-by refactors
 - [ ] Dependency rules respected
       ([dependency-rules.md](../architecture/dependency-rules.md))

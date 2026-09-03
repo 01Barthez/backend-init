@@ -1,7 +1,8 @@
 # OpenAPI Documentation
 
 HTTP contracts for Backend Init are described with **OpenAPI 3** and served
-locally by Swagger UI when enabled.
+locally by Swagger UI when enabled. All operation summaries and descriptions
+are written in **English**.
 
 ## Live UI
 
@@ -10,26 +11,41 @@ When the API is running and `SWAGGER_ENABLED` is true:
 - UI: http://localhost:3000/api-docs
 - Raw document: http://localhost:3000/api-docs.json
 
-The runtime loader prefers `docs/api/openapi.yaml`, then falls back to
-`docs/openapi.yaml` during migration (`src/app/config/swagger.ts`).
+Both require HTTP Basic (`ADMIN_BASIC_*`, fallback `SWAGGER_*`) except when
+`NODE_ENV=test`. The runtime loader uses **`docs/api/openapi.yaml` only**.
+
+## Source of truth
+
+`docs/api/openapi.config.js` generates the consolidated spec. Modular YAML
+under `paths/` are human-editable fragments kept aligned with routers — they
+are **not** loaded at runtime. After route changes:
+
+1. Update Express routes.
+2. Update `openapi.config.js` (and the matching `paths/*.yaml` fragment).
+3. `npm run generate:openapi`
+4. `npm run test:docs`
+5. Contract tests also fail if `openapi.yaml` drifts from the generator.
+
+## Coverage rule
+
+Every Express route mounted in `src/app/routes/index.ts` and module routers
+must appear in the generated OpenAPI document. Operator UIs (`/api-docs`,
+`/api-docs.json`) are documented in prose here; they are not OpenAPI operations.
 
 ## Layout
 
 ```
 docs/api/
-├── openapi.yaml           # Consolidated spec (generated / maintained)
+├── openapi.yaml           # Consolidated spec (generated — runtime + Swagger)
 ├── openapi.config.js      # Generator entry — run via npm run generate:openapi
 ├── README.md              # This file
-├── components/
-│   ├── parameters/
-│   ├── responses/
-│   └── schemas/
 ├── paths/
 │   ├── index.yaml
 │   ├── auth.yaml
 │   ├── users.yaml
 │   ├── oauth.yaml
 │   ├── blogs.yaml
+│   ├── files.yaml
 │   └── system.yaml
 ├── schemas/
 │   └── schemas.yaml
@@ -37,35 +53,22 @@ docs/api/
     └── bearerAuth.yml
 ```
 
-### Components
-
-Reusable **parameters**, **responses**, and **schemas**. Path fragments under
-`paths/` reference them with relative `$ref` paths such as
-`../components/schemas/…` (correct from the `paths/` directory).
-
 ### Paths
 
-One file per tag area. Only document endpoints that exist in module routers
-(auth, users, oauth, blogs, system). Do not invent product APIs that are not
-implemented.
+One file per tag area. Document only endpoints that exist in module routers
+(auth, users, oauth, blogs, files, system). Do not invent product APIs that are
+not implemented.
+
+Keep in sync with:
+
+- `src/modules/*/presentation/routes`
+- Mount table in `src/app/routes/index.ts`
 
 ### Security
 
-Bearer JWT:
-
-```yaml
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-```
-
-Protected operations set `security: [{ bearerAuth: [] }]`. Clients send
-`Authorization: Bearer <access_token>`. Refresh tokens use the HTTP-only cookie
-flow described in the authentication guide — they are not passed as Bearer
-tokens.
+Bearer JWT for domain APIs. Operator UIs also use HTTP Basic (`basicAuth` in the
+generated spec). Refresh tokens use the HTTP-only cookie flow — they are not
+passed as Bearer tokens.
 
 ## Generate
 
@@ -73,34 +76,16 @@ tokens.
 npm run generate:openapi
 ```
 
-This runs `node docs/api/openapi.config.js`, which writes
-`docs/api/openapi.yaml`.
-
-Keep the generator and any modular YAML fragments aligned with real routes
-under:
-
-- `src/modules/auth/presentation/routes`
-- `src/modules/users/presentation/routes`
-- `src/modules/oauth/presentation/routes`
-- `src/modules/blog/presentation/routes`
-- `src/modules/system/presentation/routes`
-- Mount table in `src/app/routes/index.ts`
+Writes `docs/api/openapi.yaml`.
 
 ## Validate
 
 ```bash
 npm run test:docs
-# swagger-cli validate docs/api/openapi.yaml
+npm run test:contract
 ```
 
 Also included in `npm run validate`.
-
-## Editing guidance
-
-1. Change the real Express route first.
-2. Update OpenAPI (generator definition and/or path YAML).
-3. Regenerate and validate.
-4. Mentions in root README or guides should match the same paths.
 
 ## Related
 

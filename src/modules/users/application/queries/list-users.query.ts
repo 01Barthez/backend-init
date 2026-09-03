@@ -7,15 +7,18 @@ export type ListUsersDeps = {
   userCache: UserCachePort;
 };
 
+const MAX_LIMIT = 100;
+
 /**
- * Paginated user list with optional activity / verification filters.
+ * Paginated user list with optional activity / verification / search filters.
+ * `limit` is capped at 100 regardless of the query string.
  */
 export class ListUsersQuery {
   constructor(private readonly deps: ListUsersDeps) {}
 
   async execute(input: ListUsersInput = {}): Promise<ListUsersResult> {
     const page = input.page && input.page > 0 ? input.page : 1;
-    const limit = input.limit && input.limit > 0 ? input.limit : 10;
+    const limit = Math.min(MAX_LIMIT, input.limit && input.limit > 0 ? input.limit : 10);
 
     const filters = {
       page,
@@ -23,6 +26,7 @@ export class ListUsersQuery {
       ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
       ...(input.isVerified !== undefined ? { isVerified: input.isVerified } : {}),
       ...(input.isDeleted !== undefined ? { isDeleted: input.isDeleted } : {}),
+      ...(input.search?.trim() ? { search: input.search.trim() } : {}),
     };
 
     const { users, total } = await this.deps.userCache.getList(filters);

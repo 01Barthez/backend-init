@@ -3,6 +3,9 @@
 Social login for Google, GitHub, Facebook, LinkedIn, Twitter, Instagram, and
 Telegram.
 
+Authorize, callback, Telegram, and unlink require Flagsmith `enable_oauth`
+(default true). When the flag is off they fail closed.
+
 ## Layout
 
 ```
@@ -45,8 +48,13 @@ app.use(`${prefix}/auth/oauth`, createOAuthRouter());
 
 - Validate `state` (TTL enforced by the manager).
 - Never log access tokens or authorization codes.
-- Post-login `redirectUrl` is origin-allowlisted (`CLIENT_URL` + `OAUTH_ALLOWED_ORIGINS`).
-- Callback never puts JWTs in the query string (cookie + `Authorization` header only).
-- Provider tokens at rest: `AUTH_ENCRYPTION_KEY` (AES-256-GCM). Empty key = do not persist.
+- Post-login `redirectUrl` is origin-allowlisted (`CLIENT_URL` +
+  `OAUTH_ALLOWED_ORIGINS`).
+- Callback never puts JWTs in the query string (cookie + `Authorization` header
+  only).
+- Provider tokens at rest: `AUTH_ENCRYPTION_KEY` (AES-256-GCM). Empty key = do
+  not persist.
 - Redirect URIs must match the provider console **exactly**.
 - Inactive accounts cannot complete login or linking.
+- Feature flag: `enable_oauth` (see
+  [Adding an OAuth provider](../../../docs/guides/adding-oauth-provider.md)).

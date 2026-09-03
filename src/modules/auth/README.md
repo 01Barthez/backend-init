@@ -1,7 +1,7 @@
 # Auth module
 
-Vertical slice for authentication: signup, OTP, login, refresh, logout, and
-password flows.
+Vertical slice for authentication: signup, OTP, optional TOTP, login, `/me`,
+sessions, refresh, logout, and password flows.
 
 ## Layout
 
@@ -24,15 +24,33 @@ auth/
 | Infrastructure | Domain ports (implements them) | Presentation           |
 | Presentation   | Application use cases          | Prisma directly        |
 
+## HTTP (mounted at `{API_PREFIX}/auth`)
+
+| Method | Path                  | Notes                                         |
+| ------ | --------------------- | --------------------------------------------- |
+| POST   | `/signup`             | Multipart `profile`; optional Idempotency-Key |
+| POST   | `/verify`             | Email OTP                                     |
+| POST   | `/resend-otp`         |                                               |
+| POST   | `/login`              | `totpCode` when TOTP is enabled               |
+| POST   | `/refresh`            | Cookie or body                                |
+| POST   | `/forgot-password`    |                                               |
+| POST   | `/reset-password`     | Opaque Redis token                            |
+| POST   | `/logout`             | Auth                                          |
+| POST   | `/change-password`    | Auth; revokes all sessions                    |
+| GET    | `/me`                 | Auth                                          |
+| GET    | `/sessions`           | Auth                                          |
+| DELETE | `/sessions/:familyId` | Auth                                          |
+| POST   | `/totp/enroll`        | Returns otpauth URL + secret once             |
+| POST   | `/totp/confirm`       |                                               |
+| POST   | `/totp/disable`       | Password + current TOTP code                  |
+
+TOTP secrets are AES-256-GCM (`AUTH_ENCRYPTION_KEY`). Required in production.
+
 ## Public API
 
 ```ts
 import { createAuthRouter, createAuthModule, createDefaultAuthDeps } from '@/modules/auth';
 
-// Route registration
-app.use(`${prefix}/auth`, createAuthRouter());
-
-// Custom DI (tests / alternate providers)
 const auth = createAuthModule(
   createDefaultAuthDeps({
     mailer: fakeMailer,
@@ -40,34 +58,26 @@ const auth = createAuthModule(
 );
 ```
 
+Wiring is a typed object on `createContainer()` (`container.auth.router`), not a
+string registry.
+
 ## Extension points
 
 1. **TokenServicePort** — swap JWT keys / algorithm / session store without
    touching use cases.
 2. **UserRepositoryPort / TokenRepositoryPort** — replace Prisma with another
    store.
-3. **MailerPort / RbacPort** — point at the future mail / rbac modules.
+3. **MailerPort / RbacPort** — point at the mail / rbac modules.
 4. **AvatarUploaderPort** — change storage backend for signup avatars.
 5. **UserCachePort** — optional; omit in tests to skip cache invalidation.
 
-## Container registration (notes)
-
-When `src/app/container` exists:
-
-```ts
-const authModule = createAuthModule(createDefaultAuthDeps());
-container.register('auth', authModule);
-// mount: app.use('/api/auth', authModule.router)
-```
-
-## Compatibility
-
-- Public surface is `src/modules/auth/index.ts`.
-- Presentation here is the source of truth for HTTP.
-
 ## Session and security notes
 
-- `isActive` is account status, not a login switch. Logout blacklists `jti` + refresh family.
-- OTP is stored hashed (`hashOtpCode`); reset tokens are opaque Redis values, not JWTs.
+- `isActive` is account status, not a login switch. Logout blacklists `jti` +
+  refresh family.
+- OTP is stored hashed (`hashOtpCode`); reset tokens are opaque Redis values,
+  not JWTs.
 - Login uses a dummy bcrypt hash when the email is unknown (timing).
 - Credential routes sit behind `rateLimitingAuth` (`MAX_AUTH_QUERY_NUMBER`).
+
+See [Authentication](../../../docs/guides/authentication.md).

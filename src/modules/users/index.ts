@@ -1,13 +1,19 @@
 import type { Router } from 'express';
 
 import type { UserEntity } from '@/modules/auth/domain/entities/user.entity';
+import { type AuditPort, auditRepository } from '@/shared/infrastructure/audit';
 
 import { ClearAllUsersCommand } from './application/commands/clear-all-users.command';
 import { DeleteUserPermanentlyCommand } from './application/commands/delete-user-permanently.command';
 import { DeleteUserCommand } from './application/commands/delete-user.command';
+import { InviteUserCommand } from './application/commands/invite-user.command';
 import { RestoreUserCommand } from './application/commands/restore-user.command';
+import { RevokeUserSessionsCommand } from './application/commands/revoke-user-sessions.command';
+import { SetUserActiveCommand } from './application/commands/set-user-active.command';
+import { UnlockUserCommand } from './application/commands/unlock-user.command';
 import { UpdateUserRoleCommand } from './application/commands/update-user-role.command';
 import { UpdateUserCommand } from './application/commands/update-user.command';
+import { VerifyUserEmailCommand } from './application/commands/verify-user-email.command';
 import { ExportUsersQuery } from './application/queries/export-users.query';
 import { GetUserByIdQuery } from './application/queries/get-user-by-id.query';
 import { ListUsersQuery } from './application/queries/list-users.query';
@@ -15,10 +21,15 @@ import { SearchUsersQuery } from './application/queries/search-users.query';
 import type { AvatarUploaderPort } from './application/services/avatar-uploader.port';
 import type { MailerPort } from './application/services/mailer.port';
 import type { RbacPort } from './application/services/rbac.port';
+import type { SessionPort } from './application/services/session.port';
 import type { UserCachePort } from './application/services/user-cache.port';
 import type { UsersRepositoryPort } from './domain/repositories/users.repository';
 import { AvatarUploaderAdapter } from './infrastructure/providers/avatar-uploader.adapter';
-import { createMailerAdapter, createRbacAdapter } from './infrastructure/providers/legacy-adapters';
+import {
+  createMailerAdapter,
+  createRbacAdapter,
+  createSessionAdapter,
+} from './infrastructure/providers/legacy-adapters';
 import { UserCacheAdapter } from './infrastructure/providers/user-cache.adapter';
 import { PrismaUsersRepository } from './infrastructure/repositories/prisma-users.repository';
 import {
@@ -29,7 +40,6 @@ import { createUsersRoutes } from './presentation/routes/users.routes';
 
 /**
  * Explicit dependencies for the users module.
- * Register these in `src/app/container` when the composition root lands.
  */
 export type UsersModuleDeps = {
   usersRepository: UsersRepositoryPort;
@@ -37,6 +47,8 @@ export type UsersModuleDeps = {
   avatarUploader: AvatarUploaderPort;
   mailer: MailerPort;
   rbac: RbacPort;
+  session: SessionPort;
+  audit?: AuditPort;
 };
 
 export type UsersModule = {
@@ -51,6 +63,11 @@ export type UsersModule = {
     deleteUser: DeleteUserCommand;
     deleteUserPermanently: DeleteUserPermanentlyCommand;
     restoreUser: RestoreUserCommand;
+    setUserActive: SetUserActiveCommand;
+    verifyUserEmail: VerifyUserEmailCommand;
+    unlockUser: UnlockUserCommand;
+    revokeUserSessions: RevokeUserSessionsCommand;
+    inviteUser: InviteUserCommand;
     clearAllUsers: ClearAllUsersCommand;
   };
   controller: UsersController;
@@ -67,6 +84,7 @@ export function createDefaultUsersDeps(overrides: Partial<UsersModuleDeps> = {})
   const avatarUploader = overrides.avatarUploader ?? new AvatarUploaderAdapter();
   const mailer = overrides.mailer ?? createMailerAdapter();
   const rbac = overrides.rbac ?? createRbacAdapter();
+  const session = overrides.session ?? createSessionAdapter();
 
   return {
     usersRepository,
@@ -74,18 +92,13 @@ export function createDefaultUsersDeps(overrides: Partial<UsersModuleDeps> = {})
     avatarUploader,
     mailer,
     rbac,
+    session,
+    audit: overrides.audit ?? auditRepository,
   };
 }
 
 /**
  * Composition root for the users bounded context.
- *
- * Container note:
- * ```ts
- * // src/app/container/index.ts (future)
- * const users = createUsersModule(createDefaultUsersDeps());
- * register('users.router', users.router);
- * ```
  */
 export function createUsersModule(deps: UsersModuleDeps): UsersModule {
   const useCases = {
@@ -98,10 +111,30 @@ export function createUsersModule(deps: UsersModuleDeps): UsersModule {
     deleteUser: new DeleteUserCommand(deps),
     deleteUserPermanently: new DeleteUserPermanentlyCommand(deps),
     restoreUser: new RestoreUserCommand(deps),
+    setUserActive: new SetUserActiveCommand(deps),
+    verifyUserEmail: new VerifyUserEmailCommand(deps),
+    unlockUser: new UnlockUserCommand(deps),
+    revokeUserSessions: new RevokeUserSessionsCommand(deps),
+    inviteUser: new InviteUserCommand(deps),
     clearAllUsers: new ClearAllUsersCommand(deps),
   };
 
-  const controller = createUsersController(useCases);
+  const controller = createUsersController({
+    listUsers: useCases.listUsers,
+    getUserById: useCases.getUserById,
+    searchUsers: useCases.searchUsers,
+    exportUsers: useCases.exportUsers,
+    updateUser: useCases.updateUser,
+    updateUserRole: useCases.updateUserRole,
+    deleteUser: useCases.deleteUser,
+    deleteUserPermanently: useCases.deleteUserPermanently,
+    restoreUser: useCases.restoreUser,
+    setUserActive: useCases.setUserActive,
+    verifyUserEmail: useCases.verifyUserEmail,
+    unlockUser: useCases.unlockUser,
+    revokeUserSessions: useCases.revokeUserSessions,
+    inviteUser: useCases.inviteUser,
+  });
   const router = createUsersRoutes(controller);
 
   return { deps, useCases, controller, router };
@@ -112,11 +145,6 @@ export function createUsersRouter(overrides: Partial<UsersModuleDeps> = {}): Rou
   return createUsersModule(createDefaultUsersDeps(overrides)).router;
 }
 
-/** Default singleton controller — used by deprecated controller re-exports. */
-const defaultUsersModule = createUsersModule(createDefaultUsersDeps());
-export const usersHandlers = defaultUsersModule.controller;
-
-// Public re-exports for consumers / tests
 export type { UserEntity };
 export type { UsersRepositoryPort } from './domain/repositories/users.repository';
 export type {

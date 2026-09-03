@@ -1,4 +1,9 @@
-import type { AuthRevokeReason, AuthTokenFamily, StoredRefreshToken } from '../types/auth.types';
+import type {
+  AuthRevokeReason,
+  AuthSessionSummary,
+  AuthTokenFamily,
+  StoredRefreshToken,
+} from '../types/auth.types';
 
 export type RevokeTokenInput = {
   jti: string;
@@ -36,6 +41,10 @@ export interface TokenRepositoryPort {
 
   /** Revoke every refresh family for a user (password change / security event). */
   revokeAllForUser(userId: string, reason: AuthRevokeReason): Promise<void>;
+
+  listSessionsForUser(userId: string): Promise<AuthSessionSummary[]>;
+
+  familyBelongsToUser(familyId: string, userId: string): Promise<boolean>;
 
   savePasswordResetToken(userId: string, tokenHash: string, ttlSeconds: number): Promise<void>;
 

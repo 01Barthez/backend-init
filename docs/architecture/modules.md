@@ -20,8 +20,8 @@ module-name/
 
 ## auth
 
-**Purpose.** Signup, OTP verification, login, refresh-token rotation, logout,
-forgot/reset/change password.
+**Purpose.** Signup, OTP verification, optional TOTP, login, `/me`, sessions,
+refresh-token rotation, logout, forgot/reset/change password.
 
 **Public entry points.**
 
@@ -35,9 +35,28 @@ import {
 
 Mounted at: `{API_PREFIX}/auth`.
 
+| Method | Path                  | Notes                                    |
+| ------ | --------------------- | ---------------------------------------- |
+| POST   | `/signup`             | Multipart avatar; idempotency optional   |
+| POST   | `/verify`             | Email OTP                                |
+| POST   | `/resend-otp`         |                                          |
+| POST   | `/login`              | `totpCode` required when TOTP is enabled |
+| POST   | `/refresh`            | Cookie or JSON body                      |
+| POST   | `/forgot-password`    |                                          |
+| POST   | `/reset-password`     | Opaque Redis token                       |
+| POST   | `/logout`             | Auth                                     |
+| POST   | `/change-password`    | Auth; revokes all sessions               |
+| GET    | `/me`                 | Auth                                     |
+| GET    | `/sessions`           | Auth                                     |
+| DELETE | `/sessions/:familyId` | Auth                                     |
+| POST   | `/totp/enroll`        | Auth; otpauth URL + secret once          |
+| POST   | `/totp/confirm`       | Auth                                     |
+| POST   | `/totp/disable`       | Auth; password + current code            |
+
 **Key use cases.** `SignupCommand`, `VerifyOtpCommand`, `ResendOtpCommand`,
-`LoginCommand`, `RefreshTokenCommand`, `LogoutCommand`, `ForgotPasswordCommand`,
-`ResetPasswordCommand`, `ChangePasswordCommand`.
+`LoginCommand`, `GetCurrentUserQuery`, session list/revoke, TOTP
+enroll/confirm/disable, `RefreshTokenCommand`, `LogoutCommand`,
+`ForgotPasswordCommand`, `ResetPasswordCommand`, `ChangePasswordCommand`.
 
 **How to extend.**
 
@@ -45,6 +64,7 @@ Mounted at: `{API_PREFIX}/auth`.
 - Replace `UserRepositoryPort` / `TokenRepositoryPort` (Prisma → another store).
 - Override `MailerPort`, `RbacPort`, `AvatarUploaderPort`, `UserCachePort` via
   `createDefaultAuthDeps({ ... })`.
+- TOTP secrets use `AUTH_ENCRYPTION_KEY` (AES-256-GCM).
 
 See [Authentication guide](../guides/authentication.md).
 
@@ -52,8 +72,9 @@ See [Authentication guide](../guides/authentication.md).
 
 ## users
 
-**Purpose.** Profile update, list/search/export, soft/hard delete, restore, role
-assignment, and development clear-all utilities.
+**Purpose.** Self-service profile + admin user management: list/search/export,
+invite, activate/deactivate, verify, unlock, force-logout, soft/hard delete,
+restore, role assignment.
 
 **Public entry points.**
 
@@ -67,13 +88,23 @@ import {
 
 Mounted at: `{API_PREFIX}/users`.
 
+**Boundary.** Own snapshot with roles = `GET /auth/me` (auth module). Password,
+OTP, TOTP, and session families stay in auth; users calls a `SessionPort` for
+revoke-all / invite reset tokens.
+
+**Caps.** List `limit` max 100. Search `limit` max 50 (paginated). Export max
+10_000 rows. Assignable roles: `admin`, `user`, `guest`.
+
+**GDPR hard-delete** (`DELETE /:userId/permanent`): anonymize PII, tombstone
+blogs, drop the user row only when no blogs remain.
+
 **How to extend.**
 
 - Implement `UsersRepositoryPort` for an alternate persistence layer.
 - Reuse the auth `User` entity — do not duplicate user identity models.
-- Role changes go through `RbacPort` (rbac module).
+- Role changes go through `RbacPort`; session revoke through `SessionPort`.
 
----
+See `src/modules/users/README.md`.
 
 ## rbac
 
@@ -90,9 +121,13 @@ import {
 } from '@/modules/rbac';
 ```
 
-No dedicated public REST router today. HTTP role assignment lives on the users
-module (`PUT /:userId/role`). Bootstrap seeding is typically invoked at server
-start via `rbacService.seedSystemRolesAndPermissions()`.
+No dedicated public REST router. HTTP role assignment lives on the users module
+(`PUT /:userId/role`). Bootstrap seeding runs in `bootstrapApplication()` via
+`rbacService.seedSystemRolesAndPermissions()`.
+
+Seeded slugs: `super-admin`, `admin`, `user`, `guest`. Catalogue includes
+`audit:read` (admin + super-admin). `SYSTEM_PERMISSIONS` lives in
+`src/shared/constants/app.constants.ts`.
 
 **How to extend.**
 
@@ -106,6 +141,9 @@ start via `rbacService.seedSystemRolesAndPermissions()`.
 
 **Purpose.** Social login and account linking for Google, GitHub, Facebook,
 LinkedIn, Twitter, Instagram, plus Telegram widget auth.
+
+Gated by Flagsmith `enable_oauth` (default **true**). When off, authorize,
+callback, Telegram, and unlink fail closed (`OAuthFeatureDisabledError`).
 
 **Public entry points.**
 
@@ -135,8 +173,8 @@ Mounted at: `{API_PREFIX}/auth/oauth`.
 ## blog
 
 **Purpose.** Reference domain for the template: create, update, publish,
-soft-delete, and public listing. Replace this module with your business domain
-when forking.
+soft-delete, public listing and search. Replace this module with your business
+domain when forking.
 
 **Public entry points.**
 
@@ -150,6 +188,16 @@ import {
 
 Mounted at: `{API_PREFIX}/blogs`.
 
+| Method | Path           | Auth              |
+| ------ | -------------- | ----------------- |
+| GET    | `/search`      | Public            |
+| GET    | `/`            | Public            |
+| GET    | `/:slug`       | Public            |
+| POST   | `/`            | `blog:create`     |
+| PUT    | `/:id`         | `blog:update:own` |
+| PATCH  | `/:id/publish` | `blog:publish`    |
+| DELETE | `/:id`         | `blog:delete:own` |
+
 **How to extend.** Prefer copying the blog module as a structural template for a
 new domain (see [Extending](./extending.md)), then delete or empty blog once
 your domain is wired.
@@ -158,9 +206,9 @@ your domain is wired.
 
 ## files
 
-**Purpose.** Validated user uploads (avatars, documents, media) with optional
-ClamAV scanning. Distinct from shared object storage used for backups and raw
-put/get.
+**Purpose.** Validated user uploads (avatars, documents) with ClamAV scanning
+(fail-open unless `CLAMAV_REQUIRED=true`) and presigned large-object I/O.
+Distinct from shared object storage used for backups and raw put/get.
 
 **Public entry points.**
 
@@ -168,14 +216,27 @@ put/get.
 import {
   createFilesModule,
   createDefaultFilesDeps,
+  createFilesRouter,
   uploadAvatar,
   uploadFile,
   upload, // multer middleware
 } from '@/modules/files';
 ```
 
-No dedicated versioned HTTP routes — presentation exposes Multer middleware
-consumed by auth/users routes.
+Mounted at: `{API_PREFIX}/files`.
+
+| Method | Path       | Notes                                              |
+| ------ | ---------- | -------------------------------------------------- |
+| POST   | `/presign` | Authenticated PUT URL (`PRESIGN_UPLOAD_MAX_BYTES`) |
+| GET    | `/presign` | Authenticated GET URL (`key` query)                |
+
+Avatars remain **multipart** on auth signup and users profile
+(`upload.single('profile')`), capped at `API_UPLOAD_MAX_BYTES` (2MB). Magic-byte
+sniff (`file-type`); `avatar` profile allows jpeg/png; default allows
+jpeg/png/pdf.
+
+ClamAV is injected on the singleton uploader in `infrastructure/config/minio.ts`
+(skipped in tests).
 
 **How to extend.**
 
@@ -187,8 +248,13 @@ consumed by auth/users routes.
 
 ## backup
 
-**Purpose.** MongoDB dump → AES-256-GCM encryption → object storage upload, with
-admin notification mail. Invoked by the BullMQ `BACKUP` worker.
+**Purpose.** MongoDB dump → streaming AES-256-GCM encryption (random salt) →
+object storage upload, with admin notification mail. Invoked by the BullMQ
+`BACKUP` worker.
+
+Registered when `PROCESS_ROLE` is `all` or `worker` and Flagsmith
+`enable_backup` is on (default true). `BACKUP_ENCRYPTION_KEY` is required for a
+useful dump.
 
 **Public entry points.**
 
@@ -204,6 +270,7 @@ Wired from `src/shared/infrastructure/queue/workers.ts`.
 
 **How to extend.** Swap `MongoBackupProvider`; keep mail templates
 `db-notification-success` / `db-notification-error` in shared mail templates.
+See [Backups](../guides/backup.md).
 
 ---
 
@@ -231,8 +298,8 @@ import {
 
 ## system
 
-**Purpose.** Operational HTTP surfaces: health, CSRF token, CSP report endpoint,
-Prometheus metrics, Bull Board.
+**Purpose.** Operational HTTP surfaces: health (live/ready), CSRF token, CSP
+report, Prometheus metrics, Bull Board, audit list.
 
 **Public entry points.**
 
@@ -240,11 +307,17 @@ Prometheus metrics, Bull Board.
 import { createSystemRouters } from '@/modules/system';
 
 const system = createSystemRouters();
-// system.health | .csrf | .csp | .metrics | .setupBullBoard(app)
+// system.health | .csrf | .csp | .metrics | .audit | .setupBullBoard(app)
 ```
 
-Mounted outside or alongside the API prefix as registered in
-`src/app/routes/index.ts` (health, metrics, csrf, CSP URI).
+| Mount                        | Auth                      |
+| ---------------------------- | ------------------------- |
+| `/health`, `/live`, `/ready` | none                      |
+| `/metrics`                   | HTTP Basic (except tests) |
+| `/csrf-token`                | none                      |
+| CSP report URI               | none                      |
+| `/admin/queues`              | Basic + JWT + `isAdmin`   |
+| `{API_PREFIX}/admin/audit`   | JWT + `audit:read`        |
 
 **How to extend.** Add ops routes under `presentation/routes` and expose them
 from `createSystemRouters`.

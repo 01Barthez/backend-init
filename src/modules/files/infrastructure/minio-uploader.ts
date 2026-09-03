@@ -1,5 +1,6 @@
 import EventEmitter from 'events';
 
+import { config } from '@/app/config';
 import log from '@/shared/infrastructure/logging/logger';
 
 import { UploadError, ValidationError } from './core/errors';
@@ -10,20 +11,18 @@ import { generateFilePath, sleep } from './core/utils';
 import type { FileMeta, ValidationPolicy } from './core/validation-policy';
 import { MinioProvider } from './providers/minio.provider';
 import type { Scanner } from './scanner/scanner';
-import { MultipartService } from './services/multipart.service';
 import { PresignedUrlService } from './services/presigned-url.service';
 import { Validator } from './validation/validator';
 
 export class MinioUploader extends EventEmitter {
   private validator: Validator;
   private provider: MinioProvider;
-  private multipart: MultipartService;
   private presigned: PresignedUrlService;
   private scanner?: Scanner;
   private maxRetries: number;
 
-  constructor(config: {
-    client: any;
+  constructor(configInput: {
+    client: unknown;
     bucket: string;
     basePath?: string;
     defaultPolicy?: ValidationPolicy;
@@ -34,60 +33,64 @@ export class MinioUploader extends EventEmitter {
   }) {
     super();
     this.validator = new Validator(
-      config.defaultPolicy ?? { maxSizeBytes: 50 * 1024 * 1024 },
-      config.profiles,
+      configInput.defaultPolicy ?? { maxSizeBytes: 50 * 1024 * 1024 },
+      configInput.profiles,
     );
     this.provider = new MinioProvider(
-      config.client,
-      config.bucket,
-      config.logger ?? defaultLogger(),
+      configInput.client as never,
+      configInput.bucket,
+      configInput.logger ?? defaultLogger(),
     );
-    this.multipart = new MultipartService(config.client, config.bucket);
     this.presigned = new PresignedUrlService(this.provider);
-    this.scanner = config.scanner;
-    this.maxRetries = config.maxRetries ?? 3;
+    this.scanner = configInput.scanner;
+    this.maxRetries = configInput.maxRetries ?? 3;
   }
 
-  async uploadBuffer(buffer: Buffer, meta: FileMeta): Promise<UploadResult> {
+  async uploadBuffer(
+    buffer: Buffer,
+    meta: FileMeta,
+    opts?: { profile?: string },
+  ): Promise<UploadResult> {
     const startTime = Date.now();
     const uploadId = `upload-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+    const profile = opts?.profile ?? meta.profile;
 
     log.info('Starting file upload', {
       uploadId,
       filename: meta.filename,
       size: buffer.length,
       contentType: meta.contentType,
+      profile,
     });
 
     try {
-      // 1. Validation du fichier
-      this.validator.validate(meta);
+      await this.validator.validate(meta, buffer, profile);
 
-      // 2. Scan antivirus
+      let scanResult: UploadResult['scanResult'] = 'not_scanned';
       if (this.scanner) {
-        log.debug('Starting virus scan', { uploadId });
-        const scanResult = await this.scanner.scan(buffer, meta.filename);
-
-        if (!scanResult.ok) {
-          log.warn('Virus scan failed', {
+        try {
+          const scanned = await this.scanner.scan(buffer, meta.filename);
+          if (!scanned.ok) {
+            throw new ValidationError(
+              `virus_scan_failed: ${scanned.threat || 'File is potentially malicious'}`,
+              scanned,
+            );
+          }
+          scanResult = 'clean';
+        } catch (error: unknown) {
+          if (error instanceof ValidationError) throw error;
+          if (config.storage.clamav.required) {
+            throw error;
+          }
+          log.warn('ClamAV unavailable — continuing without scan', {
             uploadId,
-            reason: scanResult.reason,
-            threat: scanResult.threat,
-            duration: Date.now() - startTime,
+            error: error instanceof Error ? error.message : String(error),
           });
-
-          throw new ValidationError(
-            `virus_scan_failed: ${scanResult.threat || 'File is potentially malicious'}`,
-            scanResult,
-          );
         }
-        log.debug('Virus scan completed', { uploadId, duration: scanResult.scanDuration });
       }
 
-      // Generate structured object key: category/YYYY/MM/DD/uuid-name.ext
       const { key, path } = generateFilePath(meta.filename, meta.category ?? 'misc');
 
-      // Upload to MinIO
       await this.retry(async () => {
         await this.provider.ensureBucketExists();
         await this.provider.putObject(key, buffer, buffer.length, meta.contentType);
@@ -102,7 +105,7 @@ export class MinioUploader extends EventEmitter {
         mimeType: meta.contentType ?? '',
         uploadedAt: new Date().toISOString(),
         uploadDuration: Date.now() - startTime,
-        scanResult: this.scanner ? 'clean' : 'not_scanned',
+        scanResult,
       };
 
       log.info('File uploaded successfully', {
@@ -130,36 +133,64 @@ export class MinioUploader extends EventEmitter {
     }
   }
 
+  async presignPut(input: {
+    filename: string;
+    contentType: string;
+    size: number;
+  }): Promise<{ url: string; key: string; expiresIn: number }> {
+    const max = config.storage.upload.presignMaxBytes;
+    if (input.size > max) {
+      throw new ValidationError('file_too_large', { max, actual: input.size });
+    }
+
+    await this.validator.validate(
+      {
+        filename: input.filename,
+        contentType: input.contentType,
+        size: input.size,
+      },
+      undefined,
+      undefined,
+    );
+
+    const { key } = generateFilePath(input.filename, 'uploads');
+    const expiresIn = config.storage.upload.presignTtlSeconds;
+    const url = await this.presigned.presignedPut(input.filename, key, expiresIn);
+    return { url: url.url, key, expiresIn };
+  }
+
+  async presignGet(key: string): Promise<{ url: string; expiresIn: number }> {
+    if (!key || key.includes('..') || !/^[a-zA-Z0-9/_.-]+$/.test(key)) {
+      throw new ValidationError('invalid_object_key', { key });
+    }
+    const expiresIn = config.storage.upload.presignTtlSeconds;
+    const url = await this.presigned.presignedGet(key, expiresIn);
+    return { url, expiresIn };
+  }
+
   private async retry<T>(fn: () => Promise<T>): Promise<T> {
     let attempt = 0;
-    let lastError: any;
+    let lastError: unknown;
 
     while (true) {
       try {
-        log.debug(`Retry attempt ${attempt + 1}/${this.maxRetries}`);
         return fn();
-      } catch (err: any) {
+      } catch (err: unknown) {
         lastError = err;
         attempt++;
+        const message = err instanceof Error ? err.message : String(err);
 
         log.warn('Retry attempt failed', {
           attempt,
           maxRetries: this.maxRetries,
-          error: err.message || err,
-          code: err.code,
+          error: message,
         });
 
         if (attempt > this.maxRetries) {
-          log.error('Max retries exceeded', {
-            attempts: attempt,
-            lastError: lastError.message || lastError,
-            code: lastError.code,
-          });
           throw new UploadError('max_retries_exceeded', lastError);
         }
 
         const delay = 200 * attempt;
-        log.debug(`Waiting ${delay}ms before retry...`);
         // eslint-disable-next-line no-await-in-loop -- intentional backoff between retries
         await sleep(delay);
       }

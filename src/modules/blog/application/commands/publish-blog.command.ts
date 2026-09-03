@@ -1,3 +1,5 @@
+import type { AuditPort } from '@/shared/infrastructure/audit';
+
 import type { BlogEntity } from '../../domain/entities/blog.entity';
 import { BlogForbiddenError, BlogNotFoundError } from '../../domain/errors/blog.errors';
 import type { BlogRepositoryPort } from '../../domain/repositories/blog.repository';
@@ -7,6 +9,7 @@ import type { BlogCachePort } from '../services/blog-cache.port';
 export type PublishBlogCommandDeps = {
   blogRepository: BlogRepositoryPort;
   cache?: BlogCachePort;
+  audit?: AuditPort;
 };
 
 /**
@@ -32,6 +35,14 @@ export class PublishBlogCommand {
 
     await this.deps.cache?.invalidate(`blogs:slug:${blog.slug}`);
     await this.deps.cache?.invalidatePattern('blogs:list:*');
+
+    await this.deps.audit?.record({
+      actorId: input.authorId,
+      action: 'blog.publish',
+      resource: 'blog',
+      resourceId: input.id,
+    });
+
     return updated;
   }
 }

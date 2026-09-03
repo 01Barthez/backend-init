@@ -32,8 +32,19 @@ export const UsersSerializer = {
     };
   },
 
+  /** Admin detail — includes lifecycle + lockout + roles. */
+  adminUser(user: UserPublicProfile) {
+    return {
+      ...UsersSerializer.publicUser(user),
+      isDeleted: user.isDeleted ?? false,
+      lastLoginAt: user.lastLoginAt ?? null,
+      lockedUntil: user.lockedUntil ?? null,
+      roles: user.roles ?? [],
+    };
+  },
+
   list(result: ListUsersResult) {
-    return result.users;
+    return result.users.map((user) => UsersSerializer.publicUser(user));
   },
 
   restored(user: UserLookupRecord) {
@@ -43,6 +54,8 @@ export const UsersSerializer = {
       firstName: user.firstName,
       lastName: user.lastName,
       isDeleted: user.isDeleted,
+      isActive: user.isActive ?? null,
+      isVerified: user.isVerified ?? null,
     };
   },
 };

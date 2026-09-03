@@ -187,3 +187,101 @@
       '401': { description: Missing authentication or wrong current password }
       '403': { description: Account not verified or inactive }
       '500': { description: Unexpected server error }
+
+/api/v1/auth/me:
+  get:
+    tags: [Authentication]
+    summary: Current user
+    description: Fresh account snapshot including roles and permissions. Requires a verified account.
+    security:
+      - bearerAuth: []
+    responses:
+      '200': { description: Current user profile }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Account not verified }
+
+/api/v1/auth/sessions:
+  get:
+    tags: [Authentication]
+    summary: List refresh-token sessions
+    description: Refresh-token families for the authenticated user. Requires verified + active account.
+    security:
+      - bearerAuth: []
+    responses:
+      '200': { description: Session families }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Account not verified or inactive }
+
+/api/v1/auth/sessions/{familyId}:
+  delete:
+    tags: [Authentication]
+    summary: Revoke one session family
+    description: Revokes one device/session family. Requires verified + active account.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: familyId
+        in: path
+        required: true
+        schema: { type: string, minLength: 1 }
+    responses:
+      '200': { description: Session revoked }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Account not verified or inactive }
+      '404': { description: Session not found }
+
+/api/v1/auth/totp/enroll:
+  post:
+    tags: [Authentication]
+    summary: Start TOTP enrollment
+    description: Returns an otpauth URL and secret once. TOTP is not enabled until confirm.
+    security:
+      - bearerAuth: []
+    responses:
+      '200': { description: otpauth URL and secret }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Account not verified or inactive }
+      '409': { description: TOTP already enabled }
+
+/api/v1/auth/totp/confirm:
+  post:
+    tags: [Authentication]
+    summary: Confirm TOTP enrollment
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [totpCode]
+            properties:
+              totpCode: { type: string, minLength: 6, maxLength: 8 }
+    responses:
+      '200': { description: TOTP enabled }
+      '400': { description: Validation failed }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Account not verified or inactive }
+
+/api/v1/auth/totp/disable:
+  post:
+    tags: [Authentication]
+    summary: Disable TOTP
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [totpCode, current_password]
+            properties:
+              totpCode: { type: string, minLength: 6, maxLength: 8 }
+              current_password: { type: string }
+    responses:
+      '200': { description: TOTP disabled }
+      '400': { description: Validation failed }
+      '401': { description: Missing or invalid authentication }
+      '403': { description: Account not verified or inactive }

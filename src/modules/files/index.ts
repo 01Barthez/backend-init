@@ -1,13 +1,19 @@
+import type { Router } from 'express';
+
+import { CreatePresignedDownloadCommand } from './application/commands/create-presigned-download.command';
+import { CreatePresignedUploadCommand } from './application/commands/create-presigned-upload.command';
 import { UploadAvatarCommand } from './application/commands/upload-avatar.command';
 import { UploadFileCommand } from './application/commands/upload-file.command';
 import type { ScannerPort } from './domain/ports/scanner.port';
 import type { UploaderPort } from './domain/ports/uploader.port';
 import { MinioUploaderAdapter } from './infrastructure/adapters/minio-uploader.adapter';
 import { uploader as defaultMinioUploader } from './infrastructure/config/minio';
+import {
+  type FilesController,
+  createFilesController,
+} from './presentation/controllers/files.controller';
+import { createFilesRoutes } from './presentation/routes/files.routes';
 
-/**
- * Explicit dependencies for the files module.
- */
 export type FilesModuleDeps = {
   uploader: UploaderPort;
   scanner?: ScannerPort;
@@ -18,12 +24,13 @@ export type FilesModule = {
   useCases: {
     uploadAvatar: UploadAvatarCommand;
     uploadFile: UploadFileCommand;
+    createPresignedUpload: CreatePresignedUploadCommand;
+    createPresignedDownload: CreatePresignedDownloadCommand;
   };
+  controller: FilesController;
+  router: Router;
 };
 
-/**
- * Builds default infrastructure adapters (MinIO uploader singleton).
- */
 export function createDefaultFilesDeps(overrides: Partial<FilesModuleDeps> = {}): FilesModuleDeps {
   return {
     uploader: overrides.uploader ?? new MinioUploaderAdapter(defaultMinioUploader),
@@ -31,20 +38,27 @@ export function createDefaultFilesDeps(overrides: Partial<FilesModuleDeps> = {})
   };
 }
 
-/**
- * Composition root for the files bounded context.
- * No HTTP router — uploads are consumed by auth / users / blog modules.
- */
 export function createFilesModule(deps: FilesModuleDeps): FilesModule {
   const useCases = {
     uploadAvatar: new UploadAvatarCommand(deps),
     uploadFile: new UploadFileCommand(deps),
+    createPresignedUpload: new CreatePresignedUploadCommand(deps),
+    createPresignedDownload: new CreatePresignedDownloadCommand(deps),
   };
 
-  return { deps, useCases };
+  const controller = createFilesController({
+    createPresignedUpload: useCases.createPresignedUpload,
+    createPresignedDownload: useCases.createPresignedDownload,
+  });
+  const router = createFilesRoutes(controller);
+
+  return { deps, useCases, controller, router };
 }
 
-/** Convenience helpers for common call sites. */
+export function createFilesRouter(overrides: Partial<FilesModuleDeps> = {}): Router {
+  return createFilesModule(createDefaultFilesDeps(overrides)).router;
+}
+
 export async function uploadAvatar(
   file?: Parameters<UploadAvatarCommand['execute']>[0],
 ): Promise<string> {
@@ -57,7 +71,6 @@ export async function uploadFile(
   return createFilesModule(createDefaultFilesDeps()).useCases.uploadFile.execute(...args);
 }
 
-// Domain
 export {
   FileUploadError,
   FileValidationError,
@@ -71,8 +84,6 @@ export type {
   UploadResult,
   ValidationPolicy,
 } from './domain/types/upload.types';
-
-// Infrastructure re-exports (swap MinIO / S3 / ClamAV here)
 export { uploader } from './infrastructure/config/minio';
 export { minioClient } from './infrastructure/config/minio-client';
 export { UploadError, ValidationError } from './infrastructure/core/errors';
@@ -84,9 +95,5 @@ export { ClamAVScanner } from './infrastructure/scanner/clamav-scanner';
 export type { Scanner } from './infrastructure/scanner/scanner';
 export { MultipartService } from './infrastructure/services/multipart.service';
 export { PresignedUrlService } from './infrastructure/services/presigned-url.service';
-
-// Presentation
 export { upload } from './presentation/upload.middleware';
-
-// Also re-export shared storage for backups / bootstrap (orthogonal to validated uploads)
 export { type StorageProvider, storageService } from '@/shared/infrastructure/storage';

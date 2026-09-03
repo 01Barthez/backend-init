@@ -1,8 +1,8 @@
 /**
  * Global Express middleware pipeline.
  *
- * Order matters: security headers → parsers → logging → rate limits → CSRF →
- * routes (injected) → error handlers.
+ * Order: Helmet → request context → maintenance → parsers → log →
+ * rate limits → CSRF → routes → error handlers.
  */
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
@@ -11,56 +11,64 @@ import csurf from 'csurf';
 import type { Express } from 'express';
 import express from 'express';
 import helmet from 'helmet';
-import morgan from 'morgan';
 
 import { config } from '@/app/config';
-import disableLogsInProduction from '@/app/middleware/disable-log.middleware';
 import errorHandler from '@/app/middleware/error.middleware';
+import httpLogMiddleware from '@/app/middleware/http-log.middleware';
+import maintenanceMiddleware from '@/app/middleware/maintenance.middleware';
 import notFoundHandler from '@/app/middleware/not-found.middleware';
-import paginationMiddleware from '@/app/middleware/pagination.middleware';
-import { errorLog, requestLog } from '@/app/middleware/request-logger.middleware';
-import { requestTimeMiddleware } from '@/app/middleware/response-time.middleware';
-import {
-  cspConfig,
-  morganFormat,
-  morganOptions,
-  rateLimiting,
-} from '@/app/middleware/security-config';
+import requestContextMiddleware from '@/app/middleware/request-context.middleware';
+import { cspConfig, rateLimiting } from '@/app/middleware/security-config';
 import { validationErrorHandler } from '@/app/middleware/validation-error.middleware';
-import { securityRequestLogger } from '@/shared/infrastructure/logging/security-logger';
+
+const corsOrigin = (
+  origin: string | undefined,
+  callback: (err: Error | null, allow?: boolean) => void,
+): void => {
+  if (!origin) {
+    callback(null, true);
+    return;
+  }
+  if (config.app.corsOrigins.includes(origin)) {
+    callback(null, true);
+    return;
+  }
+  callback(new Error(`CORS origin not allowed: ${origin}`));
+};
 
 /**
  * Apply cross-cutting middleware, then invoke `registerRoutes` before error handlers.
  */
 export const initMiddlewares = (app: Express, registerRoutes: () => void): void => {
-  app.use(helmet());
+  app.set('trust proxy', config.app.trustProxyHops);
+
   app.use(
-    helmet.hsts({
-      maxAge: config.security.hstsMaxAge,
-      includeSubDomains: true,
-      preload: true,
+    helmet({
+      contentSecurityPolicy: cspConfig,
+      hsts: {
+        maxAge: config.security.hstsMaxAge,
+        includeSubDomains: true,
+        preload: config.security.hstsPreload,
+      },
     }),
   );
-  app.use(helmet.contentSecurityPolicy(cspConfig));
-  app.use(securityRequestLogger);
+
+  app.use(requestContextMiddleware);
+  app.use(maintenanceMiddleware);
 
   app.use(cookieParser());
   app.use(
     cors({
-      origin: config.app.clientUrl || 'http://localhost:5173',
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+      origin: corsOrigin,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       credentials: true,
     }),
   );
 
   app.use(express.json({ limit: '20kb' }));
   app.use(express.urlencoded({ extended: true, limit: '10kb' }));
-  app.use(paginationMiddleware);
 
-  app.use(morgan(morganFormat, morganOptions));
-  app.use(requestLog);
-  app.use(requestTimeMiddleware);
-  app.use(disableLogsInProduction);
+  app.use(httpLogMiddleware);
 
   app.disable('x-powered-by');
   app.use(compression());
@@ -86,10 +94,8 @@ export const initMiddlewares = (app: Express, registerRoutes: () => void): void 
 
   app.use(validationErrorHandler);
 
-  // Module routes are registered here — before error / 404 handlers.
   registerRoutes();
 
-  app.use(errorLog);
   app.use(errorHandler);
   app.use(notFoundHandler);
 };

@@ -11,6 +11,7 @@
  */
 import { type AuthModule, createAuthModule, createDefaultAuthDeps } from '@/modules/auth';
 import { type BlogModule, createBlogModule, createDefaultBlogDeps } from '@/modules/blog';
+import { type FilesModule, createDefaultFilesDeps, createFilesModule } from '@/modules/files';
 import { type OAuthModule, createDefaultOAuthDeps, createOAuthModule } from '@/modules/oauth';
 import { type RbacModule, createDefaultRbacDeps, createRbacModule } from '@/modules/rbac';
 import { type SystemRouters, createSystemRouters } from '@/modules/system';
@@ -22,6 +23,7 @@ export type AppContainer = {
   rbac: RbacModule;
   blog: BlogModule;
   oauth: OAuthModule;
+  files: FilesModule;
   system: SystemRouters;
 };
 
@@ -31,6 +33,7 @@ export type ContainerOverrides = {
   rbac?: Parameters<typeof createDefaultRbacDeps>[0];
   blog?: Parameters<typeof createDefaultBlogDeps>[0];
   oauth?: Parameters<typeof createDefaultOAuthDeps>[0];
+  files?: Parameters<typeof createDefaultFilesDeps>[0];
 };
 
 /**
@@ -45,9 +48,10 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
   const users = createUsersModule(createDefaultUsersDeps(overrides.users));
   const blog = createBlogModule(createDefaultBlogDeps(overrides.blog));
   const oauth = createOAuthModule(createDefaultOAuthDeps(overrides.oauth));
+  const files = createFilesModule(createDefaultFilesDeps(overrides.files));
   const system = createSystemRouters();
 
-  return { auth, users, rbac, blog, oauth, system };
+  return { auth, users, rbac, blog, oauth, files, system };
 }
 
 /** Singleton used by the HTTP process. Prefer `createContainer` in tests. */

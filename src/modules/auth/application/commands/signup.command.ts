@@ -1,9 +1,9 @@
 import { MAIL } from '@/shared/constants/mail.constants';
 import { AppError } from '@/shared/domain/errors/app-error';
 import log from '@/shared/infrastructure/logging/logger';
+import { hashPassword } from '@/shared/utils/crypto';
 import generateOtp from '@/shared/utils/otp/generate-otp';
 import { getOtpExpirationDate } from '@/shared/utils/otp/otp-expiration';
-import { hashPassword } from '@/shared/utils/crypto';
 
 import { EmailAlreadyExistsError } from '../../domain/errors/auth.errors';
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';

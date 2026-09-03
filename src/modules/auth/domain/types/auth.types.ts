@@ -51,3 +51,12 @@ export type StoredRefreshToken = {
   expiresAt: Date;
   lastUsedAt?: Date | null;
 };
+
+/** One refresh-token family as shown on GET /auth/sessions. */
+export type AuthSessionSummary = {
+  familyId: string;
+  createdAt: Date;
+  lastUsedAt: Date | null;
+  expiresAt: Date;
+  isRevoked: boolean;
+};

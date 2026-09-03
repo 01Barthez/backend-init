@@ -28,16 +28,17 @@ tests/
 
 ## What each layer covers
 
-| Layer | Tests | Real DB? |
-|-------|--------|----------|
-| **Unit** | Commands, domain errors, pure utils | No — mock ports |
-| **Integration (api)** | Express routes + middleware + controllers | No — Prisma/Redis mocked |
-| **Integration (live)** | Mongo / Redis / MinIO / queue | Yes — `RUN_LIVE_INFRA=1` |
-| **E2E** | Cross-route journeys as an HTTP client | Offline doubles by default |
-| **Contract** | OpenAPI validity + critical paths | N/A |
+| Layer                  | Tests                                     | Real DB?                   |
+| ---------------------- | ----------------------------------------- | -------------------------- |
+| **Unit**               | Commands, domain errors, pure utils       | No — mock ports            |
+| **Integration (api)**  | Express routes + middleware + controllers | No — Prisma/Redis mocked   |
+| **Integration (live)** | Mongo / Redis / MinIO / queue             | Yes — `RUN_LIVE_INFRA=1`   |
+| **E2E**                | Cross-route journeys as an HTTP client    | Offline doubles by default |
+| **Contract**           | OpenAPI validity + critical paths         | N/A                        |
 
-This stack uses **MongoDB** (Prisma), **Redis**, **MinIO** — not PostgreSQL/RabbitMQ.
-Live suites can use an external URL or Testcontainers (`TESTCONTAINERS_MONGO=1`).
+This stack uses **MongoDB** (Prisma), **Redis**, **MinIO** — not
+PostgreSQL/RabbitMQ. Live suites can use an external URL or Testcontainers
+(`TESTCONTAINERS_MONGO=1`).
 
 ## Commands
 
@@ -61,3 +62,7 @@ npm run validate              # lint + types + test:ci + docs
 3. Keep setup mocks aligned with `@/shared/...` import paths.
 4. Do not assert on private infrastructure when a public use case exists.
 5. Load tests under `tests/load/` are run with k6 (or similar), not Vitest.
+
+Contract tests follow `docs/api/openapi.yaml` as produced by
+`npm run generate:openapi`. Path fragments under `docs/api/paths/` are
+documentation aids; keep them aligned, but the generator is the runtime spec.

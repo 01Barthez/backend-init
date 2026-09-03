@@ -13,6 +13,7 @@ import type {
 } from '../../domain/repositories/token.repository';
 import type {
   AuthRevokeReason,
+  AuthSessionSummary,
   AuthTokenFamily,
   StoredRefreshToken,
 } from '../../domain/types/auth.types';
@@ -149,7 +150,40 @@ export class PrismaTokenRepository implements TokenRepositoryPort {
     await Promise.all(families.map((familyId) => this.revokeFamily(familyId, reason)));
   }
 
-  async savePasswordResetToken(userId: string, tokenHash: string, ttlSeconds: number): Promise<void> {
+  async listSessionsForUser(userId: string): Promise<AuthSessionSummary[]> {
+    const tokens = await prisma.refreshToken.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const byFamily = new Map<string, AuthSessionSummary>();
+    for (const token of tokens) {
+      if (byFamily.has(token.familyId)) continue;
+      byFamily.set(token.familyId, {
+        familyId: token.familyId,
+        createdAt: token.createdAt,
+        lastUsedAt: token.lastUsedAt,
+        expiresAt: token.expiresAt,
+        isRevoked: token.isRevoked,
+      });
+    }
+
+    return [...byFamily.values()];
+  }
+
+  async familyBelongsToUser(familyId: string, userId: string): Promise<boolean> {
+    const row = await prisma.refreshToken.findFirst({
+      where: { familyId, userId },
+      select: { id: true },
+    });
+    return Boolean(row);
+  }
+
+  async savePasswordResetToken(
+    userId: string,
+    tokenHash: string,
+    ttlSeconds: number,
+  ): Promise<void> {
     await redisClient.setex(`pwd-reset:${tokenHash}`, Math.max(1, ttlSeconds), userId);
   }
 

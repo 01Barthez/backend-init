@@ -24,6 +24,7 @@ notifications/
 | `alert-login`                                       | Login notification           |
 | `password-changed`                                  | Password change confirmation |
 | `role-changed`                                      | Role assignment notice       |
+| `user-invited`                                      | Admin invite set-password    |
 | `account-deleted` / `account-restored`              | Soft-delete lifecycle        |
 | `db-notification-success` / `db-notification-error` | Backup job results           |
 

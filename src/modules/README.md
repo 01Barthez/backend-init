@@ -29,3 +29,7 @@ domain ✗→ express | prisma | redis | aws
 2. Register routes in `src/app/routes/index.ts`.
 3. Wire dependencies in `src/app/container/index.ts`.
 4. Document the module in `docs/architecture/modules.md`.
+
+Files expose HTTP at `{API_PREFIX}/files` (presign). System owns health,
+metrics, Bull Board, and `GET {API_PREFIX}/admin/audit`. Recipe:
+[docs/architecture/extending.md](../../docs/architecture/extending.md).

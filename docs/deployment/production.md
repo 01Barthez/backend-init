@@ -9,67 +9,136 @@ and compliance needs.
   secrets). Config already exposes Infisical-related env placeholders under
   `config.features.infisical`.
 - Never bake `.env` with production credentials into images.
-- Rotate OAuth client secrets, SMTP credentials, MinIO/S3 keys, and
-  `BACKUP_ENCRYPTION_KEY` on a schedule.
-- Keep `SWAGGER_PASSWORD` strong or disable Swagger (`SWAGGER_ENABLED=false`) in
-  public environments.
+- Rotate OAuth client secrets, SMTP credentials, MinIO/S3 keys,
+  `BACKUP_ENCRYPTION_KEY`, and `AUTH_ENCRYPTION_KEY` on a schedule.
+- Set `ADMIN_BASIC_PASSWORD` to a non-default value. `validateRuntimeConfig()`
+  refuses to boot in production if it is empty or still `admin`.
+- Disable Swagger in public environments (`SWAGGER_ENABLED=false`) even though
+  the UI is Basic-auth gated.
 
 ## JWT keys
 
-RS256 expects private/public key material on disk paths configured via:
+RS256 expects private/public PEM files on disk:
 
 - `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH`
 - `JWT_REFRESH_PRIVATE_KEY_PATH` / `JWT_REFRESH_PUBLIC_KEY_PATH`
 
+Canonical layout is the repo-root `keys/` directory (see
+[keys/README.md](../../keys/README.md)). `src/app/config/keys/*.key` is leftover
+material and is **not** read at runtime.
+
 Production pattern:
 
-1. Generate keys outside the image build.
-2. Mount them read-only into the container (e.g. `/run/secrets/…`).
-3. Point env paths at the mount.
+1. Run `npm run keys:generate` (or equivalent `openssl`) **outside** the image
+   build.
+2. Mount PEMs read-only into the container (`./keys:/app/keys:ro` or
+   `/run/secrets/…`).
+3. Point `JWT_*_KEY_PATH` at the mount.
 4. Restrict filesystem permissions; do not commit private keys.
 
-HS256 `JWT_SECRET` is **not** used. Do not add a symmetric secret as a fallback.
+Missing or empty PEMs abort boot. HS256 `JWT_SECRET` is **not** used.
 
 ## Auth encryption and cookies
 
-- Set `AUTH_ENCRYPTION_KEY` (64-char hex or a strong passphrase) so OAuth provider tokens are stored AES-256-GCM. Empty = tokens are not persisted.
-- `COOKIE_EXPIRES_IN` must be a duration (`7d`) or milliseconds. Align with `JWT_REFRESH_EXPIRES_IN`.
-- Leave `COOKIE_DOMAIN` empty for host-only cookies unless you explicitly need a parent domain.
-- Restrict OAuth post-login redirects with `OAUTH_ALLOWED_ORIGINS` (comma-separated). `CLIENT_URL` is always allowed.
+- `AUTH_ENCRYPTION_KEY` is **required in production** (OAuth provider tokens and
+  TOTP secrets at rest, AES-256-GCM).
+- `COOKIE_EXPIRES_IN` must be a duration (`7d`) or milliseconds. Align with
+  `JWT_REFRESH_EXPIRES_IN`.
+- Leave `COOKIE_DOMAIN` empty for host-only cookies unless you explicitly need a
+  parent domain.
+- Restrict OAuth post-login redirects with `OAUTH_ALLOWED_ORIGINS`
+  (comma-separated). `CLIENT_URL` is always allowed.
 - Enable CSRF for browser cookie flows (`ALLOW_CSRF_PROTECTION=true`).
 
-## Reverse proxy
+## Process roles
 
-Compose includes `nginx` with `infra/nginx/default.conf`. In production:
+`PROCESS_ROLE` controls what a replica does:
 
-- Terminate TLS at the proxy or mesh
-- Forward `X-Forwarded-*` correctly so cookies and secure flags behave
-- Rate-limit at the edge in addition to Express rate limits
-- Block public access to Bull Board and, if appropriate, `/metrics`
+| Value    | HTTP listen | BullMQ workers + crons |
+| -------- | ----------- | ---------------------- |
+| `all`    | yes         | yes                    |
+| `api`    | yes         | no                     |
+| `worker` | no          | yes                    |
+
+Invalid values fall back to `all`. Template default is `all` (one process).
+Production replicas should split `api` and `worker`.
+
+Do **not** point a worker-only container’s Docker `HEALTHCHECK` at `/health` —
+that process never binds a port. Probe API replicas only.
+
+## Fail-closed bootstrap
+
+HTTP listen happens **after** `bootstrapApplication()`:
+
+1. `validateRuntimeConfig()` — PEMs present, cookie TTL sane, production
+   operator password and `AUTH_ENCRYPTION_KEY` set.
+2. RBAC seed (`seedSystemRolesAndPermissions`).
+3. Object-storage bucket ensure.
+4. SMTP transport verify — **throws in production** on failure.
+5. Workers + repeatable jobs unless `PROCESS_ROLE=api`.
+6. Then `app.listen` (skipped entirely when `PROCESS_ROLE=worker`).
+
+Tests skip this bootstrap so Vitest can import the Express app without side
+effects.
+
+## Graceful shutdown
+
+`SIGTERM` / `SIGINT` drain HTTP (25s timeout), stop workers, then close queues,
+Redis, and Prisma. Worker-only processes pass `server=null`.
+
+## Reverse proxy (Nginx)
+
+Compose ships `infra/nginx/default.conf`. Public locations are **only**:
+
+- `GET /health` (and `/health/live`, `/health/ready` under that prefix)
+- `/api/` (versioned REST)
+
+`client_max_body_size` is **2m** (avatar multipart). Larger objects must use
+presigned PUT to MinIO/S3, not the API body.
+
+`/metrics`, `/api-docs`, and `/admin` return **404 at the edge**. Scrape and
+operator UIs must hit `backend:3000` on the private network.
+
+In production:
+
+- Terminate TLS at the proxy or mesh.
+- Set `TRUST_PROXY_HOPS` to the hop count in front of Express (default `1`) so
+  `req.ip`, rate limits, and audit logs see the client, not the proxy.
+- Forward `X-Forwarded-*` correctly so cookies and secure flags behave.
+- Rate-limit at the edge in addition to Express rate limits.
+
+## Operator UIs
+
+| Surface         | Auth                                                                  | Public Nginx |
+| --------------- | --------------------------------------------------------------------- | ------------ |
+| `/api-docs`     | HTTP Basic (`ADMIN_BASIC_*`, fallback `SWAGGER_*`)                    | no           |
+| `/metrics`      | HTTP Basic (skipped only when `NODE_ENV=test`)                        | no           |
+| `/admin/queues` | HTTP Basic **then** JWT **then** `isAdmin` (`admin` or `super-admin`) | no           |
+
+CORS allowlist is `CLIENT_URL` plus `CLIENT_URLS` (CSV). Never `*`.
 
 ## Health and metrics
 
-| Endpoint        | Use                             |
-| --------------- | ------------------------------- |
-| `GET /health`   | Liveness/readiness probes       |
-| `GET /metrics`  | Prometheus scrape target        |
-| `GET /api-docs` | OpenAPI UI (protect or disable) |
+| Endpoint            | Meaning                                     |
+| ------------------- | ------------------------------------------- |
+| `GET /health`       | Ready: Mongo + Redis. 503 if a dep is down. |
+| `GET /health/ready` | Same as `/health`.                          |
+| `GET /health/live`  | Process up. Does **not** check deps.        |
+| `GET /metrics`      | Prometheus scrape (Basic auth, private net) |
 
-Wire probes to `/health`. Scrape `/metrics` from an internal network only.
+Compose/Dockerfile `HEALTHCHECK` uses `GET /health`. Wire kube/load-balancer
+readiness to `/health` or `/health/ready`; liveness to `/health/live`.
 
-## Process model
+## Redis TLS
 
-- Run `npm run build` then `npm start` (compiled `dist/` with module-alias).
-- Ensure BullMQ workers start with the process (template boots workers alongside
-  the HTTP server).
-- Set `NODE_ENV=production`.
-- Pin Node 20+ as in `package.json` `engines`.
+Set `REDIS_TLS=true` (and optionally `REDIS_TLS_REJECT_UNAUTHORIZED`) when Redis
+is reached over TLS. Username/password via `REDIS_USERNAME` / `REDIS_PASSWORD`.
 
 ## Data and backups
 
 - Prefer managed MongoDB or a replica set with automated backups.
-- Application-level encrypted dumps use the backup module + `BACKUP_CRON`;
-  verify restore procedures.
+- Application-level encrypted dumps use the backup module + `BACKUP_CRON`; see
+  [Backups](../guides/backup.md). Verify restore procedures.
 - Redis should be durable enough for your queue tolerance (AOF is enabled in the
   sample Compose Redis).
 
@@ -86,4 +155,5 @@ Wire probes to `/health`. Scrape `/metrics` from an internal network only.
 - [Docker](./docker.md)
 - [Observability](./observability.md)
 - [Configuration](../architecture/configuration.md)
+- [Platform kernel](../architecture/platform-kernel.md)
 - [SECURITY.md](../../SECURITY.md)

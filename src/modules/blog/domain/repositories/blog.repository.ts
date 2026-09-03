@@ -18,5 +18,8 @@ export interface BlogRepositoryPort {
 
   listPublic(page: number, limit: number): Promise<BlogListResult>;
 
+  /** Fetch published public blogs by id (preserves search result order). */
+  findPublicByIds(ids: string[]): Promise<BlogEntity[]>;
+
   update(id: string, data: UpdateBlogInput): Promise<BlogEntity>;
 }

@@ -9,6 +9,7 @@ export type ErrorResponseBody = {
   message: string;
   code?: string;
   details?: unknown;
+  requestId?: string;
   stack?: string;
 };
 
@@ -26,7 +27,13 @@ export type FormattedError = {
  *
  * Pure function: no Express types, safe to unit-test in isolation.
  */
-export const formatErrorResponse = (error: unknown, includeStack = false): FormattedError => {
+export const formatErrorResponse = (
+  error: unknown,
+  includeStack = false,
+  requestId?: string,
+): FormattedError => {
+  const requestIdField = requestId ? { requestId } : {};
+
   if (isAppError(error)) {
     return {
       statusCode: error.statusCode,
@@ -35,6 +42,7 @@ export const formatErrorResponse = (error: unknown, includeStack = false): Forma
         message: error.message,
         code: error.code,
         details: error.details,
+        ...requestIdField,
         ...(includeStack ? { stack: error.stack } : {}),
       },
     };
@@ -47,6 +55,7 @@ export const formatErrorResponse = (error: unknown, includeStack = false): Forma
         success: false,
         message: error.message,
         code: 'VALIDATION_ERROR',
+        ...requestIdField,
       },
     };
   }
@@ -59,6 +68,7 @@ export const formatErrorResponse = (error: unknown, includeStack = false): Forma
       success: false,
       message: includeStack ? message : 'Internal server error',
       code: 'INTERNAL_ERROR',
+      ...requestIdField,
       ...(includeStack && error instanceof Error ? { stack: error.stack } : {}),
     },
   };

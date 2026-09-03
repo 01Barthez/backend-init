@@ -5,15 +5,14 @@
 import { type ConnectionOptions, Queue } from 'bullmq';
 import IORedis from 'ioredis';
 
-import { envs } from '@/app/config';
+import { config } from '@/app/config';
 import { QUEUE_NAMES } from '@/shared/constants/app.constants';
+import { buildRedisOptions } from '@/shared/infrastructure/cache/redis-options';
+import { featureFlagService } from '@/shared/infrastructure/feature-flags';
 import log from '@/shared/infrastructure/logging/logger';
 
 export const redisConnection: ConnectionOptions = {
-  host: envs.REDIS_HOST,
-  port: envs.REDIS_PORT,
-  password: envs.REDIS_PASSWORD || undefined,
-  maxRetriesPerRequest: null,
+  ...buildRedisOptions({ maxRetriesPerRequest: null }),
 };
 
 export const createQueue = (name: string) =>
@@ -32,49 +31,83 @@ export const backupQueue = createQueue(QUEUE_NAMES.BACKUP);
 export const maintenanceQueue = createQueue(QUEUE_NAMES.MAINTENANCE);
 export const heavyTasksQueue = createQueue(QUEUE_NAMES.HEAVY_TASKS);
 
-export const getRedisConnection = (): IORedis => new IORedis(redisConnection as IORedis['options']);
+export const getRedisConnection = (): IORedis =>
+  new IORedis(buildRedisOptions({ maxRetriesPerRequest: null }));
 
 const clearRepeatableJobs = async (queue: Queue): Promise<void> => {
   const jobs = await queue.getRepeatableJobs();
   await Promise.all(jobs.map((job) => queue.removeRepeatableByKey(job.key)));
 };
 
+export const closeQueues = async (): Promise<void> => {
+  await Promise.all([
+    mailQueue.close(),
+    backupQueue.close(),
+    maintenanceQueue.close(),
+    heavyTasksQueue.close(),
+  ]);
+};
+
 /** Register cron-driven backup / maintenance jobs (idempotent across restarts). */
 export const registerRepeatableJobs = async (): Promise<void> => {
+  const role = config.app.processRole;
+  if (role === 'api') {
+    log.info('Skipping repeatable job registration (PROCESS_ROLE=api)');
+    return;
+  }
+
   await clearRepeatableJobs(backupQueue);
   await clearRepeatableJobs(maintenanceQueue);
 
-  await backupQueue.add(
-    'mongodb-backup',
-    {},
-    {
-      repeat: { pattern: envs.BACKUP_CRON },
-      jobId: 'daily-mongodb-backup',
-    },
-  );
+  const backupEnabled = await featureFlagService.isEnabled('enable_backup', true);
+  const maintenanceEnabled = await featureFlagService.isEnabled('enable_maintenance_jobs', true);
 
-  await maintenanceQueue.add(
-    'purge-unverified-users',
-    {},
-    {
-      repeat: { pattern: envs.MAINTENANCE_CRON },
-      jobId: 'daily-purge-unverified',
-    },
-  );
+  if (backupEnabled) {
+    await backupQueue.add(
+      'mongodb-backup',
+      {},
+      {
+        repeat: { pattern: config.queue.backup.cron },
+        jobId: 'daily-mongodb-backup',
+      },
+    );
+  }
 
-  await maintenanceQueue.add(
-    'purge-blacklist',
-    {},
-    {
-      repeat: { pattern: envs.BLACKLIST_PURGE_CRON },
-      jobId: 'purge-blacklist',
-    },
-  );
+  if (maintenanceEnabled) {
+    await maintenanceQueue.add(
+      'purge-unverified-users',
+      {},
+      {
+        repeat: { pattern: config.queue.maintenanceCron },
+        jobId: 'daily-purge-unverified',
+      },
+    );
+
+    await maintenanceQueue.add(
+      'purge-blacklist',
+      {},
+      {
+        repeat: { pattern: config.queue.blacklistPurgeCron },
+        jobId: 'purge-blacklist',
+      },
+    );
+
+    await maintenanceQueue.add(
+      'purge-audit-logs',
+      {},
+      {
+        repeat: { pattern: config.queue.auditPurgeCron },
+        jobId: 'purge-audit-logs',
+      },
+    );
+  }
 
   log.info('Repeatable BullMQ jobs registered', {
-    backupCron: envs.BACKUP_CRON,
-    maintenanceCron: envs.MAINTENANCE_CRON,
-    blacklistPurgeCron: envs.BLACKLIST_PURGE_CRON,
+    backupEnabled,
+    maintenanceEnabled,
+    backupCron: config.queue.backup.cron,
+    maintenanceCron: config.queue.maintenanceCron,
+    blacklistPurgeCron: config.queue.blacklistPurgeCron,
   });
 };
 

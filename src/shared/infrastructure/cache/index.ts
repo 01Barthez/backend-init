@@ -11,6 +11,6 @@ export {
   invalidateCachePattern,
 } from './cache.service';
 export { default as localCache } from './clients/local-cache';
-export { default as redisClient } from './clients/redis-client';
+export { closeRedis, default as redisClient } from './clients/redis-client';
 export type { CacheableData } from './interfaces/cache.types';
 export { CacheTTL } from './interfaces/cache.types';

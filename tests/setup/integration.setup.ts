@@ -2,9 +2,9 @@
  * Integration project setup — API wiring tests with offline infra doubles.
  * For live Mongo/Redis/MinIO, set RUN_LIVE_INFRA=1 (see helpers/test-database.ts).
  */
-import './mocks.infrastructure';
-
 import { vi } from 'vitest';
+
+import './mocks.infrastructure';
 
 vi.setConfig({
   testTimeout: 20_000,

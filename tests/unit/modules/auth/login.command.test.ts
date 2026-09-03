@@ -5,7 +5,10 @@ import type { MailerPort } from '@/modules/auth/application/services/mailer.port
 import type { RbacPort } from '@/modules/auth/application/services/rbac.port';
 import type { TokenServicePort } from '@/modules/auth/application/services/token.service.port';
 import type { UserEntity } from '@/modules/auth/domain/entities/user.entity';
-import { AccountInactiveError, InvalidCredentialsError } from '@/modules/auth/domain/errors/auth.errors';
+import {
+  AccountInactiveError,
+  InvalidCredentialsError,
+} from '@/modules/auth/domain/errors/auth.errors';
 import type { UserRepositoryPort } from '@/modules/auth/domain/repositories/user.repository';
 import { comparePassword } from '@/shared/utils/crypto';
 
@@ -13,6 +16,16 @@ vi.mock('@/shared/utils/crypto', () => ({
   comparePassword: vi.fn(),
   hashPassword: vi.fn(),
   DUMMY_PASSWORD_HASH: 'dummy-hash',
+  encryptSecret: vi.fn((v: string) => v),
+  decryptSecret: vi.fn((v: string) => v),
+}));
+
+vi.mock('@/modules/auth/application/services/totp', () => ({
+  decryptTotpSecret: vi.fn((v: string) => v),
+  isValidTotpCode: vi.fn().mockReturnValue(true),
+  createTotpSecret: vi.fn(),
+  buildTotpUri: vi.fn(),
+  encryptTotpSecret: vi.fn(),
 }));
 
 const comparePasswordMock = vi.mocked(comparePassword);
@@ -30,6 +43,8 @@ const buildUser = (overrides: Partial<UserEntity> = {}): UserEntity => ({
   isDeleted: false,
   failedLoginAttempts: 0,
   lockedUntil: null,
+  totpEnabled: false,
+  totpSecret: null,
   ...overrides,
 });
 
@@ -142,6 +157,19 @@ describe('LoginCommand', () => {
     await expect(
       command.execute({ email: 'alice@example.com', password: 'Password1!' }),
     ).rejects.toBeInstanceOf(AccountInactiveError);
+
+    expect(tokenService.issueTokenPair).not.toHaveBeenCalled();
+  });
+
+  it('requires a TOTP code when TOTP is enabled', async () => {
+    vi.mocked(userRepository.findByEmail).mockResolvedValue(
+      buildUser({ totpEnabled: true, totpSecret: 'encrypted-secret' }),
+    );
+    comparePasswordMock.mockResolvedValue(true);
+
+    await expect(
+      command.execute({ email: 'alice@example.com', password: 'Password1!' }),
+    ).rejects.toMatchObject({ code: 'TOTP_REQUIRED' });
 
     expect(tokenService.issueTokenPair).not.toHaveBeenCalled();
   });

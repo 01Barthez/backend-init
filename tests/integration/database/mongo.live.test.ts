@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { cleanUpTestDatabase, isLiveInfraEnabled, setupTestDatabase } from '../../helpers/test-database';
+import {
+  cleanUpTestDatabase,
+  isLiveInfraEnabled,
+  setupTestDatabase,
+} from '../../helpers/test-database';
 
 /**
  * Live Mongo connectivity check.

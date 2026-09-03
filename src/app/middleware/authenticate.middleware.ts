@@ -12,6 +12,7 @@ import rbacService from '@/modules/rbac';
 import { SYSTEM_ROLES } from '@/shared/constants/app.constants';
 import { AppError } from '@/shared/domain/errors/app-error';
 import log from '@/shared/infrastructure/logging/logger';
+import { setRequestContextUserId } from '@/shared/infrastructure/request-context';
 import { asyncHandler } from '@/shared/utils/http/responses/helpers';
 
 const accountDirectory = new PrismaUserRepository();
@@ -56,6 +57,8 @@ export const authenticate = asyncHandler(
       roles: authContext.roles,
     };
 
+    setRequestContextUserId(decoded.id);
+
     next();
   },
 );
@@ -84,8 +87,7 @@ export const requirePermission = (permission: string) =>
 
     const roles = req.user.roles ?? [];
     const permissions = req.user.permissions ?? [];
-    const allowed =
-      roles.includes(SYSTEM_ROLES.SUPER_ADMIN) || permissions.includes(permission);
+    const allowed = roles.includes(SYSTEM_ROLES.SUPER_ADMIN) || permissions.includes(permission);
 
     if (!allowed) {
       log.warn('Permission denied', { userId: req.user.id, permission });

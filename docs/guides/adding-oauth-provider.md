@@ -3,6 +3,11 @@
 Social login is owned by `src/modules/oauth`. Built-in providers: Google,
 GitHub, Facebook, LinkedIn, Twitter, Instagram, plus Telegram (widget flow).
 
+Authorize, callback, Telegram, and unlink are gated by Flagsmith `enable_oauth`
+(default **true** when the remote is unreachable). When the flag is off, those
+routes fail closed (`OAuthFeatureDisabledError`). `GET /accounts` remains
+available for an authenticated user to list links.
+
 ## Steps
 
 ### 1. Config
@@ -62,11 +67,15 @@ Update OpenAPI enums / path docs and this guide’s provider list. Run
 
 - Validate `state` (TTL enforced by the manager).
 - Never log access tokens or authorization codes.
-- Allowlist post-login redirects (`CLIENT_URL`, `OAUTH_ALLOWED_ORIGINS`). Never put tokens in the callback URL.
-- Encrypt provider tokens at rest (`AUTH_ENCRYPTION_KEY`) or leave the key empty to skip persistence.
+- Allowlist post-login redirects (`CLIENT_URL`, `OAUTH_ALLOWED_ORIGINS`). Never
+  put tokens in the callback URL.
+- Encrypt provider tokens at rest (`AUTH_ENCRYPTION_KEY`) or leave the key empty
+  to skip persistence.
 - Redirect URIs must match the provider console **exactly**.
 - Decide account-linking rules carefully when an email already exists (follow
   existing find-or-create behavior unless you intentionally change it).
+- Keep `enable_oauth` in mind for incident response (disable social login
+  without a deploy).
 
 ## Related
 

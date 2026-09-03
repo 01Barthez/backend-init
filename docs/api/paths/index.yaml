@@ -14,5 +14,8 @@
 # Blogs — src/modules/blog/presentation/routes/blog.routes.ts
 # See: ./blogs.yaml
 
+# Files — src/modules/files/presentation/routes/files.routes.ts
+# See: ./files.yaml
+
 # System — src/modules/system/presentation/routes/* + /admin/queues
 # See: ./system.yaml

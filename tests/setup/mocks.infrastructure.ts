@@ -3,9 +3,9 @@
  * Used by integration / e2e projects so CI stays Docker-free by default.
  * Live infra suites opt out via `RUN_LIVE_INFRA=1` + dedicated helpers.
  */
-import './env';
-
 import { vi } from 'vitest';
+
+import './env';
 
 const redisMock = {
   get: vi.fn().mockResolvedValue(null),
@@ -15,6 +15,8 @@ const redisMock = {
   exists: vi.fn().mockResolvedValue(0),
   keys: vi.fn().mockResolvedValue([]),
   quit: vi.fn().mockResolvedValue('OK'),
+  ping: vi.fn().mockResolvedValue('PONG'),
+  call: vi.fn().mockResolvedValue('OK'),
   connect: vi.fn().mockResolvedValue(undefined),
   on: vi.fn(),
   status: 'ready',
@@ -28,6 +30,7 @@ const prismaMock = {
     findUnique: vi.fn().mockResolvedValue(null),
     create: vi.fn(),
     update: vi.fn(),
+    updateMany: vi.fn().mockResolvedValue({ count: 0 }),
     delete: vi.fn(),
   },
   user: {
@@ -63,9 +66,12 @@ const prismaMock = {
   },
   refreshToken: {
     findUnique: vi.fn().mockResolvedValue(null),
+    findFirst: vi.fn().mockResolvedValue(null),
+    findMany: vi.fn().mockResolvedValue([]),
     create: vi.fn(),
     update: vi.fn(),
     updateMany: vi.fn(),
+    deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
   },
   blacklistEntry: {
     findMany: vi.fn().mockResolvedValue([]),
@@ -89,8 +95,15 @@ const prismaMock = {
     create: vi.fn(),
     deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
   },
+  auditLog: {
+    create: vi.fn().mockResolvedValue({ id: 'audit-1' }),
+    findMany: vi.fn().mockResolvedValue([]),
+    count: vi.fn().mockResolvedValue(0),
+    deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+  },
   $connect: vi.fn().mockResolvedValue(undefined),
   $disconnect: vi.fn().mockResolvedValue(undefined),
+  $runCommandRaw: vi.fn().mockResolvedValue({ ok: 1 }),
   $on: vi.fn(),
   $transaction: vi.fn((ops: unknown) => Promise.all(ops as Promise<unknown>[])),
 };
@@ -116,6 +129,7 @@ const securityLoggerMock = {
 
 vi.mock('@/shared/infrastructure/cache/clients/redis-client', () => ({
   default: redisMock,
+  closeRedis: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('bullmq', () => ({
@@ -146,6 +160,7 @@ vi.mock('@/shared/infrastructure/logging/logger', () => ({
 
 vi.mock('@/shared/infrastructure/logging/security-logger', () => ({
   default: securityLoggerMock,
+  SecurityLogger: securityLoggerMock,
   securityRequestLogger: vi.fn((_req: unknown, _res: unknown, next: () => void) => next()),
 }));
 

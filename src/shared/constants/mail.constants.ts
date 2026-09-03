@@ -10,6 +10,7 @@ export const MAIL = {
   ACCOUNT_RESTORED_SUBJECT: 'Account Restored',
   PASSWORD_CHANGED_SUBJECT: 'Password Changed',
   ROLE_CHANGED_SUBJECT: 'Role Changed',
+  USER_INVITED_SUBJECT: 'You are invited',
   BACKUP_NOTIFICATION_SUBJECT_SUCCESS: 'Backup Successful',
   BACKUP_NOTIFICATION_SUBJECT_FAILED: 'Backup Failed',
 } as const;

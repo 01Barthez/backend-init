@@ -44,14 +44,17 @@
   get:
     tags: [OAuth]
     summary: Start OAuth authorization
-    description: Redirects the browser to the selected OAuth provider consent screen. Query `redirectUrl` must match `CLIENT_URL` or `OAUTH_ALLOWED_ORIGINS`.
+    description: >
+      Redirects the browser to the selected OAuth provider consent screen.
+      Query `redirectUrl` must match `CLIENT_URL` or `OAUTH_ALLOWED_ORIGINS`.
+      Telegram uses POST /telegram instead of this redirect flow.
     parameters:
       - name: provider
         in: path
         required: true
         schema:
           type: string
-          enum: [google, github, facebook, instagram, twitter, linkedin, telegram]
+          enum: [google, github, facebook, instagram, twitter, linkedin]
       - name: redirectUrl
         in: query
         schema: { type: string, format: uri }
@@ -65,14 +68,16 @@
   get:
     tags: [OAuth]
     summary: OAuth provider callback
-    description: Completes login, sets the refresh cookie, and redirects without putting tokens in the query string.
+    description: >
+      Completes login, sets the refresh cookie, and redirects without putting tokens
+      in the query string. Telegram uses POST /telegram instead.
     parameters:
       - name: provider
         in: path
         required: true
         schema:
           type: string
-          enum: [google, github, facebook, instagram, twitter, linkedin, telegram]
+          enum: [google, github, facebook, instagram, twitter, linkedin]
       - name: code
         in: query
         schema: { type: string }
@@ -93,7 +98,9 @@
   delete:
     tags: [OAuth]
     summary: Unlink an OAuth provider
-    description: Removes the linked social account for the given provider from the current user.
+    description: >
+      Removes the linked social account for the given provider from the current user.
+      Includes telegram when linked via the Login Widget.
     security:
       - bearerAuth: []
     parameters:

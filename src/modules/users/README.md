@@ -1,38 +1,60 @@
 # Users module
 
-Vertical slice for user administration: profile update, list/search/export,
-soft/hard delete, restore, role assign, and dev clear-all.
+User administration and self-service profile surfaces.
+
+**Auth boundary:** credentials, OTP, TOTP, sessions, and `GET /auth/me` stay in
+the **auth** module. Users owns profile CRUD, lifecycle, invite, list/search/
+export, and admin force-logout (via a session port into auth).
+
+`ClearAllUsersCommand` is scripts-only — no HTTP `DELETE /users/clear-all`.
+
+## HTTP (mounted at `{API_PREFIX}/users`)
+
+### Self-service
+
+| Method | Path              | Notes                                     |
+| ------ | ----------------- | ----------------------------------------- |
+| PUT    | `/profile`        | Own profile + optional avatar             |
+| DELETE | `/profile/avatar` | Clear own avatar                          |
+| DELETE | `/me`             | Soft-delete own account + revoke sessions |
+
+### Admin
+
+| Method | Path                       | Permission                                    |
+| ------ | -------------------------- | --------------------------------------------- |
+| POST   | `/invite`                  | `user:update:any`                             |
+| GET    | `/`                        | `user:read:any` (limit ≤ 100)                 |
+| GET    | `/search`                  | `user:read:any` (limit ≤ 50, paginated)       |
+| GET    | `/export`                  | `user:export` (≤ 10k rows, optional filters)  |
+| GET    | `/:userId`                 | `user:read:any` (includes roles)              |
+| PATCH  | `/:userId`                 | `user:update:any`                             |
+| PUT    | `/:userId/role`            | `user:role:assign` (`admin`\|`user`\|`guest`) |
+| POST   | `/:userId/activate`        | `user:update:any`                             |
+| POST   | `/:userId/deactivate`      | `user:update:any` (+ revoke sessions)         |
+| POST   | `/:userId/verify-email`    | `user:update:any`                             |
+| POST   | `/:userId/unlock`          | `user:update:any`                             |
+| POST   | `/:userId/revoke-sessions` | `user:update:any`                             |
+| DELETE | `/:userId`                 | `user:delete:any`                             |
+| DELETE | `/:userId/permanent`       | `user:delete:any` (GDPR)                      |
+| POST   | `/:userId/restore`         | `user:update:any` (reactivates if verified)   |
 
 ## Layout
 
 ```
 users/
-├── domain/            # UsersRepositoryPort + public profile / filter types
-├── application/       # Commands + queries + Mailer / Avatar / Cache / Rbac ports
-├── infrastructure/    # Prisma repo, cache adapter, avatar uploader
-├── presentation/      # Thin Express controllers, routes, validators, serializers
-├── index.ts           # createUsersModule / createUsersRouter
+├── domain/
+├── application/       # Commands + queries + ports (rbac, session, mail, cache, avatar)
+├── infrastructure/
+├── presentation/
+├── index.ts
 └── README.md
 ```
-
-## Dependency rules
-
-| Layer          | May depend on                                               | Must not import |
-| -------------- | ----------------------------------------------------------- | --------------- |
-| Domain         | shared domain (`AppError`); auth `UserEntity` (re-exported) | Express, Prisma |
-| Application    | Domain ports + sibling module ports (rbac)                  | Express, Prisma |
-| Infrastructure | Domain ports (implements them)                              | Presentation    |
-| Presentation   | Application use cases                                       | Prisma directly |
 
 ## Public API
 
 ```ts
 import { createUsersRouter, createUsersModule, createDefaultUsersDeps } from '@/modules/users';
 
-// Route registration
-app.use(`${prefix}/users`, createUsersRouter());
-
-// Custom DI (tests / alternate providers)
 const users = createUsersModule(
   createDefaultUsersDeps({
     mailer: fakeMailer,
@@ -40,28 +62,4 @@ const users = createUsersModule(
 );
 ```
 
-## Extension points
-
-1. **UsersRepositoryPort** — replace Prisma with another store.
-2. **UserCachePort** — swap cache backend or disable in tests.
-3. **AvatarUploaderPort** — change storage backend for profile avatars.
-4. **RbacPort** — points at `@/modules/rbac` for role assignment.
-5. **User entity** — import from `@/modules/auth/domain/entities/user.entity`;
-   do not duplicate.
-
-## Container registration (notes)
-
-When `src/app/container` exists:
-
-```ts
-const usersModule = createUsersModule(createDefaultUsersDeps());
-container.register('users', usersModule);
-// mount: app.use('/api/users', usersModule.router)
-```
-
-## Compatibility
-
-- `src/routes/users/users.router.ts` re-exports `createUsersRouter()`.
-- Legacy controller files under `src/controllers/users/users/` are deprecated
-  re-exports of `usersHandlers`.
-- Auth module avatar/cache adapters should prefer this module's providers.
+Mount via `container.users.router` in `src/app/routes`.

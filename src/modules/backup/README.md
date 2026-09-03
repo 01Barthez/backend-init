@@ -1,7 +1,13 @@
 # Backup module
 
-Scheduled MongoDB dump → AES-256-GCM encryption → object storage upload + admin
-notification mail.
+Scheduled MongoDB dump → streaming AES-256-GCM encryption (random salt per run)
+→ object storage upload + admin notification mail.
+
+`BACKUP_ENCRYPTION_KEY` must be set for a useful archive. Jobs register when
+`PROCESS_ROLE` is `all` or `worker` and Flagsmith `enable_backup` is on (default
+true).
+
+Full operator notes: [docs/guides/backup.md](../../../docs/guides/backup.md).
 
 ## Layout
 
@@ -18,7 +24,6 @@ backup/
 ```ts
 import { runMongoBackup, createBackupModule, createDefaultBackupDeps } from '@/modules/backup';
 
-// Called by BullMQ BACKUP worker
 await runMongoBackup();
 ```
 
@@ -33,7 +38,3 @@ await runMongoBackup();
   different cipher).
 - Mail templates: `db-notification-success` / `db-notification-error` in shared
   mail templates.
-
-## Compatibility
-
-- `src/services/backup/mongodb-backup.service.ts` re-exports `runMongoBackup`.

@@ -30,6 +30,7 @@ export default [
       'mongo-init.js',
       'tests/**',
       'dist/**',
+      'coverage/**',
       'node_modules/**',
       'logs/**',
       'vitest.config.ts',
@@ -161,6 +162,24 @@ export default [
         'error',
         {
           endOfLine: 'auto',
+        },
+      ],
+    },
+  },
+  // Domain layer must stay free of HTTP, ORM, and broker SDKs.
+  {
+    files: ['src/**/domain/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            { name: 'express', message: 'Domain must not import Express.' },
+            { name: '@prisma/client', message: 'Domain must not import Prisma.' },
+            { name: 'ioredis', message: 'Domain must not import Redis clients.' },
+            { name: 'axios', message: 'Domain must not import HTTP clients.' },
+            { name: 'bullmq', message: 'Domain must not import queue SDKs.' },
+          ],
         },
       ],
     },

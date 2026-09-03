@@ -10,7 +10,7 @@ export const featuresConfig = {
     apiUrl: fromEnv.get('FLAGSMITH_API_URL').default('').asString(),
     /** Safe defaults when the remote service is unreachable. */
     defaults: {
-      enable_oauth: false,
+      enable_oauth: true,
       enable_backup: true,
       enable_maintenance_jobs: true,
     } as Record<string, boolean>,

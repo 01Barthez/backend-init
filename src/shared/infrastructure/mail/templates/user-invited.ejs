@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Invitation - <%= appName %></title>
+</head>
+<body>
+  <h2>Hello <%= name %>,</h2>
+  <p>An administrator invited you to <strong><%= appName %></strong>
+    with the role <strong><%= role %></strong>.</p>
+  <p>Set your password to get started:</p>
+  <p><a href="<%= inviteLink %>"><%= inviteLink %></a></p>
+  <p>If you did not expect this invitation, you can ignore this email.</p>
+  <p>&copy; <%= year %> <%= appName %>. All rights reserved.</p>
+</body>
+</html>
+
+<!--* Variables -->
+<!-- <%= name %>, <%= appName %>, <%= role %>, <%= inviteLink %>, <%= date %>, <%= year %> -->

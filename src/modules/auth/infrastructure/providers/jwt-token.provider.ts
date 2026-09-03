@@ -124,10 +124,7 @@ export class JwtTokenProvider implements TokenServicePort {
 
   async createPasswordResetToken(userId: string): Promise<string> {
     const raw = randomHex(32);
-    const ttlSeconds = Math.max(
-      60,
-      Math.floor(config.auth.jwt.passwordResetExpiresInMs / 1000),
-    );
+    const ttlSeconds = Math.max(60, Math.floor(config.auth.jwt.passwordResetExpiresInMs / 1000));
     await this.deps.tokenRepository.savePasswordResetToken(userId, hashToken(raw), ttlSeconds);
     return raw;
   }

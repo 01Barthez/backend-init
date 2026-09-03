@@ -1,5 +1,5 @@
-import { SYSTEM_ROLES } from '@/shared/constants/app.constants';
 import type { UserEntity } from '@/modules/auth/domain/entities/user.entity';
+import { SYSTEM_ROLES } from '@/shared/constants/app.constants';
 
 let seq = 0;
 

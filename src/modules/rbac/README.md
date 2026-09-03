@@ -13,6 +13,18 @@ rbac/
 └── README.md
 ```
 
+## Seeded roles
+
+| Slug          | Notes                                   |
+| ------------- | --------------------------------------- |
+| `super-admin` | Bootstrap only; not assignable via HTTP |
+| `admin`       | Includes `audit:read`                   |
+| `user`        | Default on signup                       |
+| `guest`       | Assignable via users API                |
+
+Permission catalogue: `SYSTEM_PERMISSIONS` in
+`src/shared/constants/app.constants.ts` (includes `audit:read`).
+
 ## Dependency rules
 
 | Layer          | May depend on                  | Must not import        |
@@ -30,29 +42,18 @@ import {
   rbacService,
 } from '@/modules/rbac';
 
-// Bootstrap (server.ts)
 await rbacService.seedSystemRolesAndPermissions();
-
-// Custom DI (tests)
-const rbac = createRbacModule(
-  createDefaultRbacDeps({
-    rbacRepository: fakeRepo,
-  }),
-);
 ```
+
+Seeding runs in `bootstrapApplication()` (skipped in tests).
 
 ## Extension points
 
 1. **RbacRepositoryPort** — swap Prisma for another store or add caching.
 2. **AssignRoleCommand** — used by users module for admin role changes and by
    auth for default role on signup.
-3. **rbacService facade** — keeps middlewares / blogs working until they inject
-   use cases.
+3. **rbacService facade** — keeps middlewares working until they inject use
+   cases.
 
-## Compatibility
-
-- `src/services/auth/rbac.service.ts` re-exports `@/modules/rbac`.
-- Auth's `RbacPort` adapter should point at this module (via the service or use
-  cases).
-- Role assignment HTTP lives in the users presentation layer
-  (`PUT /:userId/role`).
+Role assignment HTTP lives in the users presentation layer
+(`PUT /:userId/role`).

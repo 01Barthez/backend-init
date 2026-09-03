@@ -42,3 +42,8 @@ OAUTH_README.md
 
 # Optional local Docker overrides
 docker-compose.override.yml
+
+# JWT RSA material — generate with `npm run keys:generate`
+keys/*.pem
+keys/*.key
+!keys/README.md

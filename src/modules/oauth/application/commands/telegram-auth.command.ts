@@ -7,12 +7,15 @@ import log from '@/shared/infrastructure/logging/logger';
 
 import type { OAuthManager } from '../../infrastructure/manager/oauth-manager.service';
 import type { CallbackResult, TelegramAuthInput } from '../dto/oauth.dto';
+import { assertOAuthEnabled } from '../services/assert-oauth-enabled';
+import type { OAuthFeatureFlagPort } from '../services/oauth-feature-flag.port';
 
 export type TelegramAuthCommandDeps = {
   oauthManager: OAuthManager;
   tokenService: TokenServicePort;
   rbac: RbacPort;
   mailer: MailerPort;
+  featureFlags?: OAuthFeatureFlagPort;
 };
 
 /**
@@ -22,6 +25,8 @@ export class TelegramAuthCommand {
   constructor(private readonly deps: TelegramAuthCommandDeps) {}
 
   async execute(input: TelegramAuthInput): Promise<CallbackResult> {
+    await assertOAuthEnabled(this.deps.featureFlags);
+
     const authData = input.authData;
     if (!authData?.hash) {
       throw AppError.badRequest('Invalid Telegram authentication data');

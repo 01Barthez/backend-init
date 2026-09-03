@@ -13,13 +13,19 @@ import type { UsersController } from '../controllers/users.controller';
 import { usersSchemas } from '../schemas/users.schemas';
 
 /**
- * Users HTTP routes — path contract mirrors the legacy `users.router.ts`.
- * Mounted at `/api/v1/users`.
+ * Users HTTP routes — mounted at `/api/v1/users`.
+ *
+ * Self-service: profile, avatar delete, account delete.
+ * Admin: list/search/export, get, update, role, lifecycle, invite, sessions.
+ *
+ * Own profile with roles/permissions remains `GET /api/v1/auth/me`.
  */
 export function createUsersRoutes(controller: UsersController): Router {
   const users = Router();
 
-  /** PUT /profile — Update the authenticated user's profile (optional avatar). */
+  // --- Self-service ----------------------------------------------------------
+
+  /** PUT /profile — Update own profile (optional avatar). */
   users.put(
     '/profile',
     authenticate,
@@ -31,7 +37,31 @@ export function createUsersRoutes(controller: UsersController): Router {
     controller.updateUser,
   );
 
-  /** GET /search — Search users by name or email (`user:read:any`). */
+  /** DELETE /profile/avatar — Clear own avatar. */
+  users.delete(
+    '/profile/avatar',
+    authenticate,
+    requireVerified,
+    requireActive,
+    controller.deleteAvatar,
+  );
+
+  /** DELETE /me — Soft-delete own account (GDPR self-service). */
+  users.delete('/me', authenticate, requireVerified, requireActive, controller.deleteOwnAccount);
+
+  // --- Admin collection ------------------------------------------------------
+
+  /** POST /invite — Create verified user + set-password email (`user:update:any`). */
+  users.post(
+    '/invite',
+    authenticate,
+    requirePermission('user:update:any'),
+    usersSchemas.inviteUser,
+    validationErrorHandler,
+    controller.inviteUser,
+  );
+
+  /** GET /search — Paginated search (`user:read:any`). */
   users.get(
     '/search',
     authenticate,
@@ -41,7 +71,7 @@ export function createUsersRoutes(controller: UsersController): Router {
     controller.searchUsers,
   );
 
-  /** GET / — List users with pagination and filters (`user:read:any`). */
+  /** GET / — Paginated list (`user:read:any`). */
   users.get(
     '/',
     authenticate,
@@ -51,19 +81,19 @@ export function createUsersRoutes(controller: UsersController): Router {
     controller.listUsers,
   );
 
-  /** GET /export — Export users (`user:export`). */
-  users.get('/export', authenticate, requirePermission('user:export'), controller.exportUsers);
-
-  // Registered before `/:userId` so "clear-all" is not captured as an id.
-  /** DELETE /clear-all — Destructive clear of user records (`user:delete:any`). */
-  users.delete(
-    '/clear-all',
+  /** GET /export — CSV export (`user:export`). */
+  users.get(
+    '/export',
     authenticate,
-    requirePermission('user:delete:any'),
-    controller.clearAllUsers,
+    requirePermission('user:export'),
+    usersSchemas.exportUsers,
+    validationErrorHandler,
+    controller.exportUsers,
   );
 
-  /** GET /:userId — Fetch a single user by id (`user:read:any`). */
+  // --- Admin by id -----------------------------------------------------------
+
+  /** GET /:userId — Admin detail with roles (`user:read:any`). */
   users.get(
     '/:userId',
     authenticate,
@@ -73,7 +103,18 @@ export function createUsersRoutes(controller: UsersController): Router {
     controller.getUserById,
   );
 
-  /** PUT /:userId/role — Assign a system role slug (`user:role:assign`). */
+  /** PATCH /:userId — Admin update profile (`user:update:any`). */
+  users.patch(
+    '/:userId',
+    authenticate,
+    requirePermission('user:update:any'),
+    upload.single('profile'),
+    usersSchemas.updateUserById,
+    validationErrorHandler,
+    controller.updateUserById,
+  );
+
+  /** PUT /:userId/role — Assign role (`user:role:assign`). */
   users.put(
     '/:userId/role',
     authenticate,
@@ -83,7 +124,57 @@ export function createUsersRoutes(controller: UsersController): Router {
     controller.updateUserRole,
   );
 
-  /** DELETE /:userId — Soft-delete a user (`user:delete:any`). */
+  /** POST /:userId/activate — Enable account (`user:update:any`). */
+  users.post(
+    '/:userId/activate',
+    authenticate,
+    requirePermission('user:update:any'),
+    usersSchemas.byUserId,
+    validationErrorHandler,
+    controller.activateUser,
+  );
+
+  /** POST /:userId/deactivate — Disable account + revoke sessions (`user:update:any`). */
+  users.post(
+    '/:userId/deactivate',
+    authenticate,
+    requirePermission('user:update:any'),
+    usersSchemas.byUserId,
+    validationErrorHandler,
+    controller.deactivateUser,
+  );
+
+  /** POST /:userId/verify-email — Mark email verified (`user:update:any`). */
+  users.post(
+    '/:userId/verify-email',
+    authenticate,
+    requirePermission('user:update:any'),
+    usersSchemas.byUserId,
+    validationErrorHandler,
+    controller.verifyUserEmail,
+  );
+
+  /** POST /:userId/unlock — Clear login lockout (`user:update:any`). */
+  users.post(
+    '/:userId/unlock',
+    authenticate,
+    requirePermission('user:update:any'),
+    usersSchemas.byUserId,
+    validationErrorHandler,
+    controller.unlockUser,
+  );
+
+  /** POST /:userId/revoke-sessions — Force logout all devices (`user:update:any`). */
+  users.post(
+    '/:userId/revoke-sessions',
+    authenticate,
+    requirePermission('user:update:any'),
+    usersSchemas.byUserId,
+    validationErrorHandler,
+    controller.revokeUserSessions,
+  );
+
+  /** DELETE /:userId — Soft-delete (`user:delete:any`). */
   users.delete(
     '/:userId',
     authenticate,
@@ -93,7 +184,7 @@ export function createUsersRoutes(controller: UsersController): Router {
     controller.deleteUser,
   );
 
-  /** DELETE /:userId/permanent — Hard-delete a user (`user:delete:any`). */
+  /** DELETE /:userId/permanent — GDPR hard-delete (`user:delete:any`). */
   users.delete(
     '/:userId/permanent',
     authenticate,
@@ -103,7 +194,7 @@ export function createUsersRoutes(controller: UsersController): Router {
     controller.deleteUserPermanently,
   );
 
-  /** POST /:userId/restore — Restore a soft-deleted user (`user:update:any`). */
+  /** POST /:userId/restore — Restore soft-deleted user (`user:update:any`). */
   users.post(
     '/:userId/restore',
     authenticate,

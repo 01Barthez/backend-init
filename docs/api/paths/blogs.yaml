@@ -1,18 +1,40 @@
 # Blog routes — /api/v1/blogs
 # Keep in sync with src/modules/blog/presentation/routes/blog.routes.ts
 
+/api/v1/blogs/search:
+  get:
+    tags: [Blogs]
+    summary: Search published blogs
+    description: Mongo `contains` search over published public posts. Cap 100 results.
+    parameters:
+      - name: q
+        in: query
+        required: true
+        schema: { type: string, minLength: 2, maxLength: 200 }
+        description: Search text (2–200 characters)
+      - name: page
+        in: query
+        schema: { type: integer, minimum: 1, default: 1 }
+      - name: limit
+        in: query
+        schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+    responses:
+      '200': { description: Search hits }
+      '400': { description: Validation failed }
+      '500': { description: Unexpected server error }
+
 /api/v1/blogs:
   get:
     tags: [Blogs]
     summary: List blog posts
-    description: Returns a paginated list of blog posts (public listing).
+    description: Returns a paginated list of blog posts (public listing). Limit capped at 100.
     parameters:
       - name: page
         in: query
         schema: { type: integer, minimum: 1, default: 1 }
       - name: limit
         in: query
-        schema: { type: integer, minimum: 1, default: 10 }
+        schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
     responses:
       '200': { description: Paginated blog list }
       '500': { description: Unexpected server error }
@@ -64,26 +86,30 @@
   put:
     tags: [Blogs]
     summary: Update blog post
-    description: Updates an existing blog. Requires `blog:update:own`.
+    description: >
+      Partial update of an existing blog. All body fields are optional.
+      Requires `blog:update:own` (or elevated permission).
     security:
       - bearerAuth: []
     parameters:
       - name: id
         in: path
         required: true
-        schema: { type: string }
+        schema:
+          type: string
+          pattern: '^[a-fA-F0-9]{24}$'
     requestBody:
       required: true
       content:
         application/json:
           schema:
             type: object
-            required: [title, content]
+            minProperties: 1
             properties:
-              title: { type: string }
-              content: { type: string }
-              excerpt: { type: string }
-              coverImage: { type: string }
+              title: { type: string, minLength: 3, maxLength: 200 }
+              content: { type: string, minLength: 10, maxLength: 50000 }
+              excerpt: { type: string, maxLength: 500, nullable: true }
+              coverImage: { type: string, format: uri, nullable: true }
               visibility:
                 type: string
                 enum: [PUBLIC, PRIVATE, MEMBERS_ONLY]

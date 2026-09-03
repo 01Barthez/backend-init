@@ -1,8 +1,8 @@
 # Dependency Rules
 
 These rules are the main defense against a modular monolith collapsing into a
-ball of mud. They are enforced by convention today; treat violations as review
-blockers even when ESLint does not yet fail the build.
+ball of mud. Treat violations as review blockers. Domain-layer SDK imports are
+also **enforced by ESLint**.
 
 ## Hard rules
 
@@ -48,26 +48,30 @@ shared storage  ◄── backup, files (as appropriate)
 OAuth shares token / mail / RBAC-style ports with auth via adapters, not by
 reaching into auth infrastructure folders.
 
-## ESLint / boundaries guidance
+## ESLint / boundaries
 
-The current `eslint.config.mjs` focuses on TypeScript hygiene, import cleanup,
-security, and Sonar rules. It does **not** yet ship `eslint-plugin-boundaries`
-or a hard `no-restricted-imports` matrix for layers.
+`eslint.config.mjs` already fails the build when `src/**/domain/**` imports:
 
-Recommended practice for contributors and forks:
+- `express`
+- `@prisma/client`
+- `ioredis`
+- `axios`
+- `bullmq`
 
-1. **Review checklist** — reject PRs that import Prisma or Express into
-   `domain/`.
-2. **Optional hardening** — add path-based `no-restricted-imports` for
-   `**/domain/**` blocking `@prisma/client`, `express`, `ioredis`, `bullmq`,
-   `minio`.
-3. **Optional plugin** — `eslint-plugin-boundaries` with elements
+`process.env` is banned outside `src/app/config` (`no-restricted-syntax`).
+Application `console.log` is banned in `src/modules` and `src/shared` (logger
+bootstrap and the CLI banner are excepted).
+
+Recommended extras for forks:
+
+1. **Review checklist** — still reject MinIO/Nodemailer in `domain/` (not yet in
+   the restricted-import list).
+2. **Optional plugin** — `eslint-plugin-boundaries` with elements
    `domain | application | infrastructure | presentation | shared | app`.
-4. **Keep tests free to mock** — test doubles belong under `tests/`; do not
+3. **Keep tests free to mock** — test doubles belong under `tests/`; do not
    weaken production import rules to make tests pass.
 
-Until automated boundaries land, module `README.md` dependency tables are
-normative.
+Module `README.md` dependency tables remain normative for layer direction.
 
 ## `shared/` hygiene
 

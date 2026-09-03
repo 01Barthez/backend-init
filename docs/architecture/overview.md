@@ -84,7 +84,7 @@ src/
 │   ├── container/       # Manual DI wiring for modules
 │   ├── middleware/      # Cross-cutting Express middleware
 │   ├── routes/          # Mounts module routers under /api/v1
-│   └── app.ts           # Express factory + bootstrap hooks
+│   └── app.ts           # Express factory + explicit bootstrapApplication
 ├── modules/             # Bounded contexts (auth, users, blog, …)
 ├── shared/              # Cross-module infrastructure & utils
 │   ├── constants/
@@ -118,20 +118,27 @@ Domain-specific code does not belong in `shared/`.
 
 ## Runtime composition
 
-At boot:
+`src/server.ts` exports `createApp()` for tests (no listen, no workers).
+`src/index.ts` is the process entry: bootstrap, then listen unless
+`PROCESS_ROLE=worker`.
+
+At boot (`index.ts`):
 
 1. Load and validate env via `@/app/config`.
-2. Build the container (`getContainer()`).
-3. Create the Express app and register middleware.
-4. Mount module routers from the container.
-5. Start BullMQ workers and repeatable jobs.
-6. Optionally mount Swagger UI and Bull Board.
+2. `bootstrapApplication()` (skipped in `NODE_ENV=test`):
+   - `validateRuntimeConfig()` (JWT PEMs, cookie TTL, production operator auth)
+   - RBAC seed, bucket ensure, SMTP verify (throws in production on SMTP fail)
+   - `startWorkers()` + `registerRepeatableJobs()` unless `PROCESS_ROLE=api`
+3. If `PROCESS_ROLE=worker`, stay in-process with no HTTP listen.
+4. Otherwise `createApp()`: Swagger, Bull Board, middleware, module routers.
+5. `app.listen`, then SIGTERM/SIGINT drain via `gracefulShutdown`.
 
 ```mermaid
 flowchart LR
-  Boot[index / server] --> Config[app/config]
-  Boot --> Container[app/container]
-  Boot --> App[app/app.ts]
+  Boot[index.ts] --> Config[app/config]
+  Boot --> Bootstrap[bootstrapApplication]
+  Bootstrap --> Container[app/container]
+  Boot --> App[createApp]
   Container --> Modules[modules/*]
   App --> Routes[app/routes]
   Routes --> Modules
@@ -142,21 +149,25 @@ flowchart LR
 
 Base prefix: `/api/v1` (configurable).
 
-| Mount                                            | Module |
-| ------------------------------------------------ | ------ |
-| `/auth`                                          | auth   |
-| `/auth/oauth`                                    | oauth  |
-| `/users`                                         | users  |
-| `/blogs`                                         | blog   |
-| `/health`, `/metrics`, `/csrf-token`, CSP report | system |
+| Mount                                      | Module |
+| ------------------------------------------ | ------ |
+| `/auth`                                    | auth   |
+| `/auth/oauth`                              | oauth  |
+| `/users`                                   | users  |
+| `/blogs`                                   | blog   |
+| `/files`                                   | files  |
+| `/admin/audit`                             | system |
+| `/health`, `/health/live`, `/health/ready` | system |
+| `/metrics`, `/csrf-token`, CSP report      | system |
 
-Files, backup, notifications, and rbac are primarily **library modules** (ports
-and use cases) rather than large public HTTP surfaces. RBAC is used by
-auth/users; files power avatar uploads; backup and mail run through BullMQ
-workers.
+Backup, notifications, and rbac are primarily **library modules** (ports and use
+cases). RBAC is used by auth/users; files also power avatar multipart on
+auth/users; backup and mail run through BullMQ workers. Process role:
+[production.md](../deployment/production.md).
 
 ## Related reading
 
+- [Platform kernel](./platform-kernel.md)
 - [Dependency rules](./dependency-rules.md)
 - [Extending](./extending.md)
 - [Configuration](./configuration.md)

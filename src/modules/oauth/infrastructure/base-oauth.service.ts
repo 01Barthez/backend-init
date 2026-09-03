@@ -2,9 +2,9 @@
  * Base OAuth Service
  * Abstract class that provides common OAuth2.0 functionality
  */
-import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 
+import { createSafeHttpClient } from '@/shared/infrastructure/http/safe-http-client';
 import log from '@/shared/infrastructure/logging/logger';
 
 import type {
@@ -20,13 +20,7 @@ export abstract class BaseOAuthService implements IOAuthService {
 
   constructor(config: IOAuthProviderConfig) {
     this.config = config;
-    this.httpClient = axios.create({
-      timeout: 10000,
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-    });
+    this.httpClient = createSafeHttpClient({ timeoutMs: 10_000, maxRedirects: 0 });
   }
 
   /**

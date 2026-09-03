@@ -7,7 +7,6 @@
  *
  * Writes:
  *   - docs/api/openapi.yaml
- *   - docs/openapi.yaml (legacy fallback for Swagger UI)
  *
  * Keep in sync with module routers under src/modules/.../presentation/routes
  * and the mount table in src/app/routes/index.ts.
@@ -24,18 +23,19 @@ const errorContent = {
   },
 };
 
-const okContent = (schemaRef, description) => ({
+const okContent = (dataSchema, description) => ({
   description,
   content: {
     'application/json': {
-      schema: schemaRef
+      schema: dataSchema
         ? {
             allOf: [
               { $ref: '#/components/schemas/ApiResponse' },
               {
                 type: 'object',
                 properties: {
-                  data: { $ref: schemaRef },
+                  data:
+                    typeof dataSchema === 'string' ? { $ref: dataSchema } : dataSchema,
                 },
               },
             ],
@@ -47,10 +47,32 @@ const okContent = (schemaRef, description) => ({
 
 const bearer = [{ bearerAuth: [] }];
 
-const oauthProviders = {
+/** Redirect/callback providers — Telegram uses POST /telegram instead. */
+const oauthRedirectProviders = {
+  type: 'string',
+  enum: ['google', 'github', 'facebook', 'instagram', 'twitter', 'linkedin'],
+  description: 'OAuth 2.0 redirect provider (not telegram)',
+};
+
+/** Linked-account provider identifiers including Telegram. */
+const oauthAccountProviders = {
   type: 'string',
   enum: ['google', 'github', 'facebook', 'instagram', 'twitter', 'linkedin', 'telegram'],
-  description: 'OAuth provider identifier',
+  description: 'Linked OAuth account provider',
+};
+
+const totpCodeSchema = {
+  type: 'string',
+  minLength: 6,
+  maxLength: 8,
+  description: 'Time-based one-time password from the authenticator app',
+};
+
+const mongoObjectId = {
+  type: 'string',
+  pattern: '^[a-fA-F0-9]{24}$',
+  example: '507f1f77bcf86cd799439011',
+  description: 'MongoDB ObjectId',
 };
 
 const definition = {
@@ -58,15 +80,23 @@ const definition = {
   info: {
     title: 'Backend Init API',
     description: [
-      'Production-ready Express + TypeScript backend template.',
+      'Production-ready Express + TypeScript modular monolith template.',
       '',
-      'Features: JWT authentication (RS256), OAuth 2.0, email OTP verification,',
-      'user management, file uploads (MinIO), Redis caching, and scheduled jobs.',
+      'Features: RS256 JWT auth (OTP + optional TOTP), OAuth 2.0, RBAC user admin,',
+      'file uploads (MinIO / S3), Redis caching, BullMQ jobs, and operator surfaces.',
       '',
       '**Authentication:** send `Authorization: Bearer <access_token>` on protected routes.',
-      'Refresh tokens are typically stored in an HTTP-only cookie; `/auth/refresh` also accepts `refreshToken` in the JSON body.',
+      'Refresh tokens use an HTTP-only cookie; `/auth/refresh` also accepts `refreshToken` in JSON.',
       '',
-      '**Base paths:** domain APIs live under `/api/v1`. System endpoints (`/health`, `/csrf-token`, `/metrics`, CSP report URI, Bull Board) are mounted at the application root.',
+      '**Base paths:** domain APIs under `/api/v1`. System endpoints (`/health`, `/csrf-token`,',
+      '`/metrics`, CSP report URI, Bull Board) are at the application root.',
+      '',
+      '**Operator UIs:** `/api-docs`, `/api-docs.json`, `/metrics`, and `/admin/queues` require',
+      'HTTP Basic (`ADMIN_BASIC_*`, fallback `SWAGGER_*`) outside tests and are not published',
+      'through the sample Nginx public surface.',
+      '',
+      '**Identity vs admin:** `GET /api/v1/auth/me` is the self snapshot (roles + permissions).',
+      'User administration lives under `/api/v1/users`.',
     ].join('\n'),
     version: '1.0.0',
     contact: {
@@ -88,23 +118,30 @@ const definition = {
   tags: [
     {
       name: 'Authentication',
-      description: 'Signup, login, OTP verification, token refresh, and password management',
+      description:
+        'Signup, OTP, login, refresh, password flows, current user (`/me`), sessions, and optional TOTP',
     },
     {
       name: 'OAuth',
-      description: 'Social login providers, Telegram auth, account linking and unlinking',
+      description:
+        'Social login (redirect providers + Telegram widget), account linking and unlinking',
     },
     {
       name: 'Users',
-      description: 'Profile updates and administrative user management',
+      description:
+        'Self-service profile and admin user lifecycle (invite, activate, unlock, export, GDPR delete)',
     },
     {
       name: 'Blogs',
       description: 'Reference blog domain used to validate the modular template',
     },
     {
+      name: 'Files',
+      description: 'Presigned object-storage URLs for large uploads/downloads',
+    },
+    {
       name: 'System',
-      description: 'Health, CSRF, Prometheus metrics, CSP reports, and Bull Board admin UI',
+      description: 'Health, CSRF, Prometheus metrics, CSP reports, audit list, and Bull Board',
     },
   ],
   components: {
@@ -118,7 +155,7 @@ const definition = {
       basicAuth: {
         type: 'http',
         scheme: 'basic',
-        description: 'HTTP Basic credentials for Bull Board (SWAGGER_USER / SWAGGER_PASSWORD)',
+        description: 'HTTP Basic for operator UIs (ADMIN_BASIC_* , fallback SWAGGER_*)',
       },
     },
     schemas: {
@@ -133,7 +170,7 @@ const definition = {
           avatarUrl: { type: 'string', nullable: true },
           isActive: { type: 'boolean' },
           isVerified: { type: 'boolean' },
-          role: { type: 'string', enum: ['USER', 'ADMIN', 'MODERATOR'] },
+          role: { type: 'string', enum: ['admin', 'user', 'guest', 'super-admin'] },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' },
         },
@@ -201,10 +238,33 @@ const definition = {
       OAuthAccount: {
         type: 'object',
         properties: {
-          provider: oauthProviders,
+          provider: oauthAccountProviders,
           providerUserId: { type: 'string' },
           email: { type: 'string', format: 'email', nullable: true },
           linkedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      SessionFamily: {
+        type: 'object',
+        properties: {
+          familyId: { type: 'string', description: 'Refresh-token family identifier' },
+          createdAt: { type: 'string', format: 'date-time' },
+          lastUsedAt: { type: 'string', format: 'date-time', nullable: true },
+          userAgent: { type: 'string', nullable: true },
+          ip: { type: 'string', nullable: true },
+        },
+      },
+      TotpEnrollment: {
+        type: 'object',
+        properties: {
+          otpauthUrl: {
+            type: 'string',
+            description: 'otpauth:// URI for authenticator apps (shown once)',
+          },
+          secret: {
+            type: 'string',
+            description: 'Base32 TOTP secret (shown once; store offline if needed)',
+          },
         },
       },
     },
@@ -360,6 +420,10 @@ const definition = {
                 properties: {
                   email: { type: 'string', format: 'email' },
                   password: { type: 'string' },
+                  totpCode: {
+                    ...totpCodeSchema,
+                    description: 'Required when TOTP is enabled on the account',
+                  },
                 },
               },
             },
@@ -516,6 +580,132 @@ const definition = {
         },
       },
     },
+    '/api/v1/auth/me': {
+      get: {
+        tags: ['Authentication'],
+        summary: 'Current user',
+        description:
+          'Returns a fresh account snapshot including roles and permissions (not JWT claims alone). Requires a verified account.',
+        security: bearer,
+        responses: {
+          200: okContent('#/components/schemas/User', 'Current user'),
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+        },
+      },
+    },
+    '/api/v1/auth/sessions': {
+      get: {
+        tags: ['Authentication'],
+        summary: 'List sessions',
+        description: 'Refresh-token families for the authenticated user. Requires verified + active account.',
+        security: bearer,
+        responses: {
+          200: okContent(
+            {
+              type: 'array',
+              items: { $ref: '#/components/schemas/SessionFamily' },
+            },
+            'Session list',
+          ),
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+        },
+      },
+    },
+    '/api/v1/auth/sessions/{familyId}': {
+      delete: {
+        tags: ['Authentication'],
+        summary: 'Revoke a session family',
+        description: 'Revokes one device/session family. Requires verified + active account.',
+        security: bearer,
+        parameters: [
+          {
+            name: 'familyId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string', minLength: 1 },
+            description: 'Refresh-token family id from GET /auth/sessions',
+          },
+        ],
+        responses: {
+          200: okContent(null, 'Session revoked'),
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
+    '/api/v1/auth/totp/enroll': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Start TOTP enrollment',
+        description:
+          'Returns an otpauth URL and secret once. TOTP is not enabled until confirm. Requires verified + active account.',
+        security: bearer,
+        responses: {
+          200: okContent('#/components/schemas/TotpEnrollment', 'Enrollment started'),
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          409: { $ref: '#/components/responses/Conflict' },
+        },
+      },
+    },
+    '/api/v1/auth/totp/confirm': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Confirm TOTP enrollment',
+        description: 'Enables TOTP after verifying a code from the authenticator app.',
+        security: bearer,
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['totpCode'],
+                properties: { totpCode: totpCodeSchema },
+              },
+            },
+          },
+        },
+        responses: {
+          200: okContent(null, 'TOTP enabled'),
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+        },
+      },
+    },
+    '/api/v1/auth/totp/disable': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Disable TOTP',
+        description: 'Turns TOTP off. Requires current password and a valid authenticator code.',
+        security: bearer,
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['totpCode', 'current_password'],
+                properties: {
+                  totpCode: totpCodeSchema,
+                  current_password: { type: 'string', minLength: 1 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: okContent(null, 'TOTP disabled'),
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+        },
+      },
+    },
 
     // -------------------------------------------------------------------------
     // OAuth — /api/v1/auth/oauth
@@ -593,13 +783,13 @@ const definition = {
         tags: ['OAuth'],
         summary: 'Start OAuth authorization',
         description:
-          'Redirects the browser to the selected OAuth provider consent screen. Query `redirectUrl` must match `CLIENT_URL` or `OAUTH_ALLOWED_ORIGINS`.',
+          'Redirects the browser to the selected OAuth provider consent screen. Query `redirectUrl` must match `CLIENT_URL` or `OAUTH_ALLOWED_ORIGINS`. Telegram uses POST /telegram instead of this redirect flow.',
         parameters: [
           {
             name: 'provider',
             in: 'path',
             required: true,
-            schema: oauthProviders,
+            schema: oauthRedirectProviders,
           },
           {
             name: 'redirectUrl',
@@ -621,13 +811,13 @@ const definition = {
         tags: ['OAuth'],
         summary: 'OAuth provider callback',
         description:
-          'Completes login, sets the refresh cookie, and redirects without putting tokens in the query string.',
+          'Completes login, sets the refresh cookie, and redirects without putting tokens in the query string. Telegram uses POST /telegram instead.',
         parameters: [
           {
             name: 'provider',
             in: 'path',
             required: true,
-            schema: oauthProviders,
+            schema: oauthRedirectProviders,
           },
           {
             name: 'code',
@@ -665,14 +855,14 @@ const definition = {
         tags: ['OAuth'],
         summary: 'Unlink an OAuth provider',
         description:
-          'Removes the linked social account for the given provider from the current user.',
+          'Removes the linked social account for the given provider from the current user. Includes telegram when linked via the Login Widget.',
         security: bearer,
         parameters: [
           {
             name: 'provider',
             in: 'path',
             required: true,
-            schema: oauthProviders,
+            schema: oauthAccountProviders,
           },
         ],
         responses: {
@@ -694,7 +884,7 @@ const definition = {
         tags: ['Users'],
         summary: 'Update own profile',
         description:
-          'Updates the authenticated user profile. Optional avatar via multipart field `profile`.',
+          'Updates the authenticated user profile. Optional avatar via multipart field `profile`. Own identity with roles remains `GET /api/v1/auth/me`.',
         security: bearer,
         requestBody: {
           required: false,
@@ -721,38 +911,82 @@ const definition = {
         },
       },
     },
+    '/api/v1/users/profile/avatar': {
+      delete: {
+        tags: ['Users'],
+        summary: 'Remove own avatar',
+        security: bearer,
+        responses: {
+          200: okContent('#/components/schemas/User', 'Avatar removed'),
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+        },
+      },
+    },
+    '/api/v1/users/me': {
+      delete: {
+        tags: ['Users'],
+        summary: 'Delete own account',
+        description: 'Soft-deletes the authenticated account and revokes sessions (GDPR self-service).',
+        security: bearer,
+        responses: {
+          200: okContent(null, 'Account deleted'),
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+        },
+      },
+    },
+    '/api/v1/users/invite': {
+      post: {
+        tags: ['Users'],
+        summary: 'Invite a user',
+        description:
+          'Creates a verified+active user, assigns a role (`admin`|`user`|`guest`), and emails a set-password link. Requires `user:update:any`.',
+        security: bearer,
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email', 'firstName', 'lastName'],
+                properties: {
+                  email: { type: 'string', format: 'email' },
+                  firstName: { type: 'string' },
+                  lastName: { type: 'string' },
+                  phone: { type: 'string' },
+                  role: {
+                    type: 'string',
+                    enum: ['admin', 'user', 'guest'],
+                    default: 'user',
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: okContent(null, 'User invited'),
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          409: { description: 'Email already exists' },
+        },
+      },
+    },
     '/api/v1/users': {
       get: {
         tags: ['Users'],
         summary: 'List users',
-        description: 'Returns a paginated user list. Requires `user:read:any`.',
+        description: 'Paginated list with optional filters. Requires `user:read:any`. Limit capped at 100.',
         security: bearer,
         parameters: [
-          {
-            name: 'page',
-            in: 'query',
-            schema: { type: 'integer', minimum: 1, default: 1 },
-          },
-          {
-            name: 'limit',
-            in: 'query',
-            schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-          },
-          {
-            name: 'isActive',
-            in: 'query',
-            schema: { type: 'boolean' },
-          },
-          {
-            name: 'isVerified',
-            in: 'query',
-            schema: { type: 'boolean' },
-          },
-          {
-            name: 'isDeleted',
-            in: 'query',
-            schema: { type: 'boolean' },
-          },
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 } },
+          { name: 'isActive', in: 'query', schema: { type: 'boolean' } },
+          { name: 'isVerified', in: 'query', schema: { type: 'boolean' } },
+          { name: 'isDeleted', in: 'query', schema: { type: 'boolean' } },
+          { name: 'search', in: 'query', schema: { type: 'string', minLength: 1, maxLength: 100 } },
         ],
         responses: {
           200: {
@@ -764,10 +998,7 @@ const definition = {
                   properties: {
                     success: { type: 'boolean' },
                     message: { type: 'string' },
-                    data: {
-                      type: 'array',
-                      items: { $ref: '#/components/schemas/User' },
-                    },
+                    data: { type: 'array', items: { $ref: '#/components/schemas/User' } },
                     pagination: { $ref: '#/components/schemas/PaginationMeta' },
                   },
                 },
@@ -784,34 +1015,26 @@ const definition = {
       get: {
         tags: ['Users'],
         summary: 'Search users',
-        description: 'Searches users by name or email. Requires `user:read:any`.',
+        description: 'Paginated free-text search (email, name, phone, ObjectId). Requires `user:read:any`. Limit capped at 50.',
         security: bearer,
         parameters: [
-          {
-            name: 'search',
-            in: 'query',
-            schema: { type: 'string', minLength: 1, maxLength: 100 },
-            description: 'Search term',
-          },
+          { name: 'search', in: 'query', required: true, schema: { type: 'string', minLength: 1, maxLength: 100 } },
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 } },
         ],
         responses: {
           200: {
-            description: 'Matching users',
+            description: 'Paginated search results',
             content: {
               'application/json': {
                 schema: {
-                  allOf: [
-                    { $ref: '#/components/schemas/ApiResponse' },
-                    {
-                      type: 'object',
-                      properties: {
-                        data: {
-                          type: 'array',
-                          items: { $ref: '#/components/schemas/User' },
-                        },
-                      },
-                    },
-                  ],
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    message: { type: 'string' },
+                    data: { type: 'array', items: { $ref: '#/components/schemas/User' } },
+                    pagination: { $ref: '#/components/schemas/PaginationMeta' },
+                  },
                 },
               },
             },
@@ -819,7 +1042,6 @@ const definition = {
           400: { $ref: '#/components/responses/BadRequest' },
           401: { $ref: '#/components/responses/Unauthorized' },
           403: { $ref: '#/components/responses/Forbidden' },
-          500: { $ref: '#/components/responses/ServerError' },
         },
       },
     },
@@ -827,38 +1049,22 @@ const definition = {
       get: {
         tags: ['Users'],
         summary: 'Export users',
-        description: 'Exports users (typically CSV/file download). Requires `user:export`.',
+        description: 'CSV export (max 10_000 rows). Optional filters. Requires `user:export`.',
         security: bearer,
+        parameters: [
+          { name: 'isActive', in: 'query', schema: { type: 'boolean' } },
+          { name: 'isVerified', in: 'query', schema: { type: 'boolean' } },
+          { name: 'search', in: 'query', schema: { type: 'string' } },
+        ],
         responses: {
           200: {
-            description: 'Export payload or file download',
+            description: 'CSV download',
             content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/ApiResponse' },
-              },
-              'text/csv': {
-                schema: { type: 'string', format: 'binary' },
-              },
+              'text/csv': { schema: { type: 'string', format: 'binary' } },
             },
           },
           401: { $ref: '#/components/responses/Unauthorized' },
           403: { $ref: '#/components/responses/Forbidden' },
-          500: { $ref: '#/components/responses/ServerError' },
-        },
-      },
-    },
-    '/api/v1/users/clear-all': {
-      delete: {
-        tags: ['Users'],
-        summary: 'Clear all users',
-        description:
-          'Destructive admin operation that clears user records. Requires `user:delete:any`. Registered before `/:userId` so the path is not captured as an id.',
-        security: bearer,
-        responses: {
-          200: okContent(null, 'Users cleared'),
-          401: { $ref: '#/components/responses/Unauthorized' },
-          403: { $ref: '#/components/responses/Forbidden' },
-          500: { $ref: '#/components/responses/ServerError' },
         },
       },
     },
@@ -866,43 +1072,58 @@ const definition = {
       get: {
         tags: ['Users'],
         summary: 'Get user by ID',
-        description: 'Returns a single user. Requires `user:read:any`.',
+        description: 'Admin detail including roles, lastLoginAt, lockedUntil. Requires `user:read:any`.',
         security: bearer,
-        parameters: [
-          {
-            name: 'userId',
-            in: 'path',
-            required: true,
-            schema: { type: 'string' },
-          },
-        ],
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
         responses: {
           200: okContent('#/components/schemas/User', 'User details'),
           401: { $ref: '#/components/responses/Unauthorized' },
           403: { $ref: '#/components/responses/Forbidden' },
           404: { $ref: '#/components/responses/NotFound' },
-          500: { $ref: '#/components/responses/ServerError' },
+        },
+      },
+      patch: {
+        tags: ['Users'],
+        summary: 'Admin update user profile',
+        description: 'Update another user profile (not email/password). Requires `user:update:any`.',
+        security: bearer,
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: false,
+          content: {
+            'multipart/form-data': {
+              schema: {
+                type: 'object',
+                properties: {
+                  firstName: { type: 'string' },
+                  lastName: { type: 'string' },
+                  phone: { type: 'string' },
+                  clearAvatar: { type: 'boolean' },
+                  profile: { type: 'string', format: 'binary' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: okContent('#/components/schemas/User', 'User updated'),
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
         },
       },
       delete: {
         tags: ['Users'],
         summary: 'Soft-delete user',
-        description: 'Soft-deletes the user. Requires `user:delete:any`.',
+        description: 'Soft-deletes and revokes sessions. Requires `user:delete:any`.',
         security: bearer,
-        parameters: [
-          {
-            name: 'userId',
-            in: 'path',
-            required: true,
-            schema: { type: 'string' },
-          },
-        ],
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
         responses: {
           200: okContent(null, 'User soft-deleted'),
           401: { $ref: '#/components/responses/Unauthorized' },
           403: { $ref: '#/components/responses/Forbidden' },
           404: { $ref: '#/components/responses/NotFound' },
-          500: { $ref: '#/components/responses/ServerError' },
         },
       },
     },
@@ -910,16 +1131,9 @@ const definition = {
       put: {
         tags: ['Users'],
         summary: 'Assign user role',
-        description: 'Updates the role for a user. Requires `user:role:assign`.',
+        description: 'Assigns a system role slug. Requires `user:role:assign`. `super-admin` is not assignable via HTTP.',
         security: bearer,
-        parameters: [
-          {
-            name: 'userId',
-            in: 'path',
-            required: true,
-            schema: { type: 'string' },
-          },
-        ],
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           required: true,
           content: {
@@ -930,7 +1144,7 @@ const definition = {
                 properties: {
                   role: {
                     type: 'string',
-                    enum: ['USER', 'ADMIN', 'MODERATOR'],
+                    enum: ['admin', 'user', 'guest'],
                   },
                 },
               },
@@ -938,12 +1152,88 @@ const definition = {
           },
         },
         responses: {
-          200: okContent('#/components/schemas/User', 'Role updated'),
+          200: okContent(null, 'Role updated'),
           400: { $ref: '#/components/responses/BadRequest' },
           401: { $ref: '#/components/responses/Unauthorized' },
           403: { $ref: '#/components/responses/Forbidden' },
           404: { $ref: '#/components/responses/NotFound' },
-          500: { $ref: '#/components/responses/ServerError' },
+        },
+      },
+    },
+    '/api/v1/users/{userId}/activate': {
+      post: {
+        tags: ['Users'],
+        summary: 'Activate user',
+        description: 'Sets `isActive=true`. Requires `user:update:any`.',
+        security: bearer,
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: okContent('#/components/schemas/User', 'User activated'),
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
+    '/api/v1/users/{userId}/deactivate': {
+      post: {
+        tags: ['Users'],
+        summary: 'Deactivate user',
+        description: 'Sets `isActive=false` and revokes all sessions. Requires `user:update:any`.',
+        security: bearer,
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: okContent('#/components/schemas/User', 'User deactivated'),
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
+    '/api/v1/users/{userId}/verify-email': {
+      post: {
+        tags: ['Users'],
+        summary: 'Mark email verified',
+        description: 'Admin marks the account email as verified. Requires `user:update:any`.',
+        security: bearer,
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: okContent('#/components/schemas/User', 'Email verified'),
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
+    '/api/v1/users/{userId}/unlock': {
+      post: {
+        tags: ['Users'],
+        summary: 'Unlock login lockout',
+        description: 'Clears `failedLoginAttempts` / `lockedUntil`. Requires `user:update:any`.',
+        security: bearer,
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: okContent('#/components/schemas/User', 'User unlocked'),
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
+    '/api/v1/users/{userId}/revoke-sessions': {
+      post: {
+        tags: ['Users'],
+        summary: 'Revoke all sessions',
+        description: 'Force-logout every refresh family for the user. Requires `user:update:any`.',
+        security: bearer,
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: okContent(null, 'Sessions revoked'),
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
         },
       },
     },
@@ -951,22 +1241,15 @@ const definition = {
       delete: {
         tags: ['Users'],
         summary: 'Permanently delete user',
-        description: 'Hard-deletes the user record. Requires `user:delete:any`.',
+        description:
+          'GDPR hard-delete: anonymize PII, tombstone blogs, drop row when possible. Requires `user:delete:any`.',
         security: bearer,
-        parameters: [
-          {
-            name: 'userId',
-            in: 'path',
-            required: true,
-            schema: { type: 'string' },
-          },
-        ],
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
         responses: {
           200: okContent(null, 'User permanently deleted'),
           401: { $ref: '#/components/responses/Unauthorized' },
           403: { $ref: '#/components/responses/Forbidden' },
           404: { $ref: '#/components/responses/NotFound' },
-          500: { $ref: '#/components/responses/ServerError' },
         },
       },
     },
@@ -974,22 +1257,15 @@ const definition = {
       post: {
         tags: ['Users'],
         summary: 'Restore soft-deleted user',
-        description: 'Restores a previously soft-deleted user. Requires `user:update:any`.',
+        description:
+          'Clears soft-delete flags and reactivates when the account is verified. Requires `user:update:any`.',
         security: bearer,
-        parameters: [
-          {
-            name: 'userId',
-            in: 'path',
-            required: true,
-            schema: { type: 'string' },
-          },
-        ],
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
         responses: {
           200: okContent('#/components/schemas/User', 'User restored'),
           401: { $ref: '#/components/responses/Unauthorized' },
           403: { $ref: '#/components/responses/Forbidden' },
           404: { $ref: '#/components/responses/NotFound' },
-          500: { $ref: '#/components/responses/ServerError' },
         },
       },
     },
@@ -997,11 +1273,38 @@ const definition = {
     // -------------------------------------------------------------------------
     // Blogs — /api/v1/blogs
     // -------------------------------------------------------------------------
+    '/api/v1/blogs/search': {
+      get: {
+        tags: ['Blogs'],
+        summary: 'Search published blogs',
+        description: 'Mongo `contains` search over published public posts. Cap 100 results.',
+        parameters: [
+          {
+            name: 'q',
+            in: 'query',
+            required: true,
+            schema: { type: 'string', minLength: 2, maxLength: 200 },
+            description: 'Search text (2–200 characters)',
+          },
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+          },
+        ],
+        responses: {
+          200: okContent(null, 'Search hits'),
+          400: { $ref: '#/components/responses/BadRequest' },
+          500: { $ref: '#/components/responses/ServerError' },
+        },
+      },
+    },
     '/api/v1/blogs': {
       get: {
         tags: ['Blogs'],
         summary: 'List blog posts',
-        description: 'Returns a paginated list of blog posts (public listing).',
+        description: 'Returns a paginated list of blog posts (public listing). Limit capped at 100.',
         parameters: [
           {
             name: 'page',
@@ -1011,7 +1314,7 @@ const definition = {
           {
             name: 'limit',
             in: 'query',
-            schema: { type: 'integer', minimum: 1, default: 10 },
+            schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
           },
         ],
         responses: {
@@ -1098,14 +1401,14 @@ const definition = {
         tags: ['Blogs'],
         summary: 'Update blog post',
         description:
-          'Updates an existing blog. Requires `blog:update:own` (or elevated permission).',
+          'Partial update of an existing blog. All body fields are optional. Requires `blog:update:own` (or elevated permission).',
         security: bearer,
         parameters: [
           {
             name: 'id',
             in: 'path',
             required: true,
-            schema: { type: 'string' },
+            schema: mongoObjectId,
           },
         ],
         requestBody: {
@@ -1114,12 +1417,12 @@ const definition = {
             'application/json': {
               schema: {
                 type: 'object',
-                required: ['title', 'content'],
+                minProperties: 1,
                 properties: {
-                  title: { type: 'string' },
-                  content: { type: 'string' },
-                  excerpt: { type: 'string' },
-                  coverImage: { type: 'string' },
+                  title: { type: 'string', minLength: 3, maxLength: 200 },
+                  content: { type: 'string', minLength: 10, maxLength: 50000 },
+                  excerpt: { type: 'string', maxLength: 500, nullable: true },
+                  coverImage: { type: 'string', format: 'uri', nullable: true },
                   visibility: {
                     type: 'string',
                     enum: ['PUBLIC', 'PRIVATE', 'MEMBERS_ONLY'],
@@ -1190,11 +1493,31 @@ const definition = {
     '/health': {
       get: {
         tags: ['System'],
-        summary: 'Health check',
-        description: 'Liveness endpoint confirming the API process is responding.',
+        summary: 'Readiness (Mongo + Redis)',
+        description: 'Used by Docker HEALTHCHECK. Returns 503 if a dependency is down.',
         responses: {
-          200: okContent(null, 'Service is healthy'),
-          500: { $ref: '#/components/responses/ServerError' },
+          200: okContent(null, 'Ready'),
+          503: { description: 'Dependency check failed' },
+        },
+      },
+    },
+    '/health/live': {
+      get: {
+        tags: ['System'],
+        summary: 'Liveness',
+        description: 'Process is up. Does not check Mongo or Redis.',
+        responses: {
+          200: okContent(null, 'Live'),
+        },
+      },
+    },
+    '/health/ready': {
+      get: {
+        tags: ['System'],
+        summary: 'Readiness alias',
+        responses: {
+          200: okContent(null, 'Ready'),
+          503: { description: 'Dependency check failed' },
         },
       },
     },
@@ -1236,7 +1559,9 @@ const definition = {
       get: {
         tags: ['System'],
         summary: 'Prometheus metrics',
-        description: 'Exposes default Node.js process metrics in Prometheus text format.',
+        description:
+          'Exposes default Node.js process metrics in Prometheus text format. Requires HTTP Basic (ADMIN_BASIC_*, fallback SWAGGER_*) except in tests. Not published through public Nginx.',
+        security: [{ basicAuth: [] }],
         responses: {
           200: {
             description: 'Prometheus metrics scrape payload',
@@ -1246,16 +1571,17 @@ const definition = {
               },
             },
           },
+          401: { $ref: '#/components/responses/Unauthorized' },
           500: { $ref: '#/components/responses/ServerError' },
         },
       },
     },
     '/security/csp-violation': {
-      get: {
+      post: {
         tags: ['System'],
         summary: 'CSP violation report URI',
         description:
-          'Receives Content-Security-Policy violation reports. Mount path defaults to `CSP_REPORT_URI` (`/security/csp-violation`). The Express route currently registers GET.',
+          'Receives Content-Security-Policy violation reports from browsers (POST). Mount path defaults to `CSP_REPORT_URI` (`/security/csp-violation`). GET is also accepted for legacy clients.',
         requestBody: {
           required: false,
           content: {
@@ -1280,9 +1606,80 @@ const definition = {
         },
         responses: {
           200: { description: 'Report accepted' },
-          204: { description: 'Report accepted (no content)' },
           400: { $ref: '#/components/responses/BadRequest' },
           500: { $ref: '#/components/responses/ServerError' },
+        },
+      },
+      get: {
+        tags: ['System'],
+        summary: 'CSP violation report URI (legacy GET)',
+        description:
+          'Same handler as POST for clients that send reports with GET. Prefer POST.',
+        responses: {
+          200: { description: 'Report accepted' },
+          500: { $ref: '#/components/responses/ServerError' },
+        },
+      },
+    },
+    '/api/v1/admin/audit': {
+      get: {
+        tags: ['System'],
+        summary: 'List audit log entries',
+        description: 'Requires `audit:read`. Paginated; limit capped at 100.',
+        security: bearer,
+        parameters: [
+          { name: 'actorId', in: 'query', schema: { type: 'string' } },
+          { name: 'action', in: 'query', schema: { type: 'string' } },
+          { name: 'resource', in: 'query', schema: { type: 'string' } },
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } },
+        ],
+        responses: {
+          200: okContent(null, 'Audit entries'),
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+        },
+      },
+    },
+    '/api/v1/files/presign': {
+      post: {
+        tags: ['Files'],
+        summary: 'Create a presigned upload URL',
+        description: 'Authenticated. Use for objects larger than the 2MB API multipart cap.',
+        security: bearer,
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['filename', 'contentType', 'size'],
+                properties: {
+                  filename: { type: 'string' },
+                  contentType: { type: 'string' },
+                  size: { type: 'integer', minimum: 1 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: okContent(null, 'Presigned PUT URL'),
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+        },
+      },
+      get: {
+        tags: ['Files'],
+        summary: 'Create a presigned download URL',
+        security: bearer,
+        parameters: [{ name: 'key', in: 'query', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: okContent(null, 'Presigned GET URL'),
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
         },
       },
     },
@@ -1291,7 +1688,7 @@ const definition = {
         tags: ['System'],
         summary: 'Bull Board queue admin UI',
         description:
-          'Serves the Bull Board dashboard for mail, backup, maintenance, and heavy-task queues. Requires HTTP Basic (`SWAGGER_USER` / `SWAGGER_PASSWORD`) plus a JWT for an admin user.',
+          'Serves the Bull Board dashboard for mail, backup, maintenance, and heavy-task queues. Requires HTTP Basic (ADMIN_BASIC_*, fallback SWAGGER_*) plus a JWT for an admin or super-admin user. Not published through public Nginx.',
         security: [{ basicAuth: [] }, { bearerAuth: [] }],
         responses: {
           200: { description: 'Bull Board HTML UI' },
@@ -1305,11 +1702,8 @@ const definition = {
 
 const yamlContent = yaml.stringify(definition, 10, 2);
 const primaryPath = path.join(__dirname, 'openapi.yaml');
-const legacyPath = path.join(__dirname, '..', 'openapi.yaml');
 
 fs.writeFileSync(primaryPath, yamlContent, 'utf8');
-fs.writeFileSync(legacyPath, yamlContent, 'utf8');
 console.log(`OpenAPI spec written to ${primaryPath}`);
-console.log(`OpenAPI spec copied to ${legacyPath}`);
 
 module.exports = { definition };
