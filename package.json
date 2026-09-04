@@ -89,6 +89,7 @@
     "prisma:seed": "ts-node -r tsconfig-paths/register --project prisma/tsconfig.json prisma/seed.ts",
     "generate:openapi": "node docs/api/openapi.config.js",
     "keys:generate": "bash scripts/generate-jwt-keys.sh",
+    "scaffold:module": "node scripts/scaffold/module.mjs",
     "postinstall": "npm run prisma:generate",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx --max-warnings=10 --fix",
     "lint:check": "eslint . --ext .ts,.tsx,.js,.jsx --max-warnings=10",

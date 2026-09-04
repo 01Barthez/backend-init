@@ -186,6 +186,7 @@ Full contract: [docs/api/openapi.yaml](./docs/api/openapi.yaml)
 | `npm run validate`                          | Lint + types + test:ci + OpenAPI              |
 | `npm run format` / `lint`                   | Prettier + ESLint                             |
 | `npm run generate:openapi`                  | Regenerate `docs/api/openapi.yaml`            |
+| `npm run scaffold:module`                   | Generate a full domain module (optional `--wire`) |
 | `npm run docker:up` / `docker:build`        | Compose / local image build                   |
 | `npm run prisma:generate` / `push` / `seed` | Database tooling                              |
 | `npm run prisma:studio`                     | Browse Mongo data (dev; localhost:5555)       |

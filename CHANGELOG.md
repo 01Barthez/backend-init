@@ -31,6 +31,11 @@ and this project adheres to
   `GET /admin/audit/export` (CSV/JSON, ≤ 10_000), filters `requestId` /
   `from` / `to` on list and export.
 
+### Added
+
+- `npm run scaffold:module` — full vertical-slice module generator (CRUD,
+  Prisma, OpenAPI, unit test, optional `--wire` for container/routes/RBAC).
+
 ### Changed
 
 - `PROCESS_ROLE` (`all` / `api` / `worker`). Dev runner is `tsx watch`, not Bun.

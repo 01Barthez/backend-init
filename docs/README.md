@@ -67,6 +67,7 @@ tree is the cross-cutting narrative.
 - [Adding an OAuth provider](./guides/adding-oauth-provider.md)
 - [Background jobs](./guides/background-jobs.md) — BullMQ queues and crons
 - [Backups](./guides/backup.md) — encrypted Mongo dumps
+- [Scaffolding a module](./guides/scaffolding-a-module.md) — `npm run scaffold:module`
 
 ### API
 

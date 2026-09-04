@@ -11,6 +11,16 @@ This guide walks through adding a new bounded context — using a fictional
 
 ## Step 1 — Scaffold the module
 
+Prefer the CLI (full vertical slice: CRUD, Prisma, OpenAPI, unit test):
+
+```bash
+npm run scaffold:module -- billing --wire
+```
+
+See [Scaffolding a module](../guides/scaffolding-a-module.md).
+
+Manual layout (if you prefer to copy by hand):
+
 ```
 src/modules/billing/
 ├── domain/
@@ -151,10 +161,10 @@ Never read `process.env` inside the module.
 
 Document real endpoints only:
 
-1. Extend `docs/api/openapi.config.js` and/or modular path YAML under
-   `docs/api/paths/`.
-2. Run `npm run generate:openapi`.
-3. Validate with `npm run test:docs`.
+1. Prefer the scaffold’s `docs/api/generator/paths/<module>.js` (or add one).
+2. Ensure it is merged from `docs/api/generator/paths/index.js` (`--wire` does this).
+3. Run `npm run generate:openapi`.
+4. Validate with `npm run test:docs`.
 
 See [API docs](../api/README.md).
 
@@ -196,8 +206,9 @@ See [Testing](../development/testing.md).
 
 - [ ] Domain has no framework imports
 - [ ] `createDefaultXxxDeps` + `createXxxModule` exported
-- [ ] Container + routes updated
+- [ ] Container + routes updated (or `scaffold:module --wire`)
 - [ ] Env documented if required
 - [ ] OpenAPI updated for real HTTP surfaces
 - [ ] Unit tests with port fakes
 - [ ] Module README written
+- [ ] Prisma generate + push when a model was added
