@@ -156,7 +156,7 @@ Base prefix: `/api/v1` (configurable).
 | `/users`                                   | users  |
 | `/blogs`                                   | blog   |
 | `/files`                                   | files  |
-| `/admin/audit`                             | system |
+| `/admin/audit`                             | system (list / export / `{auditId}`) |
 | `/health`, `/health/live`, `/health/ready` | system |
 | `/metrics`, `/csrf-token`, CSP report      | system |
 

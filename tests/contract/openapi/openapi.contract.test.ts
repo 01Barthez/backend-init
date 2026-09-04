@@ -40,6 +40,8 @@ const REQUIRED_PATHS = [
   '/api/v1/blogs/search',
   '/api/v1/files/presign',
   '/api/v1/admin/audit',
+  '/api/v1/admin/audit/export',
+  '/api/v1/admin/audit/{auditId}',
   '/health',
   '/health/live',
   '/health/ready',

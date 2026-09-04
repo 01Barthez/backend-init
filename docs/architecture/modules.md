@@ -299,7 +299,8 @@ import {
 ## system
 
 **Purpose.** Operational HTTP surfaces: health (live/ready), CSRF token, CSP
-report, Prometheus metrics, Bull Board, audit list.
+report, Prometheus metrics, Bull Board, audit investigation (list / detail /
+export).
 
 **Public entry points.**
 
@@ -317,7 +318,9 @@ const system = createSystemRouters();
 | `/csrf-token`                | none                      |
 | CSP report URI               | none                      |
 | `/admin/queues`              | Basic + JWT + `isAdmin`   |
-| `{API_PREFIX}/admin/audit`   | JWT + `audit:read`        |
+| `{API_PREFIX}/admin/audit`          | JWT + `audit:read` — list     |
+| `{API_PREFIX}/admin/audit/export`   | JWT + `audit:read` — CSV/JSON |
+| `{API_PREFIX}/admin/audit/{auditId}` | JWT + `audit:read` — detail  |
 
 **How to extend.** Add ops routes under `presentation/routes` and expose them
 from `createSystemRouters`.

@@ -1,7 +1,7 @@
 # System module
 
 Operational HTTP surfaces: health (live/ready), CSRF token, CSP report,
-Prometheus metrics, Bull Board, audit list.
+Prometheus metrics, Bull Board, audit investigation (list / detail / export).
 
 ## Layout
 
@@ -9,7 +9,8 @@ Prometheus metrics, Bull Board, audit list.
 system/
 ├── presentation/
 │   ├── controllers/   # health, csrf, csp, audit
-│   └── routes/        # health, csrf, csp, admin/queues, audit
+│   ├── routes/        # health, csrf, csp, admin/queues, audit
+│   └── schemas/       # audit query validation
 ├── infrastructure/    # metrics re-export
 ├── index.ts           # createSystemRouters()
 └── README.md
@@ -26,7 +27,13 @@ system/
 | `/csrf-token`              | none                               |
 | CSP report URI (POST/GET)  | none                               |
 | `/admin/queues`            | Basic + JWT + `isAdmin`            |
-| `{API_PREFIX}/admin/audit` | JWT + `audit:read`                 |
+| `{API_PREFIX}/admin/audit`          | JWT + `audit:read` — list     |
+| `{API_PREFIX}/admin/audit/export`   | JWT + `audit:read` — CSV/JSON |
+| `{API_PREFIX}/admin/audit/{auditId}` | JWT + `audit:read` — detail  |
+
+Audit HTTP is **read-only** (append-only trail). Filters on list/export:
+`actorId`, `action`, `resource`, `requestId`, `from`, `to`. Export accepts
+`format=csv|json` (default csv, max 10_000 rows).
 
 Public Nginx exposes only `/health` and `/api/`. Scrape `/metrics` on the
 private network.

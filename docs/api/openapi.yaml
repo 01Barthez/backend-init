@@ -32,7 +32,7 @@ tags:
     description: 'Presigned object-storage URLs for large uploads/downloads'
   -
     name: System
-    description: 'Health, CSRF, Prometheus metrics, CSP reports, audit list, and Bull Board'
+    description: 'Health, CSRF, Prometheus metrics, CSP reports, audit list/detail/export, and Bull Board'
 components:
   securitySchemes:
     bearerAuth:
@@ -221,6 +221,50 @@ components:
         secret:
           type: string
           description: 'Base32 TOTP secret (shown once; store offline if needed)'
+    AuditLogEntry:
+      type: object
+      description: 'Audit list row (metadata omitted for list payloads)'
+      properties:
+        id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        actorId:
+          type: string
+          nullable: true
+        action:
+          type: string
+          example: user.role.changed
+        resource:
+          type: string
+          example: user
+        resourceId:
+          type: string
+          nullable: true
+        ip:
+          type: string
+          nullable: true
+        requestId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    AuditLogDetail:
+      allOf:
+        -
+          $ref: '#/components/schemas/AuditLogEntry'
+        -
+          type: object
+          description: 'Full audit entry including request metadata'
+          properties:
+            userAgent:
+              type: string
+              nullable: true
+            metadata:
+              type: object
+              nullable: true
+              additionalProperties: true
+              description: 'Domain-specific context captured at write time'
   responses:
     BadRequest:
       description: 'Validation failed or malformed request'
@@ -2159,7 +2203,7 @@ paths:
       tags:
         - System
       summary: 'List audit log entries'
-      description: 'Requires `audit:read`. Paginated; limit capped at 100.'
+      description: 'Append-only security trail. Requires `audit:read`. Paginated (limit ≤ 100). Filter by actor, action, resource, requestId, and date range. List rows omit metadata — use `GET /admin/audit/{auditId}` for full detail.'
       security:
         -
           bearerAuth: []
@@ -2169,16 +2213,39 @@ paths:
           in: query
           schema:
             type: string
+          description: 'Filter by actor user id'
         -
           name: action
           in: query
           schema:
             type: string
+          description: 'Exact action key (e.g. user.role.changed)'
         -
           name: resource
           in: query
           schema:
             type: string
+          description: 'Resource type (e.g. user, blog)'
+        -
+          name: requestId
+          in: query
+          schema:
+            type: string
+          description: 'Correlate with `X-Request-Id` from application logs'
+        -
+          name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: 'Inclusive lower bound on `createdAt` (ISO-8601)'
+        -
+          name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: 'Inclusive upper bound on `createdAt` (ISO-8601)'
         -
           name: page
           in: query
@@ -2196,15 +2263,141 @@ paths:
             default: 20
       responses:
         '200':
-          description: 'Audit entries'
+          description: 'Paginated audit entries'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  success: {type: boolean}
+                  message: {type: string}
+                  data: {type: array, items: {$ref: '#/components/schemas/AuditLogEntry'}}
+                  pagination: {$ref: '#/components/schemas/PaginationMeta'}
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+  /api/v1/admin/audit/export:
+    get:
+      tags:
+        - System
+      summary: 'Export audit log'
+      description: 'Download matching entries as CSV or JSON (max 10_000 rows). Same filters as list. Requires `audit:read`. Response includes `Content-Disposition` and `X-Export-Count`. Not a mutation API — trail remains append-only; retention purge is cron-only.'
+      security:
+        -
+          bearerAuth: []
+      parameters:
+        -
+          name: actorId
+          in: query
+          schema:
+            type: string
+          description: 'Filter by actor user id'
+        -
+          name: action
+          in: query
+          schema:
+            type: string
+          description: 'Exact action key (e.g. user.role.changed)'
+        -
+          name: resource
+          in: query
+          schema:
+            type: string
+          description: 'Resource type (e.g. user, blog)'
+        -
+          name: requestId
+          in: query
+          schema:
+            type: string
+          description: 'Correlate with `X-Request-Id` from application logs'
+        -
+          name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: 'Inclusive lower bound on `createdAt` (ISO-8601)'
+        -
+          name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: 'Inclusive upper bound on `createdAt` (ISO-8601)'
+        -
+          name: format
+          in: query
+          schema:
+            type: string
+            enum:
+              - csv
+              - json
+            default: csv
+          description: 'Export format (default csv)'
+      responses:
+        '200':
+          description: 'Audit export download'
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditLogDetail'
+          headers:
+            X-Export-Count:
+              description: 'Number of rows in this export (≤ 10_000)'
+              schema:
+                type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  '/api/v1/admin/audit/{auditId}':
+    get:
+      tags:
+        - System
+      summary: 'Get audit entry by id'
+      description: 'Full entry including `metadata` and `userAgent`. Requires `audit:read`.'
+      security:
+        -
+          bearerAuth: []
+      parameters:
+        -
+          name: auditId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
+            example: 507f1f77bcf86cd799439011
+            description: 'MongoDB ObjectId'
+          description: 'AuditLog ObjectId'
+      responses:
+        '200':
+          description: 'Audit entry detail'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - {$ref: '#/components/schemas/ApiResponse'}
+                  - {type: object, properties: {data: {$ref: '#/components/schemas/AuditLogDetail'}}}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /api/v1/files/presign:
     post:
       tags:

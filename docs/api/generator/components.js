@@ -129,6 +129,38 @@ module.exports = {
         },
       },
     },
+    AuditLogEntry: {
+      type: 'object',
+      description: 'Audit list row (metadata omitted for list payloads)',
+      properties: {
+        id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+        actorId: { type: 'string', nullable: true },
+        action: { type: 'string', example: 'user.role.changed' },
+        resource: { type: 'string', example: 'user' },
+        resourceId: { type: 'string', nullable: true },
+        ip: { type: 'string', nullable: true },
+        requestId: { type: 'string', nullable: true },
+        createdAt: { type: 'string', format: 'date-time' },
+      },
+    },
+    AuditLogDetail: {
+      allOf: [
+        { $ref: '#/components/schemas/AuditLogEntry' },
+        {
+          type: 'object',
+          description: 'Full audit entry including request metadata',
+          properties: {
+            userAgent: { type: 'string', nullable: true },
+            metadata: {
+              type: 'object',
+              nullable: true,
+              additionalProperties: true,
+              description: 'Domain-specific context captured at write time',
+            },
+          },
+        },
+      ],
+    },
   },
   responses: {
     BadRequest: {

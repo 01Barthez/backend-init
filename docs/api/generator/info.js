@@ -67,7 +67,8 @@ const tags = [
   },
   {
     name: 'System',
-    description: 'Health, CSRF, Prometheus metrics, CSP reports, audit list, and Bull Board',
+    description:
+      'Health, CSRF, Prometheus metrics, CSP reports, audit list/detail/export, and Bull Board',
   },
 ];
 

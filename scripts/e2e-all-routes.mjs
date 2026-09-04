@@ -604,11 +604,47 @@ async function main() {
     name: 'DELETE /users/:userId/oauth/google',
     auth: 'admin',
   });
-  await req('GET', `${API}/admin/audit?page=1&limit=10`, {
+  const auditList = await req('GET', `${API}/admin/audit?page=1&limit=10`, {
     expect: 200,
     name: 'GET /admin/audit',
     auth: 'admin',
   });
+  const auditId =
+    auditList.json?.data?.[0]?.id ||
+    auditList.json?.data?.items?.[0]?.id ||
+    '';
+  await req(
+    'GET',
+    `${API}/admin/audit?from=2020-01-01T00:00:00.000Z&to=2030-01-01T00:00:00.000Z&page=1&limit=5`,
+    {
+      expect: 200,
+      name: 'GET /admin/audit date filters',
+      auth: 'admin',
+    },
+  );
+  await req('GET', `${API}/admin/audit/export?format=csv`, {
+    expect: 200,
+    name: 'GET /admin/audit/export csv',
+    auth: 'admin',
+  });
+  await req('GET', `${API}/admin/audit/export?format=json`, {
+    expect: 200,
+    name: 'GET /admin/audit/export json',
+    auth: 'admin',
+  });
+  if (auditId) {
+    await req('GET', `${API}/admin/audit/${auditId}`, {
+      expect: 200,
+      name: 'GET /admin/audit/:auditId',
+      auth: 'admin',
+    });
+  } else {
+    await req('GET', `${API}/admin/audit/000000000000000000000000`, {
+      expect: 404,
+      name: 'GET /admin/audit/:auditId missing',
+      auth: 'admin',
+    });
+  }
 
   // soft delete + restore + permanent on invitee
   let inviteId = inviteIdFromInvite;

@@ -27,6 +27,9 @@ and this project adheres to
 - Idempotency keys bound to actor/IP with an in-flight lock.
 - Audit query (`GET /api/v1/admin/audit`, `audit:read`) and retention purge
   cron.
+- Audit investigation: `GET /admin/audit/{auditId}` (metadata + userAgent),
+  `GET /admin/audit/export` (CSV/JSON, ≤ 10_000), filters `requestId` /
+  `from` / `to` on list and export.
 
 ### Changed
 
