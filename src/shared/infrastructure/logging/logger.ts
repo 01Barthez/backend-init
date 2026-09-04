@@ -1,9 +1,11 @@
 /**
- * Application Winston logger — rotating files and optional Loki.
+ * Application Winston logger — stdout by default, optional Loki, optional files.
+ *
+ * Ops path for the template: stdout (+ Loki when enabled). File transports are
+ * opt-in via `LOG_TO_FILE=true` for local debugging only — not a production archive.
  *
  * Process-level `uncaughtException` / `unhandledRejection` handlers live in
- * `registerProcessHandlers()` (entrypoint), not here. Winston must not swallow
- * those events while also registering Node listeners (double-handling).
+ * `registerProcessHandlers()` (entrypoint), not here.
  */
 import path from 'path';
 import { createLogger, format, transports } from 'winston';
@@ -13,16 +15,17 @@ import LokiTransport from 'winston-loki';
 import { config } from '@/app/config';
 import { ensureDirectoryExists } from '@/shared/utils/fs-utils';
 
-const logsDir = path.join(process.cwd(), 'logs');
-let canWriteLogs = true;
-try {
-  ensureDirectoryExists(logsDir);
-} catch (error) {
-  canWriteLogs = false;
-  console.warn('Logs directory unavailable — falling back to console transports only.', error);
-}
+const configuredLevel = config.observability.logLevel || 'info';
 
-const logLevel = config.app.isProduction ? 'warn' : 'debug';
+let canWriteLogs = false;
+if (config.observability.logToFile) {
+  try {
+    ensureDirectoryExists(path.join(process.cwd(), 'logs'));
+    canWriteLogs = true;
+  } catch (error) {
+    console.warn('LOG_TO_FILE=true but logs/ is not writable — console only.', error);
+  }
+}
 
 const createTransport = (filename: string, level: string, maxFiles: number) =>
   new DailyRotateFile({
@@ -80,7 +83,7 @@ const errorFormatter = format((info) => {
 });
 
 const log = createLogger({
-  level: logLevel,
+  level: configuredLevel,
   format: format.combine(
     format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     errorFormatter(),
@@ -90,7 +93,7 @@ const log = createLogger({
   ),
   transports: [
     new transports.Console({
-      level: config.app.isProduction ? 'info' : 'debug',
+      level: configuredLevel,
       format: format.combine(
         format.colorize({ all: true }),
         format.printf(({ level, message, timestamp, ...meta }) => {

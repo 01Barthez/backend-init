@@ -1,19 +1,16 @@
-export class ValidationError extends Error {
-  code = 'VALIDATION_ERROR';
-  details?: any;
+import { AppError } from '@/shared/domain/errors/app-error';
 
-  constructor(message: string, details?: any) {
-    super(message);
-    this.details = details;
+/** Client-side upload validation failure (MIME, size, extension, magic bytes). */
+export class ValidationError extends AppError {
+  constructor(message: string, details?: unknown) {
+    super(400, message, 'VALIDATION_ERROR', details);
+    this.name = 'ValidationError';
   }
 }
 
-export class UploadError extends Error {
-  code = 'UPLOAD_ERROR';
-  details?: any;
-
-  constructor(message: string, details?: any) {
-    super(message);
-    this.details = details;
+export class UploadError extends AppError {
+  constructor(message: string, details?: unknown) {
+    super(500, message, 'UPLOAD_ERROR', details);
+    this.name = 'UploadError';
   }
 }

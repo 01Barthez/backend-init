@@ -141,22 +141,6 @@ export class PrismaRbacRepository implements RbacRepositoryPort {
       }
     }
 
-    const aclRules = await prisma.aclRule.findMany({
-      where: {
-        userId,
-        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-      },
-    });
-
-    for (const rule of aclRules) {
-      const key = `${rule.resource}:${rule.action}`;
-      if (rule.effect === 'ALLOW') {
-        permissions.add(key);
-      } else {
-        permissions.delete(key);
-      }
-    }
-
     return { permissions: [...permissions], roles };
   }
 }

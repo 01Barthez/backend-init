@@ -75,8 +75,21 @@ Everything else (including `/metrics`, `/api-docs`, `/admin`) returns **404**.
 Scrape Prometheus and open operator UIs against `backend:3000` on
 `backend_network`, not through port 80.
 
+**TLS:** Compose publishes **port 80 only**. Terminate TLS at your load balancer
+(ALB, Cloudflare, Caddy, etc.). To terminate inside Nginx, mount certificates,
+add an `ssl` server block to `infra/nginx/default.conf`, and uncomment the
+`:443` port mapping in `infra/docker/docker-compose.yml`.
+
+**ClamAV:** The backend `depends_on` waits for ClamAV healthy. First boot can
+take 1–5 minutes while signatures download. If you do not need AV scanning,
+remove the `clamav` dependency (and service) from Compose. With
+`CLAMAV_REQUIRED=false`, the API degrades gracefully at runtime once started.
+
 `client_max_body_size 2m` — avatars via the API. Large objects use
 `POST /api/v1/files/presign` then PUT directly to MinIO.
+
+**JWT keys in Docker:** the image runs as the official `node` user (UID 1000),
+so host-owned `keys/*.pem` (`chmod 600`) remain readable when mounted read-only.
 
 ## Common commands
 

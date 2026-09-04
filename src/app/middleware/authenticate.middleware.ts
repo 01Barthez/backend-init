@@ -9,6 +9,7 @@ import jwtService from '@/modules/auth/infrastructure/providers/jwt.service';
 import { PrismaUserRepository } from '@/modules/auth/infrastructure/repositories/prisma-user.repository';
 import type { AuthenticatedRequest } from '@/modules/auth/presentation/types/authenticated-request';
 import rbacService from '@/modules/rbac';
+import { permissionSatisfied } from '@/modules/rbac/domain/permission-match';
 import { SYSTEM_ROLES } from '@/shared/constants/app.constants';
 import { AppError } from '@/shared/domain/errors/app-error';
 import log from '@/shared/infrastructure/logging/logger';
@@ -87,7 +88,8 @@ export const requirePermission = (permission: string) =>
 
     const roles = req.user.roles ?? [];
     const permissions = req.user.permissions ?? [];
-    const allowed = roles.includes(SYSTEM_ROLES.SUPER_ADMIN) || permissions.includes(permission);
+    const allowed =
+      roles.includes(SYSTEM_ROLES.SUPER_ADMIN) || permissionSatisfied(permissions, permission);
 
     if (!allowed) {
       log.warn('Permission denied', { userId: req.user.id, permission });

@@ -40,11 +40,14 @@ auth/
 | GET    | `/me`                 | Auth                                          |
 | GET    | `/sessions`           | Auth                                          |
 | DELETE | `/sessions/:familyId` | Auth                                          |
-| POST   | `/totp/enroll`        | Returns otpauth URL + secret once             |
-| POST   | `/totp/confirm`       |                                               |
-| POST   | `/totp/disable`       | Password + current TOTP code                  |
+| POST   | `/totp/enroll`          | Returns otpauth URL + secret once               |
+| POST   | `/totp/confirm`         | Enables TOTP after a valid authenticator code   |
+| POST   | `/totp/disable`         | Password + current TOTP code                    |
+| POST   | `/totp/recovery-codes`  | Auth; issues 8 one-time codes (shown once)      |
+| POST   | `/totp/recover`         | Public; login with email + password + recovery  |
 
 TOTP secrets are AES-256-GCM (`AUTH_ENCRYPTION_KEY`). Required in production.
+Recovery code hashes live in Redis (90-day TTL); plaintext is never stored.
 
 ## Public API
 

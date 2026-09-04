@@ -103,6 +103,16 @@ export function createUsersRoutes(controller: UsersController): Router {
     controller.getUserById,
   );
 
+  /** GET /:userId/sessions — Admin view of all refresh-token families (`user:read:any`). */
+  users.get(
+    '/:userId/sessions',
+    authenticate,
+    requirePermission('user:read:any'),
+    usersSchemas.byUserId,
+    validationErrorHandler,
+    controller.getUserSessions,
+  );
+
   /** PATCH /:userId — Admin update profile (`user:update:any`). */
   users.patch(
     '/:userId',
@@ -202,6 +212,19 @@ export function createUsersRoutes(controller: UsersController): Router {
     usersSchemas.byUserId,
     validationErrorHandler,
     controller.restoreUser,
+  );
+
+  /**
+   * DELETE /:userId/oauth/:provider — Admin: forcibly unlink an OAuth provider
+   * from any user account (`user:update:any`). Audited.
+   */
+  users.delete(
+    '/:userId/oauth/:provider',
+    authenticate,
+    requirePermission('user:update:any'),
+    usersSchemas.byUserId,
+    validationErrorHandler,
+    controller.adminUnlinkOAuth,
   );
 
   return users;

@@ -1,6 +1,13 @@
 /**
  * Instagram OAuth Service
- * Handles Instagram Basic Display API OAuth2.0 authentication
+ *
+ * @deprecated Meta deprecated the Instagram Basic Display API in September 2024.
+ * This service will stop working once Meta shuts it down. Do not use Instagram
+ * as a primary OAuth provider in new projects. Keep this implementation only for
+ * backward compatibility with existing linked accounts.
+ *
+ * Migration path: remove this provider, run a migration to unlink existing
+ * Instagram accounts, and communicate this to affected users via email.
  */
 import { envs } from '@/app/config';
 import { OAUTH_SCOPES, OAUTH_URLS } from '@/shared/constants/oauth.constants';

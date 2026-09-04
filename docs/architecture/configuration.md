@@ -38,8 +38,8 @@ src/app/config/
 └── README.md
 ```
 
-JWT PEMs live at the **repository root** `keys/` (`JWT_*_KEY_PATH`). The folder
-`src/app/config/keys/*.key` is leftover and unused.
+JWT PEMs live at the **repository root** `keys/` (`JWT_*_KEY_PATH`). Do not put
+RSA material under `src/app/config/`.
 
 ## Usage
 
@@ -74,12 +74,12 @@ envs.STORAGE_PROVIDER;
 | Operator auth | `ADMIN_BASIC_USER`, `ADMIN_BASIC_PASSWORD` (fallback `SWAGGER_*`)                            |
 | Audit         | `AUDIT_PURGE_CRON`, `AUDIT_RETENTION_DAYS`                                                   |
 | Uploads       | `API_UPLOAD_MAX_BYTES`, `PRESIGN_UPLOAD_MAX_BYTES`, `PRESIGN_TTL_SECONDS`, `CLAMAV_REQUIRED` |
-| Observability | `LOKI_ENABLED`, `LOKI_HOST`, `OTEL_ENABLED` (reserved)                                       |
+| Observability | `LOG_LEVEL`, `LOG_TO_FILE`, `LOKI_ENABLED`, `LOKI_HOST`, `OTEL_ENABLED` (reserved) |
 | Backup        | `BACKUP_CRON`, `BACKUP_ENCRYPTION_KEY`, `BACKUP_RETENTION_DAYS`, `BACKUP_ADMIN_EMAIL`        |
 
-`LOG_LEVEL` and `LOG_TO_FILE` are parsed into `config.observability` but Winston
-currently chooses level from `NODE_ENV` and writes rotating files whenever
-`logs/` is writable. Do not treat those two variables as live controls yet.
+`LOG_LEVEL` sets the Winston level. `LOG_TO_FILE=true` enables rotating files
+under `logs/` for local debugging. Production-like ops use **stdout** and
+optional **Loki** — there is no MinIO log-archive bucket in this template.
 
 ## Adding a setting
 

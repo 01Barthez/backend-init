@@ -1,26 +1,30 @@
 import type { Request, Response } from 'express';
 
-import securityLogger from '@/shared/infrastructure/logging/security-logger';
-import { response } from '@/shared/utils/http/responses/helpers';
+import { SecurityLogger } from '@/shared/infrastructure/logging/security-logger';
 
 /**
  * Accepts CSP violation reports from browsers.
+ * Always returns 204 — reporting is best-effort and must not break page loads.
  */
 export function createCspController() {
   const report = async (req: Request, res: Response): Promise<void> => {
     try {
-      if (req.body?.['csp-report']) {
-        securityLogger.warn('CSP Violation', {
-          violation: req.body['csp-report'],
+      const violation = req.body?.['csp-report'] ?? req.body?.cspReport ?? req.body;
+      if (violation) {
+        SecurityLogger.warning('CSP Violation', {
+          violation,
           timestamp: new Date().toISOString(),
           userAgent: req.headers['user-agent'],
           ip: req.ip,
         });
       }
-
-      response.success(req, res, 'CSP report received').end();
+      res.status(204).end();
     } catch (error) {
-      response.serverError(req, res, `Failed to process CSP report: ${error}`);
+      // Still acknowledge — browsers retry aggressively on CSP endpoint failures.
+      SecurityLogger.error('Failed to process CSP report', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      res.status(204).end();
     }
   };
 

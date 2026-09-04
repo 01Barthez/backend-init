@@ -37,9 +37,8 @@ config/
 └── README.md
 ```
 
-Do not put RSA material under `config/keys/`. Runtime paths are `keys/jwt-*.pem`
-at the repository root (`npm run keys:generate`). Any `*.key` files left in
-`config/keys/` are unused leftovers.
+Do not put RSA material under `src/app/config/`. Runtime paths are
+`keys/jwt-*.pem` at the repository root (`npm run keys:generate`).
 
 ## Usage
 

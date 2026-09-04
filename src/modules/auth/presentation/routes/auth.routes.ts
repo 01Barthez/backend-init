@@ -134,5 +134,30 @@ export function createAuthRoutes(controller: AuthController): Router {
     controller.disableTotp,
   );
 
+  /**
+   * POST /totp/recovery-codes — Generate new TOTP recovery codes.
+   * Returns 8 one-time codes shown exactly once. Replaces any previous set.
+   * Requires TOTP to be enabled.
+   */
+  auth.post(
+    '/totp/recovery-codes',
+    authenticate,
+    requireVerified,
+    requireActive,
+    controller.generateRecoveryCodes,
+  );
+
+  /**
+   * POST /totp/recover — Log in with a TOTP recovery code instead of the authenticator.
+   * Single-use. Validates email + password + recovery code.
+   */
+  auth.post(
+    '/totp/recover',
+    rateLimitingAuth,
+    authSchemas.recoverTotp,
+    validationErrorHandler,
+    controller.consumeRecoveryCode,
+  );
+
   return auth;
 }

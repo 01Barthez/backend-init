@@ -17,6 +17,8 @@ const REQUIRED_PATHS = [
   '/api/v1/auth/logout',
   '/api/v1/auth/sessions',
   '/api/v1/auth/totp/enroll',
+  '/api/v1/auth/totp/recovery-codes',
+  '/api/v1/auth/totp/recover',
   '/api/v1/auth/oauth/accounts',
   '/api/v1/auth/oauth/telegram',
   '/api/v1/users',
@@ -25,6 +27,8 @@ const REQUIRED_PATHS = [
   '/api/v1/users/invite',
   '/api/v1/users/search',
   '/api/v1/users/export',
+  '/api/v1/users/{userId}/sessions',
+  '/api/v1/users/{userId}/oauth/{provider}',
   '/api/v1/blogs',
   '/api/v1/blogs/search',
   '/api/v1/files/presign',
@@ -86,11 +90,17 @@ describe('OpenAPI contract', () => {
     const document = readFileSync(OPENAPI_PATH, 'utf8');
 
     for (const path of REQUIRED_PATHS) {
-      expect(document, `missing path ${path}`).toContain(`  ${path}:`);
+      const unquoted = `  ${path}:`;
+      const quoted = `  '${path}':`;
+      expect(
+        document.includes(unquoted) || document.includes(quoted),
+        `missing path ${path}`,
+      ).toBe(true);
     }
 
     for (const path of FORBIDDEN_PATHS) {
       expect(document, `removed path still present: ${path}`).not.toContain(`  ${path}:`);
+      expect(document, `removed path still present: ${path}`).not.toContain(`  '${path}':`);
     }
   });
 

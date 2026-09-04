@@ -27,6 +27,7 @@ export, and admin force-logout (via a session port into auth).
 | GET    | `/search`                  | `user:read:any` (limit ≤ 50, paginated)       |
 | GET    | `/export`                  | `user:export` (≤ 10k rows, optional filters)  |
 | GET    | `/:userId`                 | `user:read:any` (includes roles)              |
+| GET    | `/:userId/sessions`        | `user:read:any` (refresh families; audited)   |
 | PATCH  | `/:userId`                 | `user:update:any`                             |
 | PUT    | `/:userId/role`            | `user:role:assign` (`admin`\|`user`\|`guest`) |
 | POST   | `/:userId/activate`        | `user:update:any`                             |
@@ -34,6 +35,7 @@ export, and admin force-logout (via a session port into auth).
 | POST   | `/:userId/verify-email`    | `user:update:any`                             |
 | POST   | `/:userId/unlock`          | `user:update:any`                             |
 | POST   | `/:userId/revoke-sessions` | `user:update:any`                             |
+| DELETE | `/:userId/oauth/:provider` | `user:update:any` (force unlink; audited)     |
 | DELETE | `/:userId`                 | `user:delete:any`                             |
 | DELETE | `/:userId/permanent`       | `user:delete:any` (GDPR)                      |
 | POST   | `/:userId/restore`         | `user:update:any` (reactivates if verified)   |

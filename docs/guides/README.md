@@ -6,7 +6,7 @@ Task-oriented recipes for common Backend Init extensions.
 
 | Document                                               | Purpose                          |
 | ------------------------------------------------------ | -------------------------------- |
-| [Authentication](./authentication.md)                  | JWT, refresh rotation, OTP, TOTP |
+| [Authentication](./authentication.md)                  | JWT, refresh, OTP, TOTP + recovery codes |
 | [Storage providers](./storage-providers.md)            | MinIO vs S3-compatible storage   |
 | [Adding an OAuth provider](./adding-oauth-provider.md) | Wire a new social login provider |
 | [Background jobs](./background-jobs.md)                | BullMQ queues and cron workers   |

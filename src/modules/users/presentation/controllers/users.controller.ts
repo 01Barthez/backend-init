@@ -15,8 +15,10 @@ import type { UnlockUserCommand } from '../../application/commands/unlock-user.c
 import type { UpdateUserRoleCommand } from '../../application/commands/update-user-role.command';
 import type { UpdateUserCommand } from '../../application/commands/update-user.command';
 import type { VerifyUserEmailCommand } from '../../application/commands/verify-user-email.command';
+import type { AdminUnlinkOAuthCommand } from '../../application/commands/admin-unlink-oauth.command';
 import type { ExportUsersQuery } from '../../application/queries/export-users.query';
 import type { GetUserByIdQuery } from '../../application/queries/get-user-by-id.query';
+import type { GetUserSessionsQuery } from '../../application/queries/get-user-sessions.query';
 import type { ListUsersQuery } from '../../application/queries/list-users.query';
 import type { SearchUsersQuery } from '../../application/queries/search-users.query';
 import { UsersSerializer } from '../serializers/users.serializer';
@@ -25,6 +27,7 @@ import type { AuthenticatedRequest } from '../types/authenticated-request';
 export type UsersControllerDeps = {
   listUsers: ListUsersQuery;
   getUserById: GetUserByIdQuery;
+  getUserSessions: GetUserSessionsQuery;
   searchUsers: SearchUsersQuery;
   exportUsers: ExportUsersQuery;
   updateUser: UpdateUserCommand;
@@ -37,6 +40,7 @@ export type UsersControllerDeps = {
   unlockUser: UnlockUserCommand;
   revokeUserSessions: RevokeUserSessionsCommand;
   inviteUser: InviteUserCommand;
+  adminUnlinkOAuth: AdminUnlinkOAuthCommand;
 };
 
 const parseBool = (value: unknown): boolean | undefined => {
@@ -201,6 +205,25 @@ export function createUsersController(deps: UsersControllerDeps) {
     return response.ok(req, res, null, 'All sessions revoked for user');
   });
 
+  const adminUnlinkOAuth = asyncHandler(async (req: Request, res: Response) => {
+    const actor = (req as AuthenticatedRequest).user;
+    await deps.adminUnlinkOAuth.execute({
+      actorId: actor?.id ?? '',
+      targetUserId: req.params.userId,
+      provider: req.params.provider,
+    });
+    return response.ok(req, res, null, `${req.params.provider} unlinked from user`);
+  });
+
+  const getUserSessions = asyncHandler(async (req: Request, res: Response) => {
+    const actor = (req as AuthenticatedRequest).user;
+    const sessions = await deps.getUserSessions.execute({
+      actorId: actor?.id ?? '',
+      targetUserId: req.params.userId,
+    });
+    return response.ok(req, res, sessions, 'User sessions retrieved');
+  });
+
   const inviteUser = asyncHandler(async (req: Request, res: Response) => {
     const invited = await deps.inviteUser.execute({
       email: req.body.email,
@@ -228,6 +251,8 @@ export function createUsersController(deps: UsersControllerDeps) {
     listUsers,
     searchUsers,
     getUserById,
+    getUserSessions,
+    adminUnlinkOAuth,
     updateUser,
     updateUserById,
     deleteAvatar,

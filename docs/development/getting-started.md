@@ -32,7 +32,7 @@ Review at least:
 - `MINIO_*` or `S3_*` + `STORAGE_PROVIDER`
 - `JWT_*_KEY_PATH` — after `npm run keys:generate`, these default to
   `keys/jwt-access-*.pem` and `keys/jwt-refresh-*.pem` at the **repository
-  root** (not `src/app/config/keys`)
+  root**
 - `COOKIE_EXPIRES_IN` (duration such as `7d`, not a tiny integer)
 - `AUTH_ENCRYPTION_KEY` — required in production; needed locally if you persist
   OAuth tokens or use TOTP

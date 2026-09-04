@@ -24,15 +24,20 @@ session revoke. OAuth: [Adding an OAuth provider](./adding-oauth-provider.md).
    refresh families.
 6. `POST /auth/totp/enroll` → `confirm` → optional `disable` (password + current
    code). Secrets are AES-256-GCM (`AUTH_ENCRYPTION_KEY`).
-7. `POST /auth/refresh` — rotate + reuse detection (family revoke). Refresh
+7. `POST /auth/totp/recovery-codes` — after TOTP is enabled, issues 8 one-time
+   codes (shown once). Hashes live in Redis (90-day TTL). Regenerating replaces
+   the previous set.
+8. `POST /auth/totp/recover` — login with email + password + a recovery code
+   when the authenticator is lost. Each code is single-use.
+9. `POST /auth/refresh` — rotate + reuse detection (family revoke). Refresh
    fails if the account is inactive.
-8. `POST /auth/logout` — blacklist access `jti` + refresh family. Account stays
-   active so the next login works.
-9. `POST /auth/forgot-password` — identical response whether the email exists;
-   opaque single-use token (Redis hash, not a JWT in the URL).
-10. `POST /auth/reset-password` — body `resetToken` + `new_password`; consumes
+10. `POST /auth/logout` — blacklist access `jti` + refresh family. Account stays
+    active so the next login works.
+11. `POST /auth/forgot-password` — identical response whether the email exists;
+    opaque single-use token (Redis hash, not a JWT in the URL).
+12. `POST /auth/reset-password` — body `resetToken` + `new_password`; consumes
     the token and revokes all sessions.
-11. `POST /auth/change-password` — same session revoke.
+13. `POST /auth/change-password` — same session revoke.
 
 ## Tokens
 
@@ -71,7 +76,8 @@ Auth credential routes use `MAX_AUTH_QUERY_NUMBER` / `MAX_AUTH_QUERY_WINDOW`
 When `ALLOW_CSRF_PROTECTION=true`, `csurf` owns the httpOnly secret cookie. GET
 requests (including `/csrf-token` and OAuth callbacks) are ignored.
 `GET /csrf-token` returns the token in JSON only (does not overwrite that
-cookie).
+cookie). When CSRF is disabled, the same endpoint returns
+`{ csrfEnabled: false, csrfToken: null }` with HTTP 200.
 
 ## Related
 

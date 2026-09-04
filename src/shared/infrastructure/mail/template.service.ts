@@ -41,6 +41,9 @@ export const renderTemplate = async (
     ...data,
     appName: envs.APP_NAME,
     year: new Date().getFullYear(),
+    // Always present so templates can reference them safely (even in docs comments).
+    clientUrl: (data.clientUrl as string | undefined) ?? envs.CLIENT_URL ?? '',
+    supportEmail: (data.supportEmail as string | undefined) ?? envs.USER_EMAIL ?? '',
   });
 };
 

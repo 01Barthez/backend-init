@@ -86,4 +86,17 @@ export const authSchemas = {
       .withMessage('TOTP code must be 6 to 8 digits'),
     body('current_password').trim().notEmpty().withMessage('Current password is required'),
   ],
+
+  recoverTotp: [
+    emailValidation(),
+    passwordValidation(),
+    body('recoveryCode')
+      .trim()
+      .notEmpty()
+      .withMessage('Recovery code is required')
+      .isString()
+      .withMessage('Recovery code must be a string')
+      .isLength({ min: 10, max: 10 })
+      .withMessage('Recovery code must be 10 characters'),
+  ],
 };

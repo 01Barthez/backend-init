@@ -3,6 +3,7 @@ import type { Router } from 'express';
 import type { UserEntity } from '@/modules/auth/domain/entities/user.entity';
 import { type AuditPort, auditRepository } from '@/shared/infrastructure/audit';
 
+import { AdminUnlinkOAuthCommand } from './application/commands/admin-unlink-oauth.command';
 import { ClearAllUsersCommand } from './application/commands/clear-all-users.command';
 import { DeleteUserPermanentlyCommand } from './application/commands/delete-user-permanently.command';
 import { DeleteUserCommand } from './application/commands/delete-user.command';
@@ -16,6 +17,7 @@ import { UpdateUserCommand } from './application/commands/update-user.command';
 import { VerifyUserEmailCommand } from './application/commands/verify-user-email.command';
 import { ExportUsersQuery } from './application/queries/export-users.query';
 import { GetUserByIdQuery } from './application/queries/get-user-by-id.query';
+import { GetUserSessionsQuery } from './application/queries/get-user-sessions.query';
 import { ListUsersQuery } from './application/queries/list-users.query';
 import { SearchUsersQuery } from './application/queries/search-users.query';
 import type { AvatarUploaderPort } from './application/services/avatar-uploader.port';
@@ -26,9 +28,11 @@ import type { UserCachePort } from './application/services/user-cache.port';
 import type { UsersRepositoryPort } from './domain/repositories/users.repository';
 import { AvatarUploaderAdapter } from './infrastructure/providers/avatar-uploader.adapter';
 import {
+  createListSessionsAdapter,
   createMailerAdapter,
   createRbacAdapter,
   createSessionAdapter,
+  createUnlinkOAuthAdapter,
 } from './infrastructure/providers/legacy-adapters';
 import { UserCacheAdapter } from './infrastructure/providers/user-cache.adapter';
 import { PrismaUsersRepository } from './infrastructure/repositories/prisma-users.repository';
@@ -56,6 +60,7 @@ export type UsersModule = {
   useCases: {
     listUsers: ListUsersQuery;
     getUserById: GetUserByIdQuery;
+    getUserSessions: GetUserSessionsQuery;
     searchUsers: SearchUsersQuery;
     exportUsers: ExportUsersQuery;
     updateUser: UpdateUserCommand;
@@ -69,6 +74,7 @@ export type UsersModule = {
     revokeUserSessions: RevokeUserSessionsCommand;
     inviteUser: InviteUserCommand;
     clearAllUsers: ClearAllUsersCommand;
+    adminUnlinkOAuth: AdminUnlinkOAuthCommand;
   };
   controller: UsersController;
   router: Router;
@@ -104,6 +110,11 @@ export function createUsersModule(deps: UsersModuleDeps): UsersModule {
   const useCases = {
     listUsers: new ListUsersQuery(deps),
     getUserById: new GetUserByIdQuery(deps),
+    getUserSessions: new GetUserSessionsQuery({
+      usersRepository: deps.usersRepository,
+      listSessionsForUser: createListSessionsAdapter(),
+      audit: deps.audit,
+    }),
     searchUsers: new SearchUsersQuery(deps),
     exportUsers: new ExportUsersQuery(deps),
     updateUser: new UpdateUserCommand(deps),
@@ -117,11 +128,17 @@ export function createUsersModule(deps: UsersModuleDeps): UsersModule {
     revokeUserSessions: new RevokeUserSessionsCommand(deps),
     inviteUser: new InviteUserCommand(deps),
     clearAllUsers: new ClearAllUsersCommand(deps),
+    adminUnlinkOAuth: new AdminUnlinkOAuthCommand({
+      usersRepository: deps.usersRepository,
+      unlinkOAuthAccount: createUnlinkOAuthAdapter(),
+      audit: deps.audit,
+    }),
   };
 
   const controller = createUsersController({
     listUsers: useCases.listUsers,
     getUserById: useCases.getUserById,
+    getUserSessions: useCases.getUserSessions,
     searchUsers: useCases.searchUsers,
     exportUsers: useCases.exportUsers,
     updateUser: useCases.updateUser,
@@ -134,6 +151,7 @@ export function createUsersModule(deps: UsersModuleDeps): UsersModule {
     unlockUser: useCases.unlockUser,
     revokeUserSessions: useCases.revokeUserSessions,
     inviteUser: useCases.inviteUser,
+    adminUnlinkOAuth: useCases.adminUnlinkOAuth,
   });
   const router = createUsersRoutes(controller);
 

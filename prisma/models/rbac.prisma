@@ -1,4 +1,5 @@
-// RBAC + ACL authorization models
+// RBAC authorization models (roles + permissions). No per-row ACL layer —
+// ownership stays in application use cases; string permissions gate routes.
 
 model Role {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -54,20 +55,4 @@ model UserRole {
   @@unique([userId, roleId])
   @@index([userId])
   @@index([roleId])
-}
-
-model AclRule {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId     String   @db.ObjectId
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  resource   String
-  resourceId String?
-  action     String
-  effect     String   @default("ALLOW")
-  conditions Json?
-  createdAt  DateTime @default(now())
-  expiresAt  DateTime?
-
-  @@index([userId, resource, action])
-  @@index([resourceId])
 }

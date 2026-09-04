@@ -1,12 +1,15 @@
 /**
- * Security-oriented Winston logger with custom severity levels
- * (critical → debug) and dedicated rotating files under logs/security/.
+ * Security-oriented Winston logger (custom severity levels).
+ *
+ * Same ops story as the app logger: stdout (+ optional Loki via the app logger
+ * for HTTP). File transports under logs/security/ only when LOG_TO_FILE=true.
  */
 import path from 'path';
 import winston from 'winston';
 import 'winston-daily-rotate-file';
 
-import { envs } from '@/app/config';
+import { config } from '@/app/config';
+import { ensureDirectoryExists } from '@/shared/utils/fs-utils';
 
 const { combine, timestamp, json, errors } = winston.format;
 
@@ -32,33 +35,41 @@ const securityLevels = {
   },
 };
 
+const fileTransports: winston.transport[] = [];
+if (config.observability.logToFile) {
+  try {
+    ensureDirectoryExists(path.join(process.cwd(), 'logs', 'security'));
+    fileTransports.push(
+      new winston.transports.DailyRotateFile({
+        filename: path.join('logs', 'security', 'critical-%DATE%.log'),
+        level: 'critical',
+        maxSize: '20m',
+        maxFiles: '14d',
+        zippedArchive: true,
+      }),
+      new winston.transports.DailyRotateFile({
+        filename: path.join('logs', 'security', 'audit-%DATE%.log'),
+        level: 'info',
+        maxSize: '20m',
+        maxFiles: '30d',
+        zippedArchive: true,
+      }),
+    );
+  } catch (error) {
+    console.warn('LOG_TO_FILE=true but logs/security is not writable.', error);
+  }
+}
+
 const securityLogger = winston.createLogger({
   levels: securityLevels.levels,
   level: 'info',
   format: combine(errors({ stack: true }), timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), json()),
   defaultMeta: { service: 'security' },
   transports: [
-    new winston.transports.DailyRotateFile({
-      filename: path.join('logs', 'security', 'critical-%DATE%.log'),
-      level: 'critical',
-      maxSize: '20m',
-      maxFiles: '14d',
-      zippedArchive: true,
+    new winston.transports.Console({
+      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
     }),
-    new winston.transports.DailyRotateFile({
-      filename: path.join('logs', 'security', 'audit-%DATE%.log'),
-      level: 'info',
-      maxSize: '20m',
-      maxFiles: '30d',
-      zippedArchive: true,
-    }),
-    ...(envs.NODE_ENV !== 'production'
-      ? [
-          new winston.transports.Console({
-            format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
-          }),
-        ]
-      : []),
+    ...fileTransports,
   ],
 });
 

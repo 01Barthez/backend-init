@@ -10,7 +10,7 @@ prisma/
 │   ├── user.prisma        # User + OTP embed; totpSecret / totpEnabled
 │   ├── auth.prisma        # RefreshToken, blacklist
 │   ├── oauth.prisma       # OAuthAccount
-│   ├── rbac.prisma        # Role, Permission, UserRole, AclRule
+│   ├── rbac.prisma        # Role, Permission, UserRole, RolePermission
 │   ├── blog.prisma        # Reference domain; author has no onDelete cascade
 │   └── audit.prisma       # AuditLog indexes
 ├── seed.ts                # rbacService.seedSystemRolesAndPermissions()

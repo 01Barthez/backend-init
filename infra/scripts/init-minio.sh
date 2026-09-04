@@ -8,7 +8,6 @@ fi
 
 UPLOADS_BUCKET="${MINIO_APP_BUCKET:-app-uploads}"
 BACKUPS_BUCKET="${MINIO_BACKUP_BUCKET:-backups}"
-LOGS_BUCKET="${MINIO_LOGS_BUCKET:-logs-archive}"
 
 echo "Waiting for MinIO..."
 until mc alias set minio http://minio:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" >/dev/null 2>&1; do
@@ -16,14 +15,13 @@ until mc alias set minio http://minio:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KE
   sleep 1
 done
 
-for bucket in "$UPLOADS_BUCKET" "$BACKUPS_BUCKET" "$LOGS_BUCKET"; do
+for bucket in "$UPLOADS_BUCKET" "$BACKUPS_BUCKET"; do
   echo "Ensuring bucket: $bucket"
   mc mb -p "minio/${bucket}" || true
 done
 
-# Public read only for uploads (avatars, covers). Backups/logs stay private.
+# Public read only for uploads (avatars, covers). Backups stay private.
 mc anonymous set download "minio/${UPLOADS_BUCKET}" || true
 mc anonymous set none "minio/${BACKUPS_BUCKET}" || true
-mc anonymous set none "minio/${LOGS_BUCKET}" || true
 
-echo "MinIO initialized (buckets: ${UPLOADS_BUCKET}, ${BACKUPS_BUCKET}, ${LOGS_BUCKET})"
+echo "MinIO initialized (buckets: ${UPLOADS_BUCKET}, ${BACKUPS_BUCKET})"

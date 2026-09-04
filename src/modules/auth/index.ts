@@ -4,9 +4,11 @@ import { type AuditPort, auditRepository } from '@/shared/infrastructure/audit';
 
 import { ChangePasswordCommand } from './application/commands/change-password.command';
 import { ConfirmTotpCommand } from './application/commands/confirm-totp.command';
+import { ConsumeRecoveryCodeCommand } from './application/commands/consume-recovery-code.command';
 import { DisableTotpCommand } from './application/commands/disable-totp.command';
 import { EnrollTotpCommand } from './application/commands/enroll-totp.command';
 import { ForgotPasswordCommand } from './application/commands/forgot-password.command';
+import { GenerateRecoveryCodesCommand } from './application/commands/generate-recovery-codes.command';
 import { LoginCommand } from './application/commands/login.command';
 import { LogoutCommand } from './application/commands/logout.command';
 import { RefreshTokenCommand } from './application/commands/refresh-token.command';
@@ -72,6 +74,8 @@ export type AuthModule = {
     enrollTotp: EnrollTotpCommand;
     confirmTotp: ConfirmTotpCommand;
     disableTotp: DisableTotpCommand;
+    generateRecoveryCodes: GenerateRecoveryCodesCommand;
+    consumeRecoveryCode: ConsumeRecoveryCodeCommand;
   };
   controller: AuthController;
   router: Router;
@@ -124,12 +128,15 @@ export function createAuthModule(deps: AuthModuleDeps): AuthModule {
     enrollTotp: new EnrollTotpCommand(deps),
     confirmTotp: new ConfirmTotpCommand(deps),
     disableTotp: new DisableTotpCommand(deps),
+    generateRecoveryCodes: new GenerateRecoveryCodesCommand(deps),
+    consumeRecoveryCode: new ConsumeRecoveryCodeCommand(deps),
   };
 
   const controller = createAuthController({
     ...useCases,
     tokenService: deps.tokenService,
   });
+
 
   const router = createAuthRoutes(controller);
 

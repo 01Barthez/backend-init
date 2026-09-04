@@ -35,7 +35,11 @@ export const cspConfig = {
   },
 };
 
-const redisStore = (): Store | undefined => {
+/**
+ * Each rate limiter must own a dedicated RedisStore (unique prefix).
+ * Sharing one store across limiters throws ERR_ERL_STORE_REUSE.
+ */
+const createRedisStore = (prefix: string): Store | undefined => {
   if (config.app.isTest) {
     return undefined;
   }
@@ -43,7 +47,7 @@ const redisStore = (): Store | undefined => {
   return new RedisStore({
     // ioredis: send raw Redis commands for the sliding window.
     sendCommand: ((...args: string[]) => redisClient.call(args[0], ...args.slice(1))) as never,
-    prefix: 'rl:',
+    prefix,
   }) as Store;
 };
 
@@ -51,11 +55,11 @@ const common: Partial<Options> = {
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipProbes,
-  store: redisStore(),
 };
 
 export const rateLimiting = rateLimit({
   ...common,
+  store: createRedisStore('rl:global:'),
   max: config.security.rateLimit.globalMax,
   windowMs: config.security.rateLimit.globalWindowMs,
   message: LIMIT_REQUEST.GLOBAL_ROUTE,
@@ -63,6 +67,7 @@ export const rateLimiting = rateLimit({
 
 export const rateLimitingSubRoute = rateLimit({
   ...common,
+  store: createRedisStore('rl:sub:'),
   max: config.security.rateLimit.uniqueMax,
   windowMs: config.security.rateLimit.uniqueWindowMs,
   message: LIMIT_REQUEST.SUB_ROUTE,
@@ -71,6 +76,7 @@ export const rateLimitingSubRoute = rateLimit({
 /** Credential-stuffing / OTP brute-force bucket (login, forgot, OTP, reset). */
 export const rateLimitingAuth = rateLimit({
   ...common,
+  store: createRedisStore('rl:auth:'),
   max: config.security.rateLimit.authMax,
   windowMs: config.security.rateLimit.authWindowMs,
   message: LIMIT_REQUEST.AUTH_ROUTE,

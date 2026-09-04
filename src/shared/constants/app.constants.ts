@@ -50,7 +50,6 @@ export const SYSTEM_PERMISSIONS = [
 export const STORAGE_BUCKETS = {
   UPLOADS: 'app-uploads',
   BACKUPS: 'backups',
-  LOGS_ARCHIVE: 'logs-archive',
 } as const;
 
 /** Object-key prefixes inside the uploads bucket. */

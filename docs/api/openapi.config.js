@@ -677,6 +677,59 @@ const definition = {
         },
       },
     },
+    '/api/v1/auth/totp/recovery-codes': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Generate TOTP recovery codes',
+        description:
+          'Generates 8 one-time recovery codes shown exactly once. Invalidates any previous set. TOTP must already be enabled.',
+        security: bearer,
+        responses: {
+          200: okContent(
+            { type: 'object', properties: { codes: { type: 'array', items: { type: 'string' } } } },
+            'Recovery codes (shown once — store them securely)',
+          ),
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+        },
+      },
+    },
+    '/api/v1/auth/totp/recover': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Login with TOTP recovery code',
+        description:
+          'Authenticates with email + password + a one-time recovery code instead of the authenticator app. Single-use: each code is consumed on success. Use when the authenticator device is lost.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email', 'password', 'recoveryCode'],
+                properties: {
+                  email: { type: 'string', format: 'email' },
+                  password: { type: 'string' },
+                  recoveryCode: {
+                    type: 'string',
+                    minLength: 10,
+                    maxLength: 10,
+                    description: '10-character hex recovery code from the generated set',
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: okContent('#/components/schemas/TokenPair', 'Login successful'),
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          429: { $ref: '#/components/responses/TooManyRequests' },
+        },
+      },
+    },
     '/api/v1/auth/totp/disable': {
       post: {
         tags: ['Authentication'],
@@ -1237,6 +1290,53 @@ const definition = {
         },
       },
     },
+    '/api/v1/users/{userId}/sessions': {
+      get: {
+        tags: ['Users'],
+        summary: 'List sessions for a user (admin)',
+        description:
+          'Returns all refresh-token session families for the target user. Requires `user:read:any`. Audited.',
+        security: bearer,
+        parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: okContent(
+            { type: 'array', items: { $ref: '#/components/schemas/SessionFamily' } },
+            'User sessions',
+          ),
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
+    '/api/v1/users/{userId}/oauth/{provider}': {
+      delete: {
+        tags: ['Users'],
+        summary: 'Admin: unlink OAuth provider from user',
+        description:
+          'Forcibly removes a linked OAuth provider from any user account. Requires `user:update:any`. Audited.',
+        security: bearer,
+        parameters: [
+          { name: 'userId', in: 'path', required: true, schema: { type: 'string' } },
+          {
+            name: 'provider',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'string',
+              enum: ['google', 'github', 'facebook', 'instagram', 'twitter', 'linkedin', 'telegram'],
+            },
+          },
+        ],
+        responses: {
+          200: okContent(null, 'Provider unlinked'),
+          400: { $ref: '#/components/responses/BadRequest' },
+          401: { $ref: '#/components/responses/Unauthorized' },
+          403: { $ref: '#/components/responses/Forbidden' },
+          404: { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
     '/api/v1/users/{userId}/permanent': {
       delete: {
         tags: ['Users'],
@@ -1605,9 +1705,7 @@ const definition = {
           },
         },
         responses: {
-          200: { description: 'Report accepted' },
-          400: { $ref: '#/components/responses/BadRequest' },
-          500: { $ref: '#/components/responses/ServerError' },
+          204: { description: 'Report accepted (no content)' },
         },
       },
       get: {
@@ -1616,8 +1714,7 @@ const definition = {
         description:
           'Same handler as POST for clients that send reports with GET. Prefer POST.',
         responses: {
-          200: { description: 'Report accepted' },
-          500: { $ref: '#/components/responses/ServerError' },
+          204: { description: 'Report accepted (no content)' },
         },
       },
     },

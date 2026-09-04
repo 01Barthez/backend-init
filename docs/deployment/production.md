@@ -24,8 +24,7 @@ RS256 expects private/public PEM files on disk:
 - `JWT_REFRESH_PRIVATE_KEY_PATH` / `JWT_REFRESH_PUBLIC_KEY_PATH`
 
 Canonical layout is the repo-root `keys/` directory (see
-[keys/README.md](../../keys/README.md)). `src/app/config/keys/*.key` is leftover
-material and is **not** read at runtime.
+[keys/README.md](../../keys/README.md)).
 
 Production pattern:
 

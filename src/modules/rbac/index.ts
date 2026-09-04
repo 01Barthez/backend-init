@@ -3,6 +3,7 @@ import { SYSTEM_ROLES } from '@/shared/constants/app.constants';
 import { AssignRoleCommand } from './application/commands/assign-role.command';
 import { SeedSystemRolesCommand } from './application/commands/seed-system-roles.command';
 import { GetUserAuthContextQuery } from './application/queries/get-user-auth-context.query';
+import { permissionSatisfied } from './domain/permission-match';
 import type { RbacRepositoryPort } from './domain/repositories/rbac.repository';
 import type { UserAuthContext } from './domain/types/rbac.types';
 import { PrismaRbacRepository } from './infrastructure/repositories/prisma-rbac.repository';
@@ -85,7 +86,7 @@ function createRbacServiceFacade(useCases: RbacUseCases) {
     async hasPermission(userId: string, permission: string): Promise<boolean> {
       const ctx = await useCases.getUserAuthContext.execute(userId);
       if (ctx.roles.includes(SYSTEM_ROLES.SUPER_ADMIN)) return true;
-      return ctx.permissions.includes(permission);
+      return permissionSatisfied(ctx.permissions, permission);
     },
 
     async hasAnyRole(userId: string, slugs: string[]): Promise<boolean> {
@@ -93,6 +94,10 @@ function createRbacServiceFacade(useCases: RbacUseCases) {
       return slugs.some((slug) => ctx.roles.includes(slug));
     },
 
+    /**
+     * Optional helper for use cases that need ownership + `:own`/`:any` elevation.
+     * Route gates use `requirePermission`; keep resource IDOR checks in commands.
+     */
     async canAccessResource(
       userId: string,
       permission: string,
@@ -100,11 +105,11 @@ function createRbacServiceFacade(useCases: RbacUseCases) {
     ): Promise<boolean> {
       const ctx = await useCases.getUserAuthContext.execute(userId);
       if (ctx.roles.includes(SYSTEM_ROLES.SUPER_ADMIN)) return true;
-      if (ctx.permissions.includes(permission.replace(':own', ':any'))) return true;
-      if (permission.endsWith(':own') && resourceOwnerId === userId) {
-        return ctx.permissions.includes(permission);
+      if (permission.endsWith(':own')) {
+        if (ctx.permissions.includes(permission.replace(/:own$/, ':any'))) return true;
+        return resourceOwnerId === userId && ctx.permissions.includes(permission);
       }
-      return ctx.permissions.includes(permission);
+      return permissionSatisfied(ctx.permissions, permission);
     },
   };
 }
@@ -120,4 +125,5 @@ export { SeedSystemRolesCommand } from './application/commands/seed-system-roles
 export { GetUserAuthContextQuery } from './application/queries/get-user-auth-context.query';
 export type { RbacRepositoryPort } from './domain/repositories/rbac.repository';
 export type { PermissionEntity, RoleEntity, UserAuthContext } from './domain/types/rbac.types';
+export { permissionSatisfied } from './domain/permission-match';
 export { PrismaRbacRepository } from './infrastructure/repositories/prisma-rbac.repository';

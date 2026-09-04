@@ -7,8 +7,10 @@ import setSafeCookie from '@/shared/utils/http/set-safe-cookie';
 
 import type { ChangePasswordCommand } from '../../application/commands/change-password.command';
 import type { ConfirmTotpCommand } from '../../application/commands/confirm-totp.command';
+import type { ConsumeRecoveryCodeCommand } from '../../application/commands/consume-recovery-code.command';
 import type { DisableTotpCommand } from '../../application/commands/disable-totp.command';
 import type { EnrollTotpCommand } from '../../application/commands/enroll-totp.command';
+import type { GenerateRecoveryCodesCommand } from '../../application/commands/generate-recovery-codes.command';
 import type { ForgotPasswordCommand } from '../../application/commands/forgot-password.command';
 import type { LoginCommand } from '../../application/commands/login.command';
 import type { LogoutCommand } from '../../application/commands/logout.command';
@@ -40,6 +42,8 @@ export type AuthControllerDeps = {
   enrollTotp: EnrollTotpCommand;
   confirmTotp: ConfirmTotpCommand;
   disableTotp: DisableTotpCommand;
+  generateRecoveryCodes: GenerateRecoveryCodesCommand;
+  consumeRecoveryCode: ConsumeRecoveryCodeCommand;
   tokenService: TokenServicePort;
 };
 
@@ -216,6 +220,35 @@ export function createAuthController(deps: AuthControllerDeps) {
     return response.ok(req, res, null, 'TOTP disabled');
   });
 
+  const generateRecoveryCodes = asyncHandler(async (req: Request, res: Response) => {
+    const user = (req as AuthenticatedRequest).user;
+    const result = await deps.generateRecoveryCodes.execute({ userId: user?.id ?? '' });
+    return response.ok(
+      req,
+      res,
+      { codes: result.codes },
+      'Recovery codes generated — store them safely, they will not be shown again',
+    );
+  });
+
+  const consumeRecoveryCode = asyncHandler(async (req: Request, res: Response) => {
+    const result = await deps.consumeRecoveryCode.execute({
+      email: req.body.email,
+      password: req.body.password,
+      recoveryCode: req.body.recoveryCode,
+    });
+
+    res.setHeader('authorization', `Bearer ${result.accessToken}`);
+    setSafeCookie(res, AUTH_COOKIES.REFRESH_TOKEN, result.refreshToken, cookieOptions);
+
+    return response.ok(
+      req,
+      res,
+      AuthSerializer.login(result),
+      `Login successful — ${result.remainingCodes} recovery code(s) remaining`,
+    );
+  });
+
   return {
     login,
     signup,
@@ -232,6 +265,8 @@ export function createAuthController(deps: AuthControllerDeps) {
     enrollTotp,
     confirmTotp,
     disableTotp,
+    generateRecoveryCodes,
+    consumeRecoveryCode,
   };
 }
 

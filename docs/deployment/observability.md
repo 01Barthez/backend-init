@@ -6,17 +6,19 @@ production-minded starter. Monitoring Compose assets live under
 
 ## Logs
 
-- **Library:** Winston, with daily rotate file support and optional Loki
-  transport.
-- **Code:** `@/shared/infrastructure/logging`.
+- **Library:** Winston (+ optional Loki transport)
+- **Code:** `@/shared/infrastructure/logging`
+- **Ops path for this template:** **stdout** (Docker/K8s scrape) and optional
+  **Loki** when `LOKI_ENABLED=true`. There is no MinIO log-archive pipeline.
 
-Winston currently:
+| Env            | Effect                                                                 |
+| -------------- | ---------------------------------------------------------------------- |
+| `LOG_LEVEL`    | Winston level for console (and file transports when enabled)           |
+| `LOG_TO_FILE`  | When `true`, also write rotating files under `logs/` (local debug)     |
+| `LOKI_ENABLED` | Ship logs to `LOKI_HOST`                                               |
 
-- Uses log level `warn` in production and `debug` otherwise (`NODE_ENV`), not
-  `LOG_LEVEL`.
-- Adds rotating file transports when `logs/` is writable, not when `LOG_TO_FILE`
-  is true. Those two env vars are parsed into `config.observability` for a
-  future logger pass — do not document them as live controls.
+Do not mount a host volume for `logs/` in Compose for “production-like” runs —
+prefer stdout/Loki. Enable `LOG_TO_FILE` only when you need local file dumps.
 
 Guidelines:
 

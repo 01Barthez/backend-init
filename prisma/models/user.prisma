@@ -34,7 +34,6 @@ model User {
   oauthAccounts OAuthAccount[]
   blogs         Blog[]
   refreshTokens RefreshToken[]
-  aclRules      AclRule[]
 
   @@index([email, isVerified])
   @@index([email, deletedAt])

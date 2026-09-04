@@ -88,13 +88,6 @@ const prismaMock = {
     delete: vi.fn(),
     deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
   },
-  aclRule: {
-    findMany: vi.fn().mockResolvedValue([]),
-    findUnique: vi.fn().mockResolvedValue(null),
-    upsert: vi.fn(),
-    create: vi.fn(),
-    deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
-  },
   auditLog: {
     create: vi.fn().mockResolvedValue({ id: 'audit-1' }),
     findMany: vi.fn().mockResolvedValue([]),

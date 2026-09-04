@@ -1,7 +1,11 @@
 # Adding an OAuth Provider
 
 Social login is owned by `src/modules/oauth`. Built-in providers: Google,
-GitHub, Facebook, LinkedIn, Twitter, Instagram, plus Telegram (widget flow).
+GitHub, Facebook, LinkedIn, Twitter, plus Telegram (widget flow).
+
+**Instagram is deprecated.** Meta shut down the Instagram Basic Display API
+(September 2024). The provider class remains only for existing linked accounts;
+do not enable it for new projects.
 
 Authorize, callback, Telegram, and unlink are gated by Flagsmith `enable_oauth`
 (default **true** when the remote is unreachable). When the flag is off, those
