@@ -27,6 +27,15 @@ export const buildUserEntity = (overrides: UserFactoryInput = {}): UserEntity =>
   isVerified: overrides.isVerified ?? true,
   isActive: overrides.isActive ?? true,
   isDeleted: overrides.isDeleted ?? false,
+  otp: overrides.otp ?? null,
+  otpFailedAttempts: overrides.otpFailedAttempts,
+  totpEnabled: overrides.totpEnabled,
+  totpSecret: overrides.totpSecret,
+  lockedUntil: overrides.lockedUntil,
+  failedLoginAttempts: overrides.failedLoginAttempts,
+  emailVerifiedAt: overrides.emailVerifiedAt,
+  createdAt: overrides.createdAt,
+  updatedAt: overrides.updatedAt,
 });
 
 /**

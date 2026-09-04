@@ -1,9 +1,11 @@
+import { envs } from '@/app/config';
 import { MAIL } from '@/shared/constants/mail.constants';
 import { AppError } from '@/shared/domain/errors/app-error';
 import log from '@/shared/infrastructure/logging/logger';
 import generateOtp from '@/shared/utils/otp/generate-otp';
 import { getOtpExpirationDate } from '@/shared/utils/otp/otp-expiration';
 
+import { OtpResendCooldownError } from '../../domain/errors/auth.errors';
 import type { UserRepositoryPort } from '../../domain/repositories/user.repository';
 import type { ResendOtpInput, ResendOtpResult } from '../dto/auth.dto';
 import type { MailerPort } from '../services/mailer.port';
@@ -18,6 +20,7 @@ export type ResendOtpCommandDeps = {
 
 /**
  * Issues a fresh OTP for an unverified account and queues the email.
+ * Enforces a short cooldown after the previous issue (signup or resend).
  * Unlike signup, a mail failure surfaces as an error (user expects delivery).
  */
 export class ResendOtpCommand {
@@ -34,6 +37,8 @@ export class ResendOtpCommand {
     if (!user || user.isVerified) {
       return { emailSent: true };
     }
+
+    this.assertResendAllowed(user.otp?.expireAt);
 
     const userOtp = generateOtp();
     const now = new Date();
@@ -63,5 +68,24 @@ export class ResendOtpCommand {
     }
 
     return { emailSent: true };
+  }
+
+  /**
+   * OTP `expireAt` is issuedAt + OTP_DELAY, so issuedAt = expireAt - OTP_DELAY.
+   */
+  private assertResendAllowed(expireAt: Date | undefined | null): void {
+    if (!expireAt) return;
+
+    const cooldownMs = envs.OTP_RESEND_COOLDOWN;
+    if (!Number.isFinite(cooldownMs) || cooldownMs <= 0) return;
+
+    const issuedAtMs = new Date(expireAt).getTime() - envs.OTP_DELAY;
+    if (!Number.isFinite(issuedAtMs)) return;
+
+    const elapsedMs = Date.now() - issuedAtMs;
+    const remainingMs = cooldownMs - elapsedMs;
+    if (remainingMs > 0) {
+      throw new OtpResendCooldownError(remainingMs / 1000);
+    }
   }
 }

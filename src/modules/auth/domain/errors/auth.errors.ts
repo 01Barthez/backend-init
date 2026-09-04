@@ -46,6 +46,19 @@ export class OtpExpiredError extends AppError {
   }
 }
 
+export class OtpResendCooldownError extends AppError {
+  constructor(retryAfterSeconds: number) {
+    const seconds = Math.max(1, Math.ceil(retryAfterSeconds));
+    super(
+      429,
+      `Please wait ${seconds} second${seconds === 1 ? '' : 's'} before requesting another code`,
+      'OTP_RESEND_COOLDOWN',
+      { retryAfterSeconds: seconds },
+    );
+    this.name = 'OtpResendCooldownError';
+  }
+}
+
 export class InvalidRefreshTokenError extends AppError {
   constructor(message = 'Invalid or expired refresh token') {
     super(401, message, 'INVALID_REFRESH_TOKEN');

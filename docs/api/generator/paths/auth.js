@@ -78,7 +78,9 @@ module.exports = {
       tags: ['Authentication'],
       summary: 'Resend verification OTP',
       description:
-        'Sends a new one-time password when the account exists and is unverified. Response is identical for unknown emails (no enumeration).',
+        'Sends a new one-time password when the account exists and is unverified. ' +
+        'Enforces OTP_RESEND_COOLDOWN (default 60s) after the previous issue. ' +
+        'Unknown / already-verified emails still return 200 (no enumeration).',
       requestBody: {
         required: true,
         content: {

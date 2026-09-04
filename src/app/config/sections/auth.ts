@@ -46,6 +46,12 @@ export const authConfig = {
   otpDelayMs: fromEnv.get('OTP_DELAY').default(900000).asInt(),
 
   /**
+   * Minimum wait between OTP resend requests (and after signup).
+   * Derived from `otp.expireAt - OTP_DELAY` — no extra DB field.
+   */
+  otpResendCooldownMs: fromEnv.get('OTP_RESEND_COOLDOWN').default(60000).asInt(),
+
+  /**
    * AES-256-GCM key for OAuth provider tokens and TOTP secrets at rest.
    * 64-char hex or any passphrase (scrypt). Empty = secrets are not stored.
    */

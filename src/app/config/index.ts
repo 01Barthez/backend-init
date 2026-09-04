@@ -165,6 +165,7 @@ export const envs = {
   LOCAL_CACHE_TTL: config.redis.localCache.ttlMs,
   COMPRESSION_THRESHOLD: config.redis.compressionThreshold,
   OTP_DELAY: config.auth.otpDelayMs,
+  OTP_RESEND_COOLDOWN: config.auth.otpResendCooldownMs,
   GOOGLE_CLIENT_ID: config.oauth.google.clientId,
   GOOGLE_CLIENT_SECRET: config.oauth.google.clientSecret,
   GOOGLE_REDIRECT_URI: config.oauth.google.redirectUri,
