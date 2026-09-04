@@ -26,7 +26,7 @@ export const securityConfig = {
     maxRequests: fromEnv.get('RATE_LIMIT_MAX_REQUESTS').default(100).asInt(),
     globalMax: fromEnv.get('MAX_GLOBAL_QUERY_NUMBER').default(100).asInt(),
     globalWindowMs: fromEnv.get('MAX_GLOBAL_QUERY_WINDOW').default(900000).asInt(),
-    uniqueMax: fromEnv.get('MAX_UNIQ_QUERY_NUMBER').default(50).asInt(),
+    uniqueMax: fromEnv.get('MAX_UNIQ_QUERY_NUMBER').default(200).asInt(),
     uniqueWindowMs: fromEnv.get('MAX_UNIQ_QUERY_WINDOW').default(900000).asInt(),
     /** Stricter bucket for login / OTP / forgot / reset. */
     authMax: fromEnv.get('MAX_AUTH_QUERY_NUMBER').default(10).asInt(),

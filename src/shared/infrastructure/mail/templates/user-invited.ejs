@@ -1,19 +1,28 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Invitation - <%= appName %></title>
-</head>
-<body>
-  <h2>Hello <%= name %>,</h2>
-  <p>An administrator invited you to <strong><%= appName %></strong>
-    with the role <strong><%= role %></strong>.</p>
-  <p>Set your password to get started:</p>
-  <p><a href="<%= inviteLink %>"><%= inviteLink %></a></p>
-  <p>If you did not expect this invitation, you can ignore this email.</p>
-  <p>&copy; <%= year %> <%= appName %>. All rights reserved.</p>
-</body>
-</html>
+<%- include('partials/shell-open', { pageTitle: 'Invitation — ' + appName }) %>
+<%- include('partials/header', { eyebrow: 'You are invited', title: 'Join ' + appName, tone: 'brand' }) %>
+<tr>
+  <td class="mail-body" style="padding:36px 32px 28px;">
+    <h2 style="margin:0 0 12px;font-size:20px;color:<%= colors.text %>;">Hello <%= name %>,</h2>
+    <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:<%= colors.textMuted %>">
+      An administrator invited you to <strong style="color:<%= colors.text %>;"><%= appName %></strong>
+      with the role <strong style="color:<%= colors.primary %>;"><%= role %></strong>.
+    </p>
 
-<!--* Variables -->
-<%# Template locals documented in mail.types / callers %>
+    <div class="mail-panel mail-panel-brand" style="background:<%= colors.primarySoft %>;border-left:4px solid <%= colors.primary %>;border-radius:12px;padding:18px 20px;margin:22px 0;font-size:14px;color:<%= colors.text %>;">
+      Set your password to activate access. The link below is unique to you — do not forward it.
+    </div>
+
+    <%- include('partials/cta', { href: inviteLink, label: 'Accept invitation', variant: 'brand' }) %>
+
+    <p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:<%= colors.textMuted %>">
+      Or open this link:<br/>
+      <a href="<%= inviteLink %>" style="color:<%= colors.primary %>;word-break:break-all;"><%= inviteLink %></a>
+    </p>
+
+    <p style="margin:18px 0 0;font-size:14px;color:<%= colors.textMuted %>">
+      If you were not expecting this invitation, you can ignore this email.
+    </p>
+  </td>
+</tr>
+<%- include('partials/footer') %>
+<%- include('partials/shell-close') %>

@@ -1,193 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
+<%- include('partials/shell-open', { pageTitle: 'Backup failed — ' + appName }) %>
+<%- include('partials/header', { eyebrow: 'System alert', title: 'Database backup failed', tone: 'danger' }) %>
+<tr>
+  <td class="mail-body" style="padding:36px 32px 28px;">
+    <h2 style="margin:0 0 12px;font-size:20px;color:<%= colors.text %>;">Hello,</h2>
+    <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:<%= colors.textMuted %>">
+      An error occurred during the automatic database backup for
+      <strong style="color:<%= colors.text %>;"><%= appName %></strong>.
+    </p>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Backup failed - <%= appName %> notification</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-      background-color: #f8f9fb;
-      margin: 0;
-      padding: 0;
-      color: #333;
-    }
-
-    .container {
-      max-width: 700px;
-      margin: 40px auto;
-      background-color: #fff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-    }
-
-    .header {
-      background-color: #b22222;
-      background-image: linear-gradient(120deg, #a30000, #cc0000);
-      padding: 35px;
-      text-align: center;
-      color: #fff;
-    }
-
-    .header h1 {
-      margin: 0;
-      font-size: 1.9em;
-    }
-
-    .header p {
-      margin-top: 8px;
-      font-size: 0.95em;
-      opacity: 0.9;
-    }
-
-    .content {
-      padding: 40px 35px;
-      line-height: 1.7;
-    }
-
-    .content h2 {
-      color: #a30000;
-      margin-bottom: 10px;
-    }
-
-    .alert-box {
-      background-color: #fff4f4;
-      border-left: 5px solid #cc0000;
-      border-radius: 8px;
-      padding: 18px 20px;
-      margin: 25px 0;
-      font-size: 0.95em;
-    }
-
-    .alert-item {
-      margin: 10px 0;
-    }
-
-    .alert-item strong {
-      color: #a30000;
-    }
-
-    .stacktrace {
-      background-color: #f7f7f7;
-      border-radius: 6px;
-      padding: 15px;
-      margin-top: 15px;
-      font-family: Consolas, 'Courier New', monospace;
-      font-size: 0.85em;
-      color: #333;
-      overflow-x: auto;
-      white-space: pre-wrap;
-      border: 1px solid #eee;
-    }
-
-    .cta {
-      text-align: center;
-      margin: 35px 0;
-    }
-
-    .cta a {
-      background-color: #a30000;
-      color: #fff;
-      padding: 12px 28px;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: bold;
-      transition: background-color 0.3s ease;
-    }
-
-    .cta a:hover {
-      background-color: #cc1a1a;
-    }
-
-    .footer {
-      background-color: #fafafa;
-      border-top: 1px solid #eee;
-      padding: 25px 30px;
-      text-align: center;
-      font-size: 0.85em;
-      color: #777;
-    }
-
-    .footer a {
-      color: #b22222;
-      text-decoration: none;
-    }
-  </style>
-</head>
-
-<body>
-
-  <div class="container">
-    <div class="header">
-      <h1>Database backup failed</h1>
-      <p><%= appName %> – System notification</p>
+    <div class="mail-panel mail-panel-danger" style="background:<%= colors.dangerSoft %>;border-left:4px solid <%= colors.danger %>;border-radius:12px;padding:18px 20px;margin:22px 0;">
+      <div class="mail-meta-row" style="padding:8px 0;border-bottom:1px dashed <%= colors.border %>;">
+        <span class="mail-meta-label" style="color:<%= colors.textMuted %>;font-weight:600;font-size:12px;">Incident date</span>
+        <span class="mail-meta-value" style="color:<%= colors.text %>;font-size:14px;"><%= date %></span>
+      </div>
+      <div class="mail-meta-row" style="padding:8px 0;<%= typeof stackTrace !== 'undefined' && stackTrace ? 'border-bottom:1px dashed ' + colors.border + ';' : '' %>">
+        <span class="mail-meta-label" style="color:<%= colors.textMuted %>;font-weight:600;font-size:12px;">Error message</span>
+        <span class="mail-meta-value" style="color:<%= colors.text %>;font-size:14px;"><%= errorMessage %></span>
+      </div>
+      <% if (typeof stackTrace !== 'undefined' && stackTrace) { %>
+        <div class="mail-meta-row" style="padding:8px 0;">
+          <span class="mail-meta-label" style="color:<%= colors.textMuted %>;font-weight:600;font-size:12px;">Stack trace</span>
+          <div class="mail-stack" style="background:#0F172A;color:#E2E8F0;border-radius:8px;padding:14px;margin-top:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;white-space:pre-wrap;"><%= stackTrace %></div>
+        </div>
+      <% } %>
     </div>
 
-    <div class="content">
-      <h2>Hello,</h2>
-      <p>
-        An error occurred during the automatic database backup.
-        Technical details of the incident are below:
-      </p>
+    <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:<%= colors.textMuted %>">
+      Check server logs and disk space before retrying. Escalate if the failure repeats.
+    </p>
 
-      <div class="alert-box">
-        <div class="alert-item">
-          <strong>Incident date:</strong><br />
-          <span><%= date %></span>
-        </div>
-
-        <div class="alert-item">
-          <strong>Error message:</strong><br />
-          <span><%= errorMessage %></span>
-        </div>
-
-        <% if (stackTrace) { %>
-        <div class="alert-item">
-          <strong>Stack trace:</strong>
-          <div class="stacktrace"><%= stackTrace %></div>
-        </div>
-        <% } %>
-      </div>
-
-      <p>
-        Please check server logs and available disk space before retrying the backup.
-        If the issue persists, contact technical support immediately.
-      </p>
-
-      <div class="cta">
-        <a href="mailto:<%= typeof supportEmail !== 'undefined' && supportEmail ? supportEmail : 'support@example.com' %>?subject=Backup%20Error">Contact support</a>
-      </div>
-
-      <p>
-        Thank you for your attention.<br />
-        — The <strong><%= appName %></strong> infrastructure team
-      </p>
-    </div>
-
-    <div class="footer">
-      <p>&copy; <%= typeof year !== 'undefined' ? year : new Date().getFullYear() %> <%= appName %>. All rights reserved.</p>
-      <p>Contact: <a href="mailto:<%= typeof supportEmail !== 'undefined' && supportEmail ? supportEmail : 'support@example.com' %>"><%= typeof supportEmail !== 'undefined' && supportEmail ? supportEmail : 'support@example.com' %></a></p>
-      <div class="social">
-        <a href="#">Facebook</a> |
-        <a href="#">Instagram</a> |
-        <a href="#">LinkedIn</a> |
-        <a href="#">YouTube</a>
-      </div>
-    </div>
-  </div>
-
-</body>
-
-</html>
-
-<!-- * Dynamic variables -->
-<!--
-  <%= date %>
-  <%= errorMessage %>
-  <%= stackTrace %> (optional)
-  <%= appName %>
-  <%= supportEmail %> (optional)
-  <%= year %> (optional)
--->
+    <% if (supportEmail) { %>
+      <%- include('partials/cta', { href: 'mailto:' + supportEmail + '?subject=' + encodeURIComponent('Backup error — ' + appName), label: 'Contact support', variant: 'danger' }) %>
+    <% } %>
+  </td>
+</tr>
+<%- include('partials/footer') %>
+<%- include('partials/shell-close') %>

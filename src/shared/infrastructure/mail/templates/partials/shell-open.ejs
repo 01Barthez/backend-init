@@ -1,0 +1,18 @@
+<%#
+  Opens the outer canvas + card table.
+  locals: pageTitle
+%>
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title><%= typeof pageTitle !== 'undefined' ? pageTitle : appName %></title>
+  <%- include('styles') %>
+</head>
+<body style="margin:0;padding:0;background-color:<%= colors.canvas %>;">
+  <table role="presentation" class="mail-wrap" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:<%= colors.canvas %>;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" class="mail-card" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:<%= colors.card %>;border-radius:16px;overflow:hidden;border:1px solid <%= colors.border %>;">

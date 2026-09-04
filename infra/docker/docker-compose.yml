@@ -29,6 +29,10 @@ services:
       MINIO_PORT: '9000'
       CLAMAV_PORT: '3310'
       REDIS_PASSWORD: ''
+      # Overridable for load tests: MAX_GLOBAL_QUERY_NUMBER=50000 docker compose up -d backend
+      MAX_GLOBAL_QUERY_NUMBER: ${MAX_GLOBAL_QUERY_NUMBER:-100}
+      MAX_UNIQ_QUERY_NUMBER: ${MAX_UNIQ_QUERY_NUMBER:-200}
+      MAX_AUTH_QUERY_NUMBER: ${MAX_AUTH_QUERY_NUMBER:-10}
     volumes:
       # RSA PEMs generated on the host (`npm run keys:generate`). Read-only in the container.
       - ../../keys:/app/keys:ro

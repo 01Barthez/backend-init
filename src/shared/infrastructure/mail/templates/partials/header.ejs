@@ -1,0 +1,21 @@
+<%#
+  locals: eyebrow?, title, tone? ('brand'|'success'|'warning'|'danger')
+%>
+<%
+  var headerTone = 'brand';
+  if (typeof tone === 'string' && tone) headerTone = tone;
+  var g = headerGradient(headerTone);
+%>
+<tr>
+  <td class="mail-header" style="background-color:<%= g.from %>;background-image:linear-gradient(135deg, <%= g.from %>, <%= g.to %>);padding:36px 32px 28px;text-align:center;color:<%= colors.onPrimary %>;">
+    <% if (logoUrl) { %>
+      <img class="mail-logo" src="<%= logoUrl %>" alt="<%= appName %>" style="max-height:40px;max-width:180px;margin:0 auto 10px;" />
+    <% } else { %>
+      <div class="mail-brand-mark" style="display:inline-block;width:44px;height:44px;line-height:44px;border-radius:12px;background:rgba(255,255,255,0.18);font-size:18px;font-weight:700;color:<%= colors.onPrimary %>;"><%= String(appName || 'A').charAt(0).toUpperCase() %></div>
+    <% } %>
+    <% if (typeof eyebrow !== 'undefined' && eyebrow) { %>
+      <p class="eyebrow" style="margin:10px 0 0;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;opacity:0.9;font-weight:600;color:<%= colors.onPrimary %>;"><%= eyebrow %></p>
+    <% } %>
+    <h1 style="margin:10px 0 0;font-size:24px;line-height:1.3;font-weight:700;color:<%= colors.onPrimary %>;"><%= title %></h1>
+  </td>
+</tr>

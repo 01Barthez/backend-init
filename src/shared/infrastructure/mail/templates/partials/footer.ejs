@@ -1,0 +1,49 @@
+<%# Footer: company / address / phone / support / socials / legal — only if configured. %>
+<tr>
+  <td class="mail-footer" style="background:<%= colors.footerBg %>;border-top:1px solid <%= colors.border %>;padding:28px 28px 24px;text-align:center;">
+    <% if (tagline) { %>
+      <p style="margin:0 0 10px;font-size:13px;color:<%= colors.text %>;font-weight:600;"><%= tagline %></p>
+    <% } %>
+
+    <% if (socials && socials.length) { %>
+      <div class="mail-social" style="margin:14px 0 12px;">
+        <% socials.forEach(function (s) { %>
+          <a href="<%= s.url %>" style="display:inline-block;margin:0 5px;padding:6px 10px;border-radius:999px;background:<%= colors.card %>;border:1px solid <%= colors.border %>;color:<%= colors.primaryDark %>;font-size:11px;font-weight:600;text-decoration:none;"><%= s.label %></a>
+        <% }) %>
+      </div>
+    <% } %>
+
+    <% if (company || address || phone) { %>
+      <p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:<%= colors.textMuted %>;">
+        <% if (company) { %><strong style="color:<%= colors.text %>;"><%= company %></strong><br/><% } %>
+        <% if (address) { %><%= address %><br/><% } %>
+        <% if (phone) { %><a href="tel:<%= phone %>" style="color:<%= colors.primary %>;text-decoration:none;font-weight:600;"><%= phone %></a><% } %>
+      </p>
+    <% } %>
+
+    <% if (supportEmail) { %>
+      <p style="margin:0 0 8px;font-size:12px;color:<%= colors.textMuted %>;">
+        Support:
+        <a href="mailto:<%= supportEmail %>" style="color:<%= colors.primary %>;text-decoration:none;font-weight:600;"><%= supportEmail %></a>
+      </p>
+    <% } %>
+
+    <% if (clientUrl) { %>
+      <p style="margin:0 0 8px;font-size:12px;">
+        <a href="<%= clientUrl %>" style="color:<%= colors.primary %>;text-decoration:none;font-weight:600;"><%= websiteLabel %></a>
+      </p>
+    <% } %>
+
+    <% if (privacyUrl || termsUrl || helpUrl) { %>
+      <p class="mail-legal" style="margin:12px 0 8px;font-size:11px;color:<%= colors.textMuted %>;">
+        <% if (privacyUrl) { %><a href="<%= privacyUrl %>" style="color:<%= colors.textMuted %>;margin:0 6px;">Privacy</a><% } %>
+        <% if (termsUrl) { %><a href="<%= termsUrl %>" style="color:<%= colors.textMuted %>;margin:0 6px;">Terms</a><% } %>
+        <% if (helpUrl) { %><a href="<%= helpUrl %>" style="color:<%= colors.textMuted %>;margin:0 6px;">Help</a><% } %>
+      </p>
+    <% } %>
+
+    <p style="margin:14px 0 0;font-size:11px;color:<%= colors.textMuted %>;">
+      &copy; <%= year %> <%= company || appName %>. All rights reserved.
+    </p>
+  </td>
+</tr>

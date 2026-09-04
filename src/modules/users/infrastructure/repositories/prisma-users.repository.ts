@@ -1,4 +1,4 @@
-import { prisma } from '@/shared/infrastructure/database';
+import { prisma, prismaNotDeleted } from '@/shared/infrastructure/database';
 
 import type { UsersRepositoryPort } from '../../domain/repositories/users.repository';
 import type {
@@ -291,7 +291,7 @@ export class PrismaUsersRepository implements UsersRepositoryPort {
     await prisma.blacklistEntry.deleteMany({ where: { userId } });
 
     await prisma.blog.updateMany({
-      where: { authorId: userId, deletedAt: null },
+      where: { authorId: userId, ...prismaNotDeleted },
       data: { deletedAt: new Date(), visibility: 'PRIVATE', status: 'ARCHIVED' },
     });
 

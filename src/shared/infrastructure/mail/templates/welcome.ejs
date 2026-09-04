@@ -1,128 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
+<%- include('partials/shell-open', { pageTitle: 'Welcome to ' + appName }) %>
+<%- include('partials/header', { eyebrow: 'Welcome aboard', title: 'Your account is ready', tone: 'brand' }) %>
+<tr>
+  <td class="mail-body" style="padding:36px 32px 28px;">
+    <h2 style="margin:0 0 12px;font-size:20px;color:<%= colors.text %>;">Hello <%= name %>,</h2>
+    <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:<%= colors.textMuted %>">
+      Thanks for joining <strong style="color:<%= colors.text %>;"><%= appName %></strong>.
+      Your account is set up and you can start exploring right away.
+    </p>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to <%= appName %></title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-      background-color: #f8f9fb;
-      margin: 0;
-      padding: 0;
-      color: #333;
-    }
-
-    .container {
-      max-width: 700px;
-      margin: 40px auto;
-      background-color: #fff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-    }
-
-    .header {
-      background-color: #8b0000;
-      background-image: linear-gradient(120deg, #8b0000, #b22222);
-      padding: 35px;
-      text-align: center;
-      color: #fff;
-    }
-
-    .header h1 {
-      margin: 0;
-      font-size: 1.9em;
-    }
-
-    .content {
-      padding: 40px 35px;
-      line-height: 1.7;
-    }
-
-    .content h2 {
-      color: #8b0000;
-      margin-bottom: 10px;
-    }
-
-    .content p {
-      font-size: 0.95em;
-      color: #444;
-    }
-
-    .cta {
-      text-align: center;
-      margin: 35px 0;
-    }
-
-    .cta a {
-      background-color: #8b0000;
-      color: #fff;
-      padding: 12px 28px;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: bold;
-      transition: background-color 0.3s ease;
-    }
-
-    .cta a:hover {
-      background-color: #a71d1d;
-    }
-
-    .footer {
-      background-color: #fafafa;
-      border-top: 1px solid #eee;
-      padding: 25px 30px;
-      text-align: center;
-      font-size: 0.85em;
-      color: #777;
-    }
-
-    .footer a {
-      color: #b22222;
-      text-decoration: none;
-    }
-  </style>
-</head>
-
-<body>
-
-  <div class="container">
-    <div class="header">
-      <h1>Welcome to <%= appName %></h1>
-      <p>Your account is ready</p>
+    <div class="mail-panel mail-panel-brand" style="background:<%= colors.primarySoft %>;border-left:4px solid <%= colors.primary %>;border-radius:12px;padding:18px 20px;margin:22px 0;font-size:14px;color:<%= colors.text %>;">
+      Tip: complete your profile and review security settings (password, 2FA) for a smoother experience.
     </div>
 
-    <div class="content">
-      <h2>Hello <%= name %>,</h2>
-      <p>Thank you for joining us. Your account has been created successfully and you can now access your personal space.</p>
+    <% if (clientUrl) { %>
+      <%- include('partials/cta', { href: clientUrl, label: 'Go to my account', variant: 'brand' }) %>
+    <% } %>
 
-      <p>We are glad to have you with <strong><%= appName %></strong>. If you need any help getting started, our support team is available.</p>
-
-      <div class="cta">
-        <!-- Callers should pass clientUrl (app base URL). Falls back to "#" if omitted. -->
-        <a href="<%= typeof clientUrl !== 'undefined' && clientUrl ? clientUrl : '#' %>">Go to my account</a>
-      </div>
-
-      <p>Welcome again — we look forward to working with you.</p>
-    </div>
-
-    <div class="footer">
-      <p>&copy; <%= typeof year !== 'undefined' ? year : new Date().getFullYear() %> <%= appName %>. All rights reserved.</p>
-      <p>Contact: <a href="mailto:<%= typeof supportEmail !== 'undefined' && supportEmail ? supportEmail : 'support@example.com' %>"><%= typeof supportEmail !== 'undefined' && supportEmail ? supportEmail : 'support@example.com' %></a></p>
-      <div class="social">
-        <a href="#">Facebook</a> |
-        <a href="#">Instagram</a> |
-        <a href="#">LinkedIn</a> |
-        <a href="#">YouTube</a>
-      </div>
-    </div>
-  </div>
-
-</body>
-
-</html>
-
-<!--* Variables -->
-<%# Template locals documented in mail.types / callers %>
+    <p style="margin:18px 0 0;font-size:15px;line-height:1.7;color:<%= colors.textMuted %>">
+      Need a hand? Reply to this email or reach us at
+      <a href="mailto:<%= supportEmail %>" style="color:<%= colors.primary %>;font-weight:600;text-decoration:none;"><%= supportEmail %></a>.
+    </p>
+  </td>
+</tr>
+<%- include('partials/footer') %>
+<%- include('partials/shell-close') %>

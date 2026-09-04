@@ -7,6 +7,7 @@ import path from 'path';
 
 import { envs } from '@/app/config';
 
+import { buildMailBrandLocals } from './mail-brand';
 import type { MailTemplateName } from './mail.types';
 
 const templatesDir = path.join(__dirname, 'templates');
@@ -37,13 +38,8 @@ export const renderTemplate = async (
   const file = templateFiles[template];
   if (!file) throw new Error(`Unknown mail template: ${template}`);
 
-  return ejs.renderFile(path.join(templatesDir, file), {
-    ...data,
-    appName: envs.APP_NAME,
-    year: new Date().getFullYear(),
-    // Always present so templates can reference them safely (even in docs comments).
-    clientUrl: (data.clientUrl as string | undefined) ?? envs.CLIENT_URL ?? '',
-    supportEmail: (data.supportEmail as string | undefined) ?? envs.USER_EMAIL ?? '',
+  return ejs.renderFile(path.join(templatesDir, file), buildMailBrandLocals(data), {
+    filename: path.join(templatesDir, file),
   });
 };
 

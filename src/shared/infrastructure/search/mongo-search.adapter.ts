@@ -1,4 +1,5 @@
 import prisma from '@/shared/infrastructure/database/prisma.client';
+import { prismaNotDeleted } from '@/shared/infrastructure/database/prisma-soft-delete';
 
 import type { SearchOptions, SearchPort, SearchResult } from './search.port';
 
@@ -18,13 +19,17 @@ export class MongoSearchAdapter implements SearchPort {
 
     if (index === 'blogs') {
       const where = {
-        deletedAt: null,
-        status: 'PUBLISHED' as const,
-        visibility: 'PUBLIC' as const,
-        OR: [
-          { title: { contains: term } },
-          { excerpt: { contains: term } },
-          { content: { contains: term } },
+        AND: [
+          prismaNotDeleted,
+          { status: 'PUBLISHED' as const },
+          { visibility: 'PUBLIC' as const },
+          {
+            OR: [
+              { title: { contains: term } },
+              { excerpt: { contains: term } },
+              { content: { contains: term } },
+            ],
+          },
         ],
       };
 

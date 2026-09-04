@@ -16,15 +16,19 @@ Both require HTTP Basic (`ADMIN_BASIC_*`, fallback `SWAGGER_*`) except when
 
 ## Source of truth
 
-`docs/api/openapi.config.js` generates the consolidated spec. Modular YAML
-under `paths/` are human-editable fragments kept aligned with routers — they
-are **not** loaded at runtime. After route changes:
+`docs/api/openapi.config.js` is the thin entry that assembles modules under
+`docs/api/generator/` and writes the consolidated spec. After route changes:
 
 1. Update Express routes.
-2. Update `openapi.config.js` (and the matching `paths/*.yaml` fragment).
+2. Update the matching module under `docs/api/generator/paths/*.js` (and
+   `components.js` / `info.js` when schemas or tags change).
 3. `npm run generate:openapi`
 4. `npm run test:docs`
 5. Contract tests also fail if `openapi.yaml` drifts from the generator.
+
+YAML fragments under `docs/api/paths/*.yaml` are **legacy reference snippets** —
+they are **not** loaded by the generator or at runtime. Canonical path
+definitions live in `docs/api/generator/paths/*.js`.
 
 ## Coverage rule
 
@@ -36,10 +40,22 @@ must appear in the generated OpenAPI document. Operator UIs (`/api-docs`,
 
 ```
 docs/api/
-├── openapi.yaml           # Consolidated spec (generated — runtime + Swagger)
-├── openapi.config.js      # Generator entry — run via npm run generate:openapi
-├── README.md              # This file
-├── paths/
+├── openapi.yaml              # Consolidated spec (generated — runtime + Swagger)
+├── openapi.config.js         # Thin entry — assemble + write YAML
+├── README.md                 # This file
+├── generator/
+│   ├── helpers.js            # errorContent, okContent, bearer, enums, schemas
+│   ├── components.js         # components.schemas + securitySchemes + responses
+│   ├── info.js               # info, servers, tags
+│   └── paths/
+│       ├── index.js          # Merges all path objects
+│       ├── auth.js
+│       ├── oauth.js
+│       ├── users.js
+│       ├── blogs.js
+│       ├── files.js
+│       └── system.js
+├── paths/                    # Legacy YAML reference snippets (not loaded)
 │   ├── index.yaml
 │   ├── auth.yaml
 │   ├── users.yaml
@@ -53,11 +69,11 @@ docs/api/
     └── bearerAuth.yml
 ```
 
-### Paths
+### Paths (generator)
 
-One file per tag area. Document only endpoints that exist in module routers
-(auth, users, oauth, blogs, files, system). Do not invent product APIs that are
-not implemented.
+One JS module per tag area under `generator/paths/`. Document only endpoints
+that exist in module routers (auth, users, oauth, blogs, files, system). Do not
+invent product APIs that are not implemented.
 
 Keep in sync with:
 
@@ -74,6 +90,7 @@ passed as Bearer tokens.
 
 ```bash
 npm run generate:openapi
+# or: node docs/api/openapi.config.js
 ```
 
 Writes `docs/api/openapi.yaml`.

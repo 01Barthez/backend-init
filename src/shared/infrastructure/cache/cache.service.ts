@@ -6,6 +6,7 @@
 import zlib from 'zlib';
 
 import { envs } from '@/app/config';
+import { isAppError } from '@/shared/domain/errors/app-error';
 import log from '@/shared/infrastructure/logging/logger';
 
 import localCache from './clients/local-cache';
@@ -20,6 +21,9 @@ export type { CachePort } from './cache.port';
 /**
  * Read-through cache helper.
  * Returns local → Redis hit when present; otherwise runs `fetchFn` and stores the result.
+ *
+ * Domain / application errors from `fetchFn` (e.g. AppError 404) are rethrown as-is.
+ * Only Redis / serialization failures trigger the fallback fetch path.
  */
 export const cacheData = async <T extends CacheableData>(
   cacheKey: string,
@@ -35,6 +39,8 @@ export const cacheData = async <T extends CacheableData>(
     log.info(`data fetching from localCache at the key: ${cacheKey}`);
     return cachedDataLocal as T;
   }
+
+  let redisReadFailed = false;
 
   try {
     const cachedDataRedis = await redisClient.get(cacheKey);
@@ -59,7 +65,12 @@ export const cacheData = async <T extends CacheableData>(
         await redisClient.del(cacheKey);
       }
     }
+  } catch (error) {
+    redisReadFailed = true;
+    log.error(`Failed to read cache for key: ${cacheKey}`, { cacheKey, error });
+  }
 
+  try {
     log.info('data are not in the cache, execution of the function...');
     const startTime = Date.now();
     const data = await fetchFn();
@@ -76,25 +87,29 @@ export const cacheData = async <T extends CacheableData>(
     }
 
     if (data !== null) localCache.set(cacheKey, data);
-    await redisClient.setex(cacheKey, ttl, dataToStore);
 
-    log.info(
-      `data fetching, saved in the cache with TTL: ${ttl} and in the localcache under the key: ${cacheKey}...`,
-    );
+    try {
+      await redisClient.setex(cacheKey, ttl, dataToStore);
+      log.info(
+        `data fetching, saved in the cache with TTL: ${ttl} and in the localcache under the key: ${cacheKey}...`,
+      );
+    } catch (error) {
+      log.warn(`Failed to write cache for key: ${cacheKey}`, { cacheKey, error });
+    }
 
     return data;
   } catch (error) {
-    const messageError = `Failed to manage cache for key: ${cacheKey}. Error: ${error instanceof Error ? error.message : JSON.stringify(error)}`;
-    log.error(messageError, { cacheKey, error });
+    if (isAppError(error)) {
+      throw error;
+    }
 
-    try {
-      log.warn(`Attempting to fetch fresh data after cache error for key: ${cacheKey}`);
-      return await fetchFn();
-    } catch (fetchError) {
+    if (redisReadFailed) {
       const fetchErrorMsg = `Critical: Failed to fetch data after cache error for key: ${cacheKey}`;
-      log.error(fetchErrorMsg, { cacheKey, error: fetchError });
+      log.error(fetchErrorMsg, { cacheKey, error });
       throw new Error(fetchErrorMsg);
     }
+
+    throw error;
   }
 };
 

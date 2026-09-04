@@ -1,5 +1,11 @@
 import { execFileSync } from 'child_process';
-import { readFileSync, mkdtempSync, copyFileSync, rmSync } from 'fs';
+import {
+  readFileSync,
+  mkdtempSync,
+  copyFileSync,
+  cpSync,
+  rmSync,
+} from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -7,6 +13,7 @@ import { describe, expect, it } from 'vitest';
 const ROOT = process.cwd();
 const OPENAPI_PATH = resolve(ROOT, 'docs/api/openapi.yaml');
 const OPENAPI_CONFIG = resolve(ROOT, 'docs/api/openapi.config.js');
+const OPENAPI_GENERATOR = resolve(ROOT, 'docs/api/generator');
 
 /** Paths that must stay documented (covers identity, admin, blogs, system). */
 const REQUIRED_PATHS = [
@@ -63,6 +70,7 @@ describe('OpenAPI contract', () => {
 
     try {
       copyFileSync(OPENAPI_CONFIG, stagedConfig);
+      cpSync(OPENAPI_GENERATOR, join(dir, 'generator'), { recursive: true });
       copyFileSync(OPENAPI_PATH, stagedYaml);
 
       // Generator always writes beside the config file as openapi.yaml.

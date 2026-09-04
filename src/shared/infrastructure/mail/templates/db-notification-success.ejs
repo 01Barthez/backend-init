@@ -1,182 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
+<%- include('partials/shell-open', { pageTitle: 'Backup completed — ' + appName }) %>
+<%- include('partials/header', { eyebrow: 'System notification', title: 'Database backup completed', tone: 'success' }) %>
+<tr>
+  <td class="mail-body" style="padding:36px 32px 28px;">
+    <h2 style="margin:0 0 12px;font-size:20px;color:<%= colors.text %>;">Hello,</h2>
+    <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:<%= colors.textMuted %>">
+      The automatic database backup for <strong style="color:<%= colors.text %>;"><%= appName %></strong> finished successfully.
+    </p>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Backup completed – <%= appName %> notification</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-      background-color: #f8f9fb;
-      margin: 0;
-      padding: 0;
-      color: #333;
-    }
-
-    .container {
-      max-width: 700px;
-      margin: 40px auto;
-      background-color: #fff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-    }
-
-    .header {
-      background-color: #8b0000;
-      background-image: linear-gradient(120deg, #8b0000, #b22222);
-      padding: 35px;
-      text-align: center;
-      color: #fff;
-    }
-
-    .header h1 {
-      margin: 0;
-      font-size: 1.9em;
-    }
-
-    .content {
-      padding: 40px 35px;
-      line-height: 1.7;
-    }
-
-    .content h2 {
-      color: #8b0000;
-      margin-bottom: 10px;
-    }
-
-    .info-box {
-      background-color: #f9f2f2;
-      border-left: 4px solid #8b0000;
-      border-radius: 8px;
-      padding: 18px 20px;
-      margin: 25px 0;
-      font-size: 0.95em;
-    }
-
-    .info-item {
-      display: flex;
-      justify-content: space-between;
-      margin: 8px 0;
-      padding-bottom: 4px;
-      border-bottom: 1px dashed #ddd;
-    }
-
-    .info-item span:first-child {
-      font-weight: 600;
-      color: #555;
-    }
-
-    .info-item span:last-child {
-      color: #222;
-    }
-
-    .cta {
-      text-align: center;
-      margin: 35px 0;
-    }
-
-    .cta a {
-      background-color: #8b0000;
-      color: #fff;
-      padding: 12px 28px;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: bold;
-      transition: background-color 0.3s ease;
-    }
-
-    .cta a:hover {
-      background-color: #a71d1d;
-    }
-
-    .footer {
-      background-color: #fafafa;
-      border-top: 1px solid #eee;
-      padding: 25px 30px;
-      text-align: center;
-      font-size: 0.85em;
-      color: #777;
-    }
-
-    .footer a {
-      color: #b22222;
-      text-decoration: none;
-    }
-  </style>
-</head>
-
-<body>
-
-  <div class="container">
-    <div class="header">
-      <h1>Database backup completed</h1>
-      <p><%= appName %> – System notification</p>
-    </div>
-
-    <div class="content">
-      <h2>Hello,</h2>
-      <p>
-        The automatic database backup completed successfully. Operation details are below:
-      </p>
-
-      <div class="info-box">
-        <div class="info-item">
-          <span>Backup date:</span>
-          <span><%= date %></span>
-        </div>
-        <div class="info-item">
-          <span>File location:</span>
-          <span><%= backupPath %></span>
-        </div>
-        <div class="info-item">
-          <span>File size:</span>
-          <span><%= size %></span>
-        </div>
-        <div class="info-item">
-          <span>Process duration:</span>
-          <span><%= duration %></span>
-        </div>
+    <div class="mail-panel mail-panel-success" style="background:<%= colors.successSoft %>;border-left:4px solid <%= colors.success %>;border-radius:12px;padding:18px 20px;margin:22px 0;">
+      <div class="mail-meta-row" style="padding:8px 0;border-bottom:1px dashed <%= colors.border %>;">
+        <span class="mail-meta-label" style="color:<%= colors.textMuted %>;font-weight:600;font-size:12px;">Backup date</span>
+        <span class="mail-meta-value" style="color:<%= colors.text %>;font-size:14px;"><%= date %></span>
       </div>
-
-      <p>
-        The backup file is available at the location above.
-        We recommend reviewing backups periodically and keeping a secure off-site copy.
-      </p>
-
-      <div class="cta">
-        <a href="<%= backupPath %>">Download backup</a>
+      <div class="mail-meta-row" style="padding:8px 0;border-bottom:1px dashed <%= colors.border %>;">
+        <span class="mail-meta-label" style="color:<%= colors.textMuted %>;font-weight:600;font-size:12px;">File location</span>
+        <span class="mail-meta-value" style="color:<%= colors.text %>;font-size:14px;word-break:break-all;"><%= backupPath %></span>
       </div>
-
-      <p>
-        Thank you for using <strong><%= appName %></strong> automated services.
-      </p>
-    </div>
-
-    <div class="footer">
-      <p>&copy; <%= typeof year !== 'undefined' ? year : new Date().getFullYear() %> <%= appName %>. All rights reserved.</p>
-      <p>Contact: <a href="mailto:<%= typeof supportEmail !== 'undefined' && supportEmail ? supportEmail : 'support@example.com' %>"><%= typeof supportEmail !== 'undefined' && supportEmail ? supportEmail : 'support@example.com' %></a></p>
-      <div class="social">
-        <a href="#">Facebook</a> |
-        <a href="#">Instagram</a> |
-        <a href="#">LinkedIn</a> |
-        <a href="#">YouTube</a>
+      <div class="mail-meta-row" style="padding:8px 0;border-bottom:1px dashed <%= colors.border %>;">
+        <span class="mail-meta-label" style="color:<%= colors.textMuted %>;font-weight:600;font-size:12px;">File size</span>
+        <span class="mail-meta-value" style="color:<%= colors.text %>;font-size:14px;"><%= size %></span>
+      </div>
+      <div class="mail-meta-row" style="padding:8px 0;">
+        <span class="mail-meta-label" style="color:<%= colors.textMuted %>;font-weight:600;font-size:12px;">Duration</span>
+        <span class="mail-meta-value" style="color:<%= colors.text %>;font-size:14px;"><%= duration %></span>
       </div>
     </div>
-  </div>
 
-</body>
+    <% if (backupPath && String(backupPath).indexOf('http') === 0) { %>
+      <%- include('partials/cta', { href: backupPath, label: 'Open backup location', variant: 'success' }) %>
+    <% } %>
 
-</html>
-
-<!-- * Dynamic variables -->
-<!--
-  <%= date %>
-  <%= backupPath %>
-  <%= size %>
-  <%= duration %>
-  <%= appName %>
-  <%= supportEmail %> (optional)
-  <%= year %> (optional)
--->
+    <p style="margin:16px 0 0;font-size:14px;color:<%= colors.textMuted %>">
+      Keep an off-site copy as part of your recovery plan.
+    </p>
+  </td>
+</tr>
+<%- include('partials/footer') %>
+<%- include('partials/shell-close') %>

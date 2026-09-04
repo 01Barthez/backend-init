@@ -1,5 +1,6 @@
 import type { ArticleStatus, Visibility } from '@prisma/client';
 
+import { prismaNotDeleted } from '@/shared/infrastructure/database/prisma-soft-delete';
 import prisma from '@/shared/infrastructure/database/prisma.client';
 
 import type {
@@ -20,7 +21,7 @@ const authorSelect = {
 
 /**
  * Prisma-backed BlogRepositoryPort.
- * Soft-deleted blogs are excluded (deletedAt: null).
+ * Soft-deleted blogs are excluded via prismaNotDeleted (Mongo unset-safe).
  */
 export class PrismaBlogRepository implements BlogRepositoryPort {
   async create(data: CreateBlogInput): Promise<BlogEntity> {
@@ -33,6 +34,7 @@ export class PrismaBlogRepository implements BlogRepositoryPort {
         coverImage: data.coverImage,
         visibility: (data.visibility ?? 'PUBLIC') as Visibility,
         authorId: data.authorId,
+        deletedAt: null,
       },
       include: { author: { select: authorSelect } },
     });
@@ -41,7 +43,7 @@ export class PrismaBlogRepository implements BlogRepositoryPort {
 
   async findById(id: string): Promise<BlogEntity | null> {
     const blog = await prisma.blog.findFirst({
-      where: { id, deletedAt: null },
+      where: { id, ...prismaNotDeleted },
       include: { author: { select: authorSelect } },
     });
     return blog ? BlogMapper.toDomain(blog) : null;
@@ -51,9 +53,9 @@ export class PrismaBlogRepository implements BlogRepositoryPort {
     const blog = await prisma.blog.findFirst({
       where: {
         slug,
-        deletedAt: null,
         status: 'PUBLISHED',
         visibility: 'PUBLIC',
+        ...prismaNotDeleted,
       },
       include: { author: { select: authorSelect } },
     });
@@ -65,7 +67,7 @@ export class PrismaBlogRepository implements BlogRepositoryPort {
     const where = {
       status: 'PUBLISHED' as ArticleStatus,
       visibility: 'PUBLIC' as Visibility,
-      deletedAt: null,
+      ...prismaNotDeleted,
     };
 
     const [items, total] = await Promise.all([
@@ -96,9 +98,9 @@ export class PrismaBlogRepository implements BlogRepositoryPort {
     const rows = await prisma.blog.findMany({
       where: {
         id: { in: ids },
-        deletedAt: null,
         status: 'PUBLISHED',
         visibility: 'PUBLIC',
+        ...prismaNotDeleted,
       },
       include: { author: { select: authorSelect } },
     });

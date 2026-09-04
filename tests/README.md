@@ -23,7 +23,8 @@ tests/
 │   └── journeys/          # Multi-step API journeys
 ├── contract/
 │   └── openapi/           # OpenAPI document contract
-└── load/                  # k6 / load assets (not run by Vitest)
+└── load/
+    └── k6/                # k6 scenarios + helpers (not run by Vitest)
 ```
 
 ## What each layer covers
@@ -48,7 +49,10 @@ npm run test:unit
 npm run test:integration      # API + skipped live gates
 npm run test:integration:live # RUN_LIVE_INFRA=1
 npm run test:e2e
+npm run test:e2e:live         # full live route suite (running API)
 npm run test:contract
+npm run test:load             # k6 capacity suite (raises rate limits briefly)
+npm run test:load:smoke       # k6 public health smoke
 npm run test:coverage
 npm run test:ci               # unit+integration+e2e+contract + coverage
 npm run test:docs             # swagger-cli validate
@@ -61,7 +65,7 @@ npm run validate              # lint + types + test:ci + docs
 2. Prefer `tests/factories/*` for domain entities.
 3. Keep setup mocks aligned with `@/shared/...` import paths.
 4. Do not assert on private infrastructure when a public use case exists.
-5. Load tests under `tests/load/` are run with k6 (or similar), not Vitest.
+5. Load tests under `tests/load/k6/` are run with k6 (`npm run test:load`), not Vitest.
 
 Contract tests follow `docs/api/openapi.yaml` as produced by
 `npm run generate:openapi`. Path fragments under `docs/api/paths/` are

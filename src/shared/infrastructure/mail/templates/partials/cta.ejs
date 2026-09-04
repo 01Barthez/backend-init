@@ -1,0 +1,17 @@
+<%#
+  CTA button.
+  Pass: href, label, and optionally btnVariant ('brand'|'success'|'danger').
+%>
+<%
+  var _tone = 'brand';
+  if (typeof btnVariant === 'string' && btnVariant) _tone = btnVariant;
+  else if (typeof variant === 'string' && variant) _tone = variant;
+  var bg = colors.primary;
+  if (_tone === 'success') bg = colors.success;
+  if (_tone === 'danger') bg = colors.danger;
+%>
+<div class="mail-cta" style="text-align:center;margin:28px 0 8px;">
+  <a class="mail-btn" href="<%= href %>" style="display:inline-block;background-color:<%= bg %>;color:<%= colors.onPrimary %>;padding:14px 28px;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px;">
+    <%= label %>
+  </a>
+</div>

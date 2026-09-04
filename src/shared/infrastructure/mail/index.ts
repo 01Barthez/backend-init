@@ -10,3 +10,4 @@ export {
 export type { MailJobPayload, MailTemplateName, SendMailOptions } from './mail.types';
 export { default as send_mail } from './send-mail.service';
 export { getMailFromAddress, renderTemplate } from './template.service';
+export { buildMailBrandLocals } from './mail-brand';

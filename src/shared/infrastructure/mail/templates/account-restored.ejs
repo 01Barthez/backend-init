@@ -1,20 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Account restored - <%= appName %></title>
-</head>
-<body>
-  <h2>Hello <%= name %>,</h2>
-  <p>Your account on <%= appName %> was restored on <%= date %>.</p>
-  <p>You can sign in again with your credentials.
-    <!-- Callers should pass clientUrl (app base URL) if a direct link is needed. -->
-    <% if (typeof clientUrl !== 'undefined' && clientUrl) { %><a href="<%= clientUrl %>">Sign in</a><% } %></p>
-  <p>If you have questions, contact
-    <a href="mailto:<%= typeof supportEmail !== 'undefined' && supportEmail ? supportEmail : 'support@example.com' %>"><%= typeof supportEmail !== 'undefined' && supportEmail ? supportEmail : 'support@example.com' %></a>.</p>
-  <p>&copy; <%= year %> <%= appName %>. All rights reserved.</p>
-</body>
-</html>
+<%- include('partials/shell-open', { pageTitle: 'Account restored — ' + appName }) %>
+<%- include('partials/header', { eyebrow: 'Account lifecycle', title: 'Welcome back', tone: 'success' }) %>
+<tr>
+  <td class="mail-body" style="padding:36px 32px 28px;">
+    <h2 style="margin:0 0 12px;font-size:20px;color:<%= colors.text %>;">Hello <%= name %>,</h2>
+    <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:<%= colors.textMuted %>">
+      Your <strong style="color:<%= colors.text %>;"><%= appName %></strong> account was restored on
+      <strong style="color:<%= colors.text %>;"><%= date %></strong>. You can sign in again with your credentials.
+    </p>
 
-<!--* Variables -->
-<%# Template locals documented in mail.types / callers %>
+    <div class="mail-panel mail-panel-success" style="background:<%= colors.successSoft %>;border-left:4px solid <%= colors.success %>;border-radius:12px;padding:18px 20px;margin:22px 0;font-size:14px;color:<%= colors.text %>;">
+      For safety, consider rotating your password and reviewing active sessions after you sign in.
+    </div>
+
+    <% if (clientUrl) { %>
+      <%- include('partials/cta', { href: clientUrl, label: 'Sign in', variant: 'success' }) %>
+    <% } %>
+  </td>
+</tr>
+<%- include('partials/footer') %>
+<%- include('partials/shell-close') %>

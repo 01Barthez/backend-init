@@ -1,17 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Role updated - <%= appName %></title>
-</head>
-<body>
-  <h2>Hello <%= name %>,</h2>
-  <p>Your role on <%= appName %> was updated to <strong><%= role %></strong> on <%= date %>.</p>
-  <p>If you have questions about this change, contact your administrator or
-    <a href="mailto:<%= typeof supportEmail !== 'undefined' && supportEmail ? supportEmail : 'support@example.com' %>"><%= typeof supportEmail !== 'undefined' && supportEmail ? supportEmail : 'support@example.com' %></a>.</p>
-  <p>&copy; <%= year %> <%= appName %>. All rights reserved.</p>
-</body>
-</html>
+<%- include('partials/shell-open', { pageTitle: 'Role updated — ' + appName }) %>
+<%- include('partials/header', { eyebrow: 'Access update', title: 'Your role changed', tone: 'brand' }) %>
+<tr>
+  <td class="mail-body" style="padding:36px 32px 28px;">
+    <h2 style="margin:0 0 12px;font-size:20px;color:<%= colors.text %>;">Hello <%= name %>,</h2>
+    <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:<%= colors.textMuted %>">
+      Your role on <strong style="color:<%= colors.text %>;"><%= appName %></strong> was updated to
+      <strong style="color:<%= colors.primary %>;"><%= role %></strong>
+      on <strong style="color:<%= colors.text %>;"><%= date %></strong>.
+    </p>
 
-<!--* Variables -->
-<%# Template locals documented in mail.types / callers %>
+    <div class="mail-panel mail-panel-brand" style="background:<%= colors.primarySoft %>;border-left:4px solid <%= colors.primary %>;border-radius:12px;padding:18px 20px;margin:22px 0;font-size:14px;color:<%= colors.text %>;">
+      New permissions apply on your next signed-in session. Sign out and back in if something looks outdated.
+    </div>
+
+    <% if (clientUrl) { %>
+      <%- include('partials/cta', { href: clientUrl, label: 'Open ' + appName, variant: 'brand' }) %>
+    <% } %>
+
+    <p style="margin:18px 0 0;font-size:14px;color:<%= colors.textMuted %>">
+      Questions? Contact your administrator or
+      <a href="mailto:<%= supportEmail %>" style="color:<%= colors.primary %>;font-weight:600;text-decoration:none;"><%= supportEmail %></a>.
+    </p>
+  </td>
+</tr>
+<%- include('partials/footer') %>
+<%- include('partials/shell-close') %>

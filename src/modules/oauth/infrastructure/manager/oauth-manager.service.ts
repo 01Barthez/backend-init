@@ -4,6 +4,7 @@
  */
 import { envs } from '@/app/config';
 import { OAUTH_ERRORS, OAUTH_STATE_TTL } from '@/shared/constants/oauth.constants';
+import { AppError } from '@/shared/domain/errors/app-error';
 import prisma from '@/shared/infrastructure/database/prisma.client';
 import log from '@/shared/infrastructure/logging/logger';
 import { decryptSecret, encryptSecret, randomHex } from '@/shared/utils/crypto';
@@ -215,25 +216,15 @@ export class OAuthManager {
   }
 
   async unlinkOAuthAccount(userId: string, provider: OAuthProvider): Promise<void> {
-    try {
-      await prisma.oAuthAccount.delete({
-        where: {
-          userId_provider: {
-            userId,
-            provider,
-          },
-        },
-      });
+    const result = await prisma.oAuthAccount.deleteMany({
+      where: { userId, provider },
+    });
 
-      log.info('OAuth account unlinked', { userId, provider });
-    } catch (error: any) {
-      log.error('Failed to unlink OAuth account', {
-        userId,
-        provider,
-        error: error.message,
-      });
-      throw new Error('Failed to unlink OAuth account');
+    if (result.count === 0) {
+      throw AppError.notFound('OAuth account not linked for this provider');
     }
+
+    log.info('OAuth account unlinked', { userId, provider });
   }
 
   async getUserOAuthAccounts(userId: string): Promise<IOAuthAccountData[]> {

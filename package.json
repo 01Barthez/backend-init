@@ -55,7 +55,7 @@
   },
   "scripts": {
     "build": "rimraf dist/ && tsc --noEmitOnError --pretty && npm run copy:templates",
-    "copy:templates": "mkdir -p dist/shared/infrastructure/mail/templates && cp -r src/shared/infrastructure/mail/templates/*.ejs dist/shared/infrastructure/mail/templates/",
+    "copy:templates": "mkdir -p dist/shared/infrastructure/mail/templates/partials && cp -r src/shared/infrastructure/mail/templates/*.ejs dist/shared/infrastructure/mail/templates/ && cp -r src/shared/infrastructure/mail/templates/partials/*.ejs dist/shared/infrastructure/mail/templates/partials/",
     "dev": "tsx watch src/index.ts",
     "dev:api": "PROCESS_ROLE=api tsx watch src/index.ts",
     "dev:worker": "PROCESS_ROLE=worker tsx watch src/index.ts",
@@ -67,6 +67,9 @@
     "test:integration": "vitest run --project integration",
     "test:integration:live": "RUN_LIVE_INFRA=1 vitest run --project integration",
     "test:e2e": "vitest run --project e2e",
+    "test:e2e:live": "node scripts/e2e-all-routes.mjs",
+    "test:load": "bash scripts/run-load-tests.sh",
+    "test:load:smoke": "k6 run tests/load/k6/scenarios/01-public-health.js",
     "test:contract": "vitest run --project contract",
     "test:coverage": "vitest run --coverage",
     "test:docs": "swagger-cli validate docs/api/openapi.yaml",

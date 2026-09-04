@@ -5,6 +5,7 @@ import path from 'path';
 import log from '@/shared/infrastructure/logging/logger';
 
 import type { TemplateData } from '../interface/types';
+import { buildMailBrandLocals } from '../mail-brand';
 
 /** Render an EJS template file from the mail templates directory. */
 export async function renderTemplate(
@@ -25,7 +26,9 @@ export async function renderTemplate(
 
   try {
     const template = fs.readFileSync(templatePath, 'utf8');
-    return ejs.render(template, templateData);
+    return ejs.render(template, buildMailBrandLocals(templateData as Record<string, unknown>), {
+      filename: templatePath,
+    });
   } catch (error: any) {
     log.error(`Failed to render ${templateLabel} template`, {
       error: error.message,
