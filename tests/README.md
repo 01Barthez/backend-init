@@ -65,7 +65,8 @@ npm run validate              # lint + types + test:ci + docs
 2. Prefer `tests/factories/*` for domain entities.
 3. Keep setup mocks aligned with `@/shared/...` import paths.
 4. Do not assert on private infrastructure when a public use case exists.
-5. Load tests under `tests/load/k6/` are run with k6 (`npm run test:load`), not Vitest.
+5. Load tests under `tests/load/k6/` are run with k6 (`npm run test:load`), not
+   Vitest.
 
 Contract tests follow `docs/api/openapi.yaml` as produced by
 `npm run generate:openapi`. Path fragments under `docs/api/paths/` are

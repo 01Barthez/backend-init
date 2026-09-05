@@ -74,7 +74,7 @@ envs.STORAGE_PROVIDER;
 | Operator auth | `ADMIN_BASIC_USER`, `ADMIN_BASIC_PASSWORD` (fallback `SWAGGER_*`)                            |
 | Audit         | `AUDIT_PURGE_CRON`, `AUDIT_RETENTION_DAYS`                                                   |
 | Uploads       | `API_UPLOAD_MAX_BYTES`, `PRESIGN_UPLOAD_MAX_BYTES`, `PRESIGN_TTL_SECONDS`, `CLAMAV_REQUIRED` |
-| Observability | `LOG_LEVEL`, `LOG_TO_FILE`, `LOKI_ENABLED`, `LOKI_HOST`, `OTEL_ENABLED` (reserved) |
+| Observability | `LOG_LEVEL`, `LOG_TO_FILE`, `LOKI_ENABLED`, `LOKI_HOST`, `OTEL_ENABLED` (reserved)           |
 | Backup        | `BACKUP_CRON`, `BACKUP_ENCRYPTION_KEY`, `BACKUP_RETENTION_DAYS`, `BACKUP_ADMIN_EMAIL`        |
 
 `LOG_LEVEL` sets the Winston level. `LOG_TO_FILE=true` enables rotating files

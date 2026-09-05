@@ -52,7 +52,8 @@ module.exports = {
     delete: {
       tags: ['Users'],
       summary: 'Delete own account',
-      description: 'Soft-deletes the authenticated account and revokes sessions (GDPR self-service).',
+      description:
+        'Soft-deletes the authenticated account and revokes sessions (GDPR self-service).',
       security: bearer,
       responses: {
         200: okContent(null, 'Account deleted'),
@@ -103,11 +104,16 @@ module.exports = {
     get: {
       tags: ['Users'],
       summary: 'List users',
-      description: 'Paginated list with optional filters. Requires `user:read:any`. Limit capped at 100.',
+      description:
+        'Paginated list with optional filters. Requires `user:read:any`. Limit capped at 100.',
       security: bearer,
       parameters: [
         { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
-        { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 } },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+        },
         { name: 'isActive', in: 'query', schema: { type: 'boolean' } },
         { name: 'isVerified', in: 'query', schema: { type: 'boolean' } },
         { name: 'isDeleted', in: 'query', schema: { type: 'boolean' } },
@@ -140,12 +146,22 @@ module.exports = {
     get: {
       tags: ['Users'],
       summary: 'Search users',
-      description: 'Paginated free-text search (email, name, phone, ObjectId). Requires `user:read:any`. Limit capped at 50.',
+      description:
+        'Paginated free-text search (email, name, phone, ObjectId). Requires `user:read:any`. Limit capped at 50.',
       security: bearer,
       parameters: [
-        { name: 'search', in: 'query', required: true, schema: { type: 'string', minLength: 1, maxLength: 100 } },
+        {
+          name: 'search',
+          in: 'query',
+          required: true,
+          schema: { type: 'string', minLength: 1, maxLength: 100 },
+        },
         { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
-        { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 } },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 },
+        },
       ],
       responses: {
         200: {
@@ -197,7 +213,8 @@ module.exports = {
     get: {
       tags: ['Users'],
       summary: 'Get user by ID',
-      description: 'Admin detail including roles, lastLoginAt, lockedUntil. Requires `user:read:any`.',
+      description:
+        'Admin detail including roles, lastLoginAt, lockedUntil. Requires `user:read:any`.',
       security: bearer,
       parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
       responses: {
@@ -256,7 +273,8 @@ module.exports = {
     put: {
       tags: ['Users'],
       summary: 'Assign user role',
-      description: 'Assigns a system role slug. Requires `user:role:assign`. `super-admin` is not assignable via HTTP.',
+      description:
+        'Assigns a system role slug. Requires `user:role:assign`. `super-admin` is not assignable via HTTP.',
       security: bearer,
       parameters: [{ name: 'userId', in: 'path', required: true, schema: { type: 'string' } }],
       requestBody: {
@@ -440,5 +458,5 @@ module.exports = {
         404: { $ref: '#/components/responses/NotFound' },
       },
     },
-  }
+  },
 };

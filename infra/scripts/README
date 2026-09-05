@@ -9,18 +9,18 @@ repo root.
 
 ## Scripts
 
-| Script                   | Description                                              |
-| ------------------------ | -------------------------------------------------------- |
-| `start_app.sh`           | Core services (backend, Mongo, Redis, …)                 |
-| `start_monitoring.sh`    | Prometheus / Grafana / Loki (app should already be up)   |
-| `stop_app.sh`            | Stop core services                                       |
-| `stop_monitoring.sh`     | Stop monitoring services                                 |
-| `status.sh`              | Status of application + monitoring                       |
-| `full_start.sh`          | App first, then monitoring                               |
-| `full_stop.sh`           | Monitoring first, then app                               |
-| `start-mongo.sh`         | Mongo container entrypoint (replica set)                 |
-| `init-minio.sh`          | Bucket bootstrap                                         |
-| `init-clamav.sh`         | ClamAV helper                                            |
+| Script                | Description                                            |
+| --------------------- | ------------------------------------------------------ |
+| `start_app.sh`        | Core services (backend, Mongo, Redis, …)               |
+| `start_monitoring.sh` | Prometheus / Grafana / Loki (app should already be up) |
+| `stop_app.sh`         | Stop core services                                     |
+| `stop_monitoring.sh`  | Stop monitoring services                               |
+| `status.sh`           | Status of application + monitoring                     |
+| `full_start.sh`       | App first, then monitoring                             |
+| `full_stop.sh`        | Monitoring first, then app                             |
+| `start-mongo.sh`      | Mongo container entrypoint (replica set)               |
+| `init-minio.sh`       | Bucket bootstrap                                       |
+| `init-clamav.sh`      | ClamAV helper                                          |
 
 ## Usage
 

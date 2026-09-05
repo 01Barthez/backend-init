@@ -33,13 +33,18 @@ describe('System API', () => {
   it('GET /csrf-token returns current CSRF endpoint behavior', async () => {
     const response = await request(app).get('/csrf-token');
 
-    // When CSRF middleware is enabled → 200 with token; when disabled → 500.
+    // Enabled → 200 + token; disabled → 200 + csrfEnabled:false; misconfig → 500.
     expect([200, 500]).toContain(response.status);
     expect(response.body).toBeDefined();
 
     if (response.status === 200) {
-      const token = response.body?.data?.csrfToken ?? response.body?.csrfToken;
-      expect(token).toBeTruthy();
+      const payload = response.body?.data ?? response.body;
+      expect(payload).toHaveProperty('csrfEnabled');
+      if (payload.csrfEnabled) {
+        expect(payload.csrfToken).toBeTruthy();
+      } else {
+        expect(payload.csrfToken == null).toBe(true);
+      }
     }
   });
 });

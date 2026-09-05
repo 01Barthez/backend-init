@@ -1,6 +1,7 @@
 # Load tests (k6)
 
-Scenarios live under `tests/load/k6/scenarios/`. They hit a **running** API (Docker or local).
+Scenarios live under `tests/load/k6/scenarios/`. They hit a **running** API
+(Docker or local).
 
 ## Prerequisites
 
@@ -21,11 +22,11 @@ Restore normal limits after the run (compose defaults / `.env`).
 
 ## Scenarios
 
-| Script | Purpose |
-|--------|---------|
-| `01-public-health.js` | Smoke + ramp on `/health` and public blogs |
-| `02-auth-session.js` | Concurrent authenticated reads (`ACCESS_TOKEN` required) |
-| `03-mixed-workload.js` | Mixed public / signup / auth / blog writes |
+| Script                 | Purpose                                                  |
+| ---------------------- | -------------------------------------------------------- |
+| `01-public-health.js`  | Smoke + ramp on `/health` and public blogs               |
+| `02-auth-session.js`   | Concurrent authenticated reads (`ACCESS_TOKEN` required) |
+| `03-mixed-workload.js` | Mixed public / signup / auth / blog writes               |
 
 ```bash
 # Public baseline
@@ -43,7 +44,8 @@ npm run test:load
 
 ## Thresholds
 
-Scripts fail if error rate or p95 latency exceeds configured thresholds. Tune env:
+Scripts fail if error rate or p95 latency exceeds configured thresholds. Tune
+env:
 
 - `BASE_URL` — API origin
 - `ACCESS_TOKEN` — Bearer for auth scenarios
@@ -51,4 +53,7 @@ Scripts fail if error rate or p95 latency exceeds configured thresholds. Tune en
 
 ## Interpreting 429s
 
-With production-like `MAX_*` values, some 429 responses are expected under heavy load. Capacity tests should use elevated limits; soak tests can keep production limits and treat 429 as a valid protection signal (adjust thresholds / checks accordingly).
+With production-like `MAX_*` values, some 429 responses are expected under heavy
+load. Capacity tests should use elevated limits; soak tests can keep production
+limits and treat 429 as a valid protection signal (adjust thresholds / checks
+accordingly).

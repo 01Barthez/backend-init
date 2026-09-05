@@ -4,11 +4,19 @@ import { ResendOtpCommand } from '@/modules/auth/application/commands/resend-otp
 import type { MailerPort } from '@/modules/auth/application/services/mailer.port';
 import { OtpResendCooldownError } from '@/modules/auth/domain/errors/auth.errors';
 import type { UserRepositoryPort } from '@/modules/auth/domain/repositories/user.repository';
+import redisClient from '@/shared/infrastructure/cache/clients/redis-client';
 
 import { buildUserEntity } from '../../../factories/user.factory';
 
 vi.mock('@/shared/utils/otp/generate-otp', () => ({
   default: vi.fn(() => '654321'),
+}));
+
+vi.mock('@/shared/infrastructure/cache/clients/redis-client', () => ({
+  default: {
+    set: vi.fn(),
+    ttl: vi.fn(),
+  },
 }));
 
 vi.mock('@/app/config', async () => {
@@ -35,9 +43,14 @@ describe('ResendOtpCommand', () => {
       findById: vi.fn(),
       create: vi.fn(),
       update: vi.fn().mockResolvedValue(undefined),
+      setActive: vi.fn(),
+      claimEmailVerification: vi.fn(),
+      incrementOtpFailedAttempts: vi.fn(),
+      incrementFailedLoginAttempts: vi.fn(),
     } as unknown as UserRepositoryPort;
     mailer = { queue: vi.fn().mockResolvedValue(undefined) } as unknown as MailerPort;
     command = new ResendOtpCommand({ userRepository, mailer });
+    vi.mocked(redisClient.set).mockResolvedValue('OK');
   });
 
   it('returns silently for unknown or already-verified emails', async () => {
@@ -46,6 +59,7 @@ describe('ResendOtpCommand', () => {
       emailSent: true,
     });
     expect(mailer.queue).not.toHaveBeenCalled();
+    expect(redisClient.set).not.toHaveBeenCalled();
 
     vi.mocked(userRepository.findByEmail).mockResolvedValue(
       buildUserEntity({ email: 'v@example.com', isVerified: true }),
@@ -56,19 +70,16 @@ describe('ResendOtpCommand', () => {
     expect(mailer.queue).not.toHaveBeenCalled();
   });
 
-  it('rejects resend inside the cooldown window', async () => {
-    const now = Date.now();
+  it('rejects resend when Redis NX cooldown key already exists', async () => {
     vi.mocked(userRepository.findByEmail).mockResolvedValue(
       buildUserEntity({
         email: 'u@example.com',
         isVerified: false,
-        otp: {
-          code: 'hash',
-          // Issued ~10s ago (expireAt = issuedAt + OTP_DELAY)
-          expireAt: new Date(now - 10_000 + 900_000),
-        },
+        otp: { code: 'hash', expireAt: new Date(Date.now() + 900_000) },
       }),
     );
+    vi.mocked(redisClient.set).mockResolvedValue(null);
+    vi.mocked(redisClient.ttl).mockResolvedValue(42);
 
     await expect(command.execute({ email: 'u@example.com' })).rejects.toBeInstanceOf(
       OtpResendCooldownError,
@@ -76,23 +87,19 @@ describe('ResendOtpCommand', () => {
     expect(mailer.queue).not.toHaveBeenCalled();
   });
 
-  it('sends a new OTP when cooldown has elapsed', async () => {
-    const now = Date.now();
+  it('sends a new OTP when cooldown key is acquired', async () => {
     vi.mocked(userRepository.findByEmail).mockResolvedValue(
       buildUserEntity({
         email: 'u@example.com',
         isVerified: false,
-        otp: {
-          code: 'hash',
-          // Issued ~2 minutes ago
-          expireAt: new Date(now - 120_000 + 900_000),
-        },
+        otp: { code: 'hash', expireAt: new Date(Date.now() + 900_000) },
       }),
     );
 
     await expect(command.execute({ email: 'u@example.com' })).resolves.toEqual({
       emailSent: true,
     });
+    expect(redisClient.set).toHaveBeenCalledWith('otp-resend:u@example.com', '1', 'EX', 60, 'NX');
     expect(userRepository.update).toHaveBeenCalled();
     expect(mailer.queue).toHaveBeenCalledWith(
       expect.objectContaining({

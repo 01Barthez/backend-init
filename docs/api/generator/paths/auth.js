@@ -297,7 +297,8 @@ module.exports = {
     get: {
       tags: ['Authentication'],
       summary: 'List sessions',
-      description: 'Refresh-token families for the authenticated user. Requires verified + active account.',
+      description:
+        'Refresh-token families for the authenticated user. Requires verified + active account.',
       security: bearer,
       responses: {
         200: okContent(
@@ -457,5 +458,5 @@ module.exports = {
         403: { $ref: '#/components/responses/Forbidden' },
       },
     },
-  }
+  },
 };

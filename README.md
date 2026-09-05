@@ -174,23 +174,23 @@ Full contract: [docs/api/openapi.yaml](./docs/api/openapi.yaml)
 
 ## Scripts
 
-| Script                                      | Description                                   |
-| ------------------------------------------- | --------------------------------------------- |
-| `npm run dev`                               | Dev server with hot reload (`tsx watch`)      |
-| `npm run dev:api` / `dev:worker`            | Split HTTP vs BullMQ (`PROCESS_ROLE`)         |
-| `npm run keys:generate`                     | Create RS256 PEMs under `keys/`               |
-| `npm run build` / `npm start`               | Compile and run production build              |
-| `npm test` / `test:ci` / `test:coverage`    | Vitest (unit, integration, e2e, contract)     |
-| `npm run test:unit` / `integration` / `e2e` | Individual Vitest projects                    |
-| `npm run test:contract` / `test:docs`       | OpenAPI contract + swagger-cli                |
-| `npm run validate`                          | Lint + types + test:ci + OpenAPI              |
-| `npm run format` / `lint`                   | Prettier + ESLint                             |
-| `npm run generate:openapi`                  | Regenerate `docs/api/openapi.yaml`            |
+| Script                                      | Description                                       |
+| ------------------------------------------- | ------------------------------------------------- |
+| `npm run dev`                               | Dev server with hot reload (`tsx watch`)          |
+| `npm run dev:api` / `dev:worker`            | Split HTTP vs BullMQ (`PROCESS_ROLE`)             |
+| `npm run keys:generate`                     | Create RS256 PEMs under `keys/`                   |
+| `npm run build` / `npm start`               | Compile and run production build                  |
+| `npm test` / `test:ci` / `test:coverage`    | Vitest (unit, integration, e2e, contract)         |
+| `npm run test:unit` / `integration` / `e2e` | Individual Vitest projects                        |
+| `npm run test:contract` / `test:docs`       | OpenAPI contract + swagger-cli                    |
+| `npm run validate`                          | Lint + types + test:ci + OpenAPI                  |
+| `npm run format` / `lint`                   | Prettier + ESLint                                 |
+| `npm run generate:openapi`                  | Regenerate `docs/api/openapi.yaml`                |
 | `npm run scaffold:module`                   | Generate a full domain module (optional `--wire`) |
-| `npm run docker:up` / `docker:build`        | Compose / local image build                   |
-| `npm run prisma:generate` / `push` / `seed` | Database tooling                              |
-| `npm run prisma:studio`                     | Browse Mongo data (dev; localhost:5555)       |
-| `npm run docker:tools`                      | Optional tools profile (Studio, RedisInsight) |
+| `npm run docker:up` / `docker:build`        | Compose / local image build                       |
+| `npm run prisma:generate` / `push` / `seed` | Database tooling                                  |
+| `npm run prisma:studio`                     | Browse Mongo data (dev; localhost:5555)           |
+| `npm run docker:tools`                      | Optional tools profile (Studio, RedisInsight)     |
 
 ---
 

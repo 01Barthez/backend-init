@@ -5,9 +5,24 @@ const { okContent, bearer, mongoObjectId } = require('../helpers');
 
 /** Shared investigation filters for list + export. */
 const auditFilterParams = [
-  { name: 'actorId', in: 'query', schema: { type: 'string' }, description: 'Filter by actor user id' },
-  { name: 'action', in: 'query', schema: { type: 'string' }, description: 'Exact action key (e.g. user.role.changed)' },
-  { name: 'resource', in: 'query', schema: { type: 'string' }, description: 'Resource type (e.g. user, blog)' },
+  {
+    name: 'actorId',
+    in: 'query',
+    schema: { type: 'string' },
+    description: 'Filter by actor user id',
+  },
+  {
+    name: 'action',
+    in: 'query',
+    schema: { type: 'string' },
+    description: 'Exact action key (e.g. user.role.changed)',
+  },
+  {
+    name: 'resource',
+    in: 'query',
+    schema: { type: 'string' },
+    description: 'Resource type (e.g. user, blog)',
+  },
   {
     name: 'requestId',
     in: 'query',
@@ -150,8 +165,7 @@ module.exports = {
     get: {
       tags: ['System'],
       summary: 'CSP violation report URI (legacy GET)',
-      description:
-        'Same handler as POST for clients that send reports with GET. Prefer POST.',
+      description: 'Same handler as POST for clients that send reports with GET. Prefer POST.',
       responses: {
         204: { description: 'Report accepted (no content)' },
       },
@@ -169,7 +183,11 @@ module.exports = {
       parameters: [
         ...auditFilterParams,
         { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
-        { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+        },
       ],
       responses: {
         200: {
@@ -244,8 +262,7 @@ module.exports = {
     get: {
       tags: ['System'],
       summary: 'Get audit entry by id',
-      description:
-        'Full entry including `metadata` and `userAgent`. Requires `audit:read`.',
+      description: 'Full entry including `metadata` and `userAgent`. Requires `audit:read`.',
       security: bearer,
       parameters: [
         {
@@ -278,5 +295,5 @@ module.exports = {
         403: { $ref: '#/components/responses/Forbidden' },
       },
     },
-  }
+  },
 };

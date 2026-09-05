@@ -5,6 +5,7 @@
  *   ACCESS_TOKEN=... k6 run tests/load/k6/scenarios/02-auth-session.js
  */
 import http from 'k6/http';
+
 import { API, jsonHeaders, okStatus, think } from '../lib/helpers.js';
 
 const token = __ENV.ACCESS_TOKEN || '';

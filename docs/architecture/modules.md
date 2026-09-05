@@ -311,16 +311,16 @@ const system = createSystemRouters();
 // system.health | .csrf | .csp | .metrics | .audit | .setupBullBoard(app)
 ```
 
-| Mount                        | Auth                      |
-| ---------------------------- | ------------------------- |
-| `/health`, `/live`, `/ready` | none                      |
-| `/metrics`                   | HTTP Basic (except tests) |
-| `/csrf-token`                | none                      |
-| CSP report URI               | none                      |
-| `/admin/queues`              | Basic + JWT + `isAdmin`   |
-| `{API_PREFIX}/admin/audit`          | JWT + `audit:read` — list     |
-| `{API_PREFIX}/admin/audit/export`   | JWT + `audit:read` — CSV/JSON |
-| `{API_PREFIX}/admin/audit/{auditId}` | JWT + `audit:read` — detail  |
+| Mount                                | Auth                          |
+| ------------------------------------ | ----------------------------- |
+| `/health`, `/live`, `/ready`         | none                          |
+| `/metrics`                           | HTTP Basic (except tests)     |
+| `/csrf-token`                        | none                          |
+| CSP report URI                       | none                          |
+| `/admin/queues`                      | Basic + JWT + `isAdmin`       |
+| `{API_PREFIX}/admin/audit`           | JWT + `audit:read` — list     |
+| `{API_PREFIX}/admin/audit/export`    | JWT + `audit:read` — CSV/JSON |
+| `{API_PREFIX}/admin/audit/{auditId}` | JWT + `audit:read` — detail   |
 
 **How to extend.** Add ops routes under `presentation/routes` and expose them
 from `createSystemRouters`.

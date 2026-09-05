@@ -1,8 +1,8 @@
 # OpenAPI Documentation
 
 HTTP contracts for Backend Init are described with **OpenAPI 3** and served
-locally by Swagger UI when enabled. All operation summaries and descriptions
-are written in **English**.
+locally by Swagger UI when enabled. All operation summaries and descriptions are
+written in **English**.
 
 ## Live UI
 
@@ -32,8 +32,8 @@ definitions live in `docs/api/generator/paths/*.js`.
 
 ## Coverage rule
 
-Every Express route mounted in `src/app/routes/index.ts` and module routers
-must appear in the generated OpenAPI document. Operator UIs (`/api-docs`,
+Every Express route mounted in `src/app/routes/index.ts` and module routers must
+appear in the generated OpenAPI document. Operator UIs (`/api-docs`,
 `/api-docs.json`) are documented in prose here; they are not OpenAPI operations.
 
 ## Layout

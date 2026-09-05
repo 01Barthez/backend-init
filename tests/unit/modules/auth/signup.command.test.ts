@@ -40,6 +40,9 @@ describe('SignupCommand', () => {
       create: vi.fn().mockResolvedValue(buildUserEntity({ id: 'new-user' })),
       update: vi.fn(),
       setActive: vi.fn(),
+      claimEmailVerification: vi.fn(),
+      incrementOtpFailedAttempts: vi.fn(),
+      incrementFailedLoginAttempts: vi.fn(),
     };
 
     rbac = {

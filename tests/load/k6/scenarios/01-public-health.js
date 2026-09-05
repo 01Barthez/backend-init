@@ -6,6 +6,7 @@
  */
 import http from 'k6/http';
 import { Trend } from 'k6/metrics';
+
 import { API, BASE, okStatus, think } from '../lib/helpers.js';
 
 const healthTrend = new Trend('health_duration', true);

@@ -1,11 +1,5 @@
 import { execFileSync } from 'child_process';
-import {
-  readFileSync,
-  mkdtempSync,
-  copyFileSync,
-  cpSync,
-  rmSync,
-} from 'fs';
+import { copyFileSync, cpSync, mkdtempSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -102,10 +96,9 @@ describe('OpenAPI contract', () => {
     for (const path of REQUIRED_PATHS) {
       const unquoted = `  ${path}:`;
       const quoted = `  '${path}':`;
-      expect(
-        document.includes(unquoted) || document.includes(quoted),
-        `missing path ${path}`,
-      ).toBe(true);
+      expect(document.includes(unquoted) || document.includes(quoted), `missing path ${path}`).toBe(
+        true,
+      );
     }
 
     for (const path of FORBIDDEN_PATHS) {

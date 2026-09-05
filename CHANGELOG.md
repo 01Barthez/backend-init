@@ -10,8 +10,39 @@ and this project adheres to
 
 ### Security
 
+- Feature flags: server SDK `flagsmith-nodejs`, boot-time load + periodic
+  refresh, remote OFF stored as false, `FEATURE_*` env kill-switches; Flagsmith
+  UI under Compose `tools` profile.
+- Dependency hardening: `file-type@22` (ESM dynamic import), `cookie` /
+  `decode-uri-component` overrides, `markdownlint-cli2@0.23`; `npm audit` clean.
+- Three SCA channels documented + CI: npm audit, Trivy FS, OSV (Google).
+- Gitleaks config (`.gitleaks.toml`) allowlists gitignored keys/`.env` and
+  env-property false positives.
+- OTP verify uses compare-and-swap activate (`claimEmailVerification`); OTP /
+  login failure counters use Prisma `increment`; resend OTP cooldown is Redis
+  `SET NX EX`; TOTP recovery-code consume uses atomic Redis Lua.
+- Presigned upload worker (`scan-presigned-object`) downloads via MinIO,
+  ClamAV-scans, and removes objects on virus / required-scan failure; missing
+  objects throw for BullMQ retry.
+- Cache pattern invalidation uses Redis `SCAN` (not `KEYS`); hit/miss logs are
+  `debug`.
+- Audit coverage: login, logout, signup, blog create/update/delete, files
+  presign upload/download (refresh skipped as noisy).
+- Auth blacklist purge imported via `@/modules/auth` facade (`blacklist.port`).
+- `AuditLog` compound index on `action + createdAt`.
+- Boot warns when `OTEL_ENABLED=true` (SDK still not wired).
 - Fail-closed bootstrap: HTTP listen happens after RBAC seed, bucket ensure, and
   (non-api) workers.
+- Production fail-closed for `ALLOW_CSRF_PROTECTION`, `COOKIE_SECURE`,
+  `CLAMAV_REQUIRED`, and non-placeholder `BACKUP_ENCRYPTION_KEY`.
+- JWT signing/verify pinned to RS256 (`JWT_ALGORITHM` env ignored).
+- Rate limit on `POST /auth/refresh`; invite non-USER roles require
+  `user:role:assign`; blog ownership elevation uses `:any` permissions.
+- Admin self-guards and last-admin protection on delete / deactivate / role
+  change.
+- Auth context Redis cache (45s) invalidated with user cache.
+- Sync users/audit export capped at 2000 rows (`X-Export-Truncated` when hit);
+  async MinIO export via `heavy-tasks` is a follow-up.
 - JWT keys live in `keys/` (gitignored). Image does not `COPY` PEMs; Compose
   mounts `./keys`.
 - Swagger/Bull Board/metrics require operator Basic auth. Nginx exposes only
@@ -28,11 +59,18 @@ and this project adheres to
 - Audit query (`GET /api/v1/admin/audit`, `audit:read`) and retention purge
   cron.
 - Audit investigation: `GET /admin/audit/{auditId}` (metadata + userAgent),
-  `GET /admin/audit/export` (CSV/JSON, ≤ 10_000), filters `requestId` /
-  `from` / `to` on list and export.
+  `GET /admin/audit/export` (CSV/JSON, ≤ 2000), filters `requestId` / `from` /
+  `to` on list and export.
 
 ### Added
 
+- Husky hooks: `pre-commit`, `commit-msg`, `pre-merge-commit`, `pre-push`,
+  `post-merge`, `post-checkout` — see `docs/development/git-hooks.md`.
+- `infra/docker/docker-compose.prod.example.yml` — no data-store host ports,
+  `PROCESS_ROLE` split, no MailHog.
+- `docs/guides/mongodb-indexes.md` — never silent `db push` to prod; Atlas
+  Search note for users/blog.
+- Scaffold `--with-audit` injects `AuditPort.record` into CRUD commands.
 - `npm run scaffold:module` — full vertical-slice module generator (CRUD,
   Prisma, OpenAPI, unit test, optional `--wire` for container/routes/RBAC).
 

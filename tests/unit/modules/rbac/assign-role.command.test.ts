@@ -27,10 +27,12 @@ describe('AssignRoleCommand', () => {
     command = new AssignRoleCommand({ rbacRepository });
   });
 
-  it('assigns an existing role', async () => {
+  it('assigns an existing role (repository replaces prior UserRole rows)', async () => {
     await command.execute({ userId: 'u1', roleSlug: SYSTEM_ROLES.USER });
 
+    // assignRole is replace-semantics in PrismaRbacRepository (deleteMany + create).
     expect(rbacRepository.assignRole).toHaveBeenCalledWith('u1', SYSTEM_ROLES.USER);
+    expect(rbacRepository.assignRole).toHaveBeenCalledTimes(1);
   });
 
   it('no-ops when role is missing and requireExists is false', async () => {

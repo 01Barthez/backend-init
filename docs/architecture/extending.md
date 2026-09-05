@@ -162,7 +162,8 @@ Never read `process.env` inside the module.
 Document real endpoints only:
 
 1. Prefer the scaffold’s `docs/api/generator/paths/<module>.js` (or add one).
-2. Ensure it is merged from `docs/api/generator/paths/index.js` (`--wire` does this).
+2. Ensure it is merged from `docs/api/generator/paths/index.js` (`--wire` does
+   this).
 3. Run `npm run generate:openapi`.
 4. Validate with `npm run test:docs`.
 

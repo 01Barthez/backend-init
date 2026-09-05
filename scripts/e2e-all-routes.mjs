@@ -57,7 +57,11 @@ function mergeCookies(res) {
   }
 }
 
-async function req(method, url, { expect, name, body, auth = 'none', headers = {}, form, redirect } = {}) {
+async function req(
+  method,
+  url,
+  { expect, name, body, auth = 'none', headers = {}, form, redirect } = {},
+) {
   const h = { ...headers };
   if (!form) h['Content-Type'] = h['Content-Type'] || 'application/json';
   if (auth === 'bearer' && access) h.Authorization = `Bearer ${access}`;
@@ -162,7 +166,7 @@ async function clearRateLimits() {
         'BACKEND_CACHE',
         'sh',
         '-c',
-        "redis-cli --scan --pattern 'rl:*' | while read -r k; do [ -n \"$k\" ] && redis-cli DEL \"$k\" >/dev/null; done; true",
+        'redis-cli --scan --pattern \'rl:*\' | while read -r k; do [ -n "$k" ] && redis-cli DEL "$k" >/dev/null; done; true',
       ],
       { stdio: 'ignore' },
     );
@@ -609,10 +613,7 @@ async function main() {
     name: 'GET /admin/audit',
     auth: 'admin',
   });
-  const auditId =
-    auditList.json?.data?.[0]?.id ||
-    auditList.json?.data?.items?.[0]?.id ||
-    '';
+  const auditId = auditList.json?.data?.[0]?.id || auditList.json?.data?.items?.[0]?.id || '';
   await req(
     'GET',
     `${API}/admin/audit?from=2020-01-01T00:00:00.000Z&to=2030-01-01T00:00:00.000Z&page=1&limit=5`,

@@ -21,13 +21,13 @@ tree is the cross-cutting narrative.
 
 ## Quick links
 
-| Audience            | Start here                                          |
-| ------------------- | --------------------------------------------------- |
-| First run           | [Getting started](./development/getting-started.md) |
-| Architecture        | [Overview](./architecture/overview.md)              |
-| Extend the template | [Extending](./architecture/extending.md)            |
-| Ship to production  | [Production](./deployment/production.md)            |
-| HTTP contract       | [OpenAPI](./api/README.md)                          |
+| Audience            | Start here                                                                                          |
+| ------------------- | --------------------------------------------------------------------------------------------------- |
+| First run           | [Getting started](./development/getting-started.md)                                                 |
+| Architecture        | [Overview](./architecture/overview.md)                                                              |
+| Extend the template | [Extending](./architecture/extending.md)                                                            |
+| Ship to production  | [Production](./deployment/production.md) + root [guide-github-config.md](../guide-github-config.md) |
+| HTTP contract       | [OpenAPI](./api/README.md)                                                                          |
 
 ## Contents
 
@@ -50,6 +50,8 @@ tree is the cross-cutting narrative.
 - [Getting started](./development/getting-started.md)
 - [Contributing](./development/contributing.md) — also see root
   [CONTRIBUTING.md](../CONTRIBUTING.md)
+- [Git hooks](./development/git-hooks.md) — Husky pre-commit / commit-msg /
+  pre-merge-commit / pre-push / post-merge / post-checkout
 - [Testing](./development/testing.md)
 - [Coding standards](./development/coding-standards.md)
 
@@ -57,7 +59,10 @@ tree is the cross-cutting narrative.
 
 - [Docker](./deployment/docker.md)
 - [Production](./deployment/production.md)
+- [GitHub deploy tutorial](../guide-github-config.md) — secrets, GHCR, VPS/OVH
 - [Observability](./deployment/observability.md)
+- [Security scanning](./deployment/security-scanning.md) — npm audit, Trivy,
+  OSV, gitleaks, SAST
 
 ### Guides
 
@@ -66,8 +71,10 @@ tree is the cross-cutting narrative.
 - [Storage providers](./guides/storage-providers.md) — MinIO vs S3, presign
 - [Adding an OAuth provider](./guides/adding-oauth-provider.md)
 - [Background jobs](./guides/background-jobs.md) — BullMQ queues and crons
+- [Feature flags](./guides/feature-flags.md) — Flagsmith + `FEATURE_*` overrides
 - [Backups](./guides/backup.md) — encrypted Mongo dumps
-- [Scaffolding a module](./guides/scaffolding-a-module.md) — `npm run scaffold:module`
+- [Scaffolding a module](./guides/scaffolding-a-module.md) —
+  `npm run scaffold:module`
 
 ### API
 

@@ -2,8 +2,8 @@
  * Shared k6 helpers for backend-init load tests.
  * BASE_URL defaults to http://127.0.0.1:3000
  */
-import http from 'k6/http';
 import { check, sleep } from 'k6';
+import http from 'k6/http';
 
 export const BASE = __ENV.BASE_URL || 'http://127.0.0.1:3000';
 export const API = `${BASE}/api/v1`;
@@ -11,7 +11,24 @@ export const API = `${BASE}/api/v1`;
 // Treat rate-limit / redirect / client auth failures as expected so http_req_failed
 // measures transport/5xx, not intentional limiter responses under capacity runs.
 http.setResponseCallback(
-  http.expectedStatuses(200, 201, 204, 301, 302, 303, 307, 308, 400, 401, 403, 404, 409, 429, 501, 503),
+  http.expectedStatuses(
+    200,
+    201,
+    204,
+    301,
+    302,
+    303,
+    307,
+    308,
+    400,
+    401,
+    403,
+    404,
+    409,
+    429,
+    501,
+    503,
+  ),
 );
 
 export function jsonHeaders(token) {

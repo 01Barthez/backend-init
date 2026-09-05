@@ -1,12 +1,7 @@
 /**
  * OAuth paths — /api/v1/auth/oauth
  */
-const {
-  okContent,
-  bearer,
-  oauthRedirectProviders,
-  oauthAccountProviders,
-} = require('../helpers');
+const { okContent, bearer, oauthRedirectProviders, oauthAccountProviders } = require('../helpers');
 
 module.exports = {
   '/api/v1/auth/oauth/accounts': {
@@ -173,5 +168,5 @@ module.exports = {
         500: { $ref: '#/components/responses/ServerError' },
       },
     },
-  }
+  },
 };

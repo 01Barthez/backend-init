@@ -11,11 +11,11 @@ production-minded starter. Monitoring Compose assets live under
 - **Ops path for this template:** **stdout** (Docker/K8s scrape) and optional
   **Loki** when `LOKI_ENABLED=true`. There is no MinIO log-archive pipeline.
 
-| Env            | Effect                                                                 |
-| -------------- | ---------------------------------------------------------------------- |
-| `LOG_LEVEL`    | Winston level for console (and file transports when enabled)           |
-| `LOG_TO_FILE`  | When `true`, also write rotating files under `logs/` (local debug)     |
-| `LOKI_ENABLED` | Ship logs to `LOKI_HOST`                                               |
+| Env            | Effect                                                             |
+| -------------- | ------------------------------------------------------------------ |
+| `LOG_LEVEL`    | Winston level for console (and file transports when enabled)       |
+| `LOG_TO_FILE`  | When `true`, also write rotating files under `logs/` (local debug) |
+| `LOKI_ENABLED` | Ship logs to `LOKI_HOST`                                           |
 
 Do not mount a host volume for `logs/` in Compose for “production-like” runs —
 prefer stdout/Loki. Enable `LOG_TO_FILE` only when you need local file dumps.
@@ -40,7 +40,9 @@ Start monitoring via project scripts (e.g.
 
 `OTEL_ENABLED` is a **reserved** flag. The template parses W3C `traceparent`
 into request context (ALS) but does **not** initialize the OpenTelemetry Node
-SDK at boot.
+SDK at boot. When `OTEL_ENABLED=true`, bootstrap logs a **warning** so ops are
+not misled into thinking spans are exported. Wire `@opentelemetry/sdk-node` (or
+your collector sidecar) before treating the flag as live.
 
 ## Metrics
 

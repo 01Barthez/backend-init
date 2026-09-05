@@ -29,6 +29,8 @@ Prefer short-lived branches and small pull requests.
 - [ ] Module catalog / README updated when adding a module
 - [ ] Changelog `[Unreleased]` note for user-visible changes
 
+Hooks: see [Git hooks](./git-hooks.md) (`pre-commit`, `commit-msg`, `pre-push`).
+
 ## Code style
 
 - TypeScript strictness as configured in `tsconfig.json`

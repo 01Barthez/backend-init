@@ -20,8 +20,7 @@ const okContent = (dataSchema, description) => ({
               {
                 type: 'object',
                 properties: {
-                  data:
-                    typeof dataSchema === 'string' ? { $ref: dataSchema } : dataSchema,
+                  data: typeof dataSchema === 'string' ? { $ref: dataSchema } : dataSchema,
                 },
               },
             ],

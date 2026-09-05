@@ -64,6 +64,9 @@ describe('LoginCommand', () => {
       create: vi.fn(),
       update: vi.fn().mockResolvedValue(buildUser()),
       setActive: vi.fn().mockResolvedValue(undefined),
+      claimEmailVerification: vi.fn(),
+      incrementOtpFailedAttempts: vi.fn(),
+      incrementFailedLoginAttempts: vi.fn().mockResolvedValue(1),
     };
 
     tokenService = {
@@ -118,7 +121,7 @@ describe('LoginCommand', () => {
       command.execute({ email: 'alice@example.com', password: 'WrongPass1!' }),
     ).rejects.toBeInstanceOf(InvalidCredentialsError);
 
-    expect(userRepository.update).toHaveBeenCalled();
+    expect(userRepository.incrementFailedLoginAttempts).toHaveBeenCalledWith('user-1');
     expect(tokenService.issueTokenPair).not.toHaveBeenCalled();
   });
 

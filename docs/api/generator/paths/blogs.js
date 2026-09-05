@@ -216,5 +216,5 @@ module.exports = {
         500: { $ref: '#/components/responses/ServerError' },
       },
     },
-  }
+  },
 };

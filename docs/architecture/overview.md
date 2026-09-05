@@ -149,16 +149,16 @@ flowchart LR
 
 Base prefix: `/api/v1` (configurable).
 
-| Mount                                      | Module |
-| ------------------------------------------ | ------ |
-| `/auth`                                    | auth   |
-| `/auth/oauth`                              | oauth  |
-| `/users`                                   | users  |
-| `/blogs`                                   | blog   |
-| `/files`                                   | files  |
+| Mount                                      | Module                               |
+| ------------------------------------------ | ------------------------------------ |
+| `/auth`                                    | auth                                 |
+| `/auth/oauth`                              | oauth                                |
+| `/users`                                   | users                                |
+| `/blogs`                                   | blog                                 |
+| `/files`                                   | files                                |
 | `/admin/audit`                             | system (list / export / `{auditId}`) |
-| `/health`, `/health/live`, `/health/ready` | system |
-| `/metrics`, `/csrf-token`, CSP report      | system |
+| `/health`, `/health/live`, `/health/ready` | system                               |
+| `/metrics`, `/csrf-token`, CSP report      | system                               |
 
 Backup, notifications, and rbac are primarily **library modules** (ports and use
 cases). RBAC is used by auth/users; files also power avatar multipart on

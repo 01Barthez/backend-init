@@ -64,16 +64,16 @@ Failures are logged and never block the use case.
 
 Operators with `audit:read` can investigate via:
 
-| Method | Path                         | Notes                                      |
-| ------ | ---------------------------- | ------------------------------------------ |
-| GET    | `/api/v1/admin/audit`        | Paginated list (limit ≤ 100)               |
-| GET    | `/api/v1/admin/audit/export` | CSV/JSON dump (≤ 10_000 rows)              |
-| GET    | `/api/v1/admin/audit/{auditId}` | Full entry (`metadata`, `userAgent`)    |
+| Method | Path                            | Notes                                |
+| ------ | ------------------------------- | ------------------------------------ |
+| GET    | `/api/v1/admin/audit`           | Paginated list (limit ≤ 100)         |
+| GET    | `/api/v1/admin/audit/export`    | CSV/JSON dump (≤ 10_000 rows)        |
+| GET    | `/api/v1/admin/audit/{auditId}` | Full entry (`metadata`, `userAgent`) |
 
 List and export share filters: `actorId`, `action`, `resource`, `requestId`,
 `from` / `to` (ISO-8601 on `createdAt`). The HTTP API is **read-only**; writes
-happen inside use cases via `AuditPort.record`. Retention:
-`AUDIT_PURGE_CRON` / `AUDIT_RETENTION_DAYS` (maintenance worker).
+happen inside use cases via `AuditPort.record`. Retention: `AUDIT_PURGE_CRON` /
+`AUDIT_RETENTION_DAYS` (maintenance worker).
 
 ## Distributed locks
 
@@ -94,7 +94,11 @@ user-controlled.
 
 ## Feature flags
 
-Defaults when Flagsmith is unreachable (`config.features.flagsmith.defaults`):
+See [Feature flags](../guides/feature-flags.md) for Flagsmith UI (Compose
+`tools` profile), `FEATURE_*` overrides, and resolution order.
+
+Defaults when Flagsmith is unreachable / unset
+(`config.features.flagsmith.defaults`):
 
 | Flag                      | Default | Effect                                  |
 | ------------------------- | ------- | --------------------------------------- |
@@ -139,7 +143,7 @@ Magic-byte sniff on multipart. ClamAV fail-open unless `CLAMAV_REQUIRED=true`.
 | `ADMIN_BASIC_USER` / `ADMIN_BASIC_PASSWORD` | Operator HTTP Basic                                    |
 | `AUDIT_PURGE_CRON` / `AUDIT_RETENTION_DAYS` | Audit retention worker                                 |
 | `LOKI_HOST`                                 | Loki push URL when `LOKI_ENABLED`                      |
-| `OTEL_ENABLED`                              | Reserved; this template does not start the OTEL SDK    |
+| `OTEL_ENABLED`                              | Reserved; boot warns if true — SDK not wired           |
 
 Boot-time JWT key and cookie TTL validation runs via `validateRuntimeConfig()`
 (skipped in `NODE_ENV=test`).

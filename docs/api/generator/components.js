@@ -1,10 +1,7 @@
 /**
  * OpenAPI components: schemas, securitySchemes, responses.
  */
-const {
-  errorContent,
-  oauthAccountProviders,
-} = require('./helpers');
+const { errorContent, oauthAccountProviders } = require('./helpers');
 
 module.exports = {
   securitySchemes: {
