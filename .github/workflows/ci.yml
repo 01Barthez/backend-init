@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup project
         uses: ./.github/actions/setup-node
@@ -28,6 +28,9 @@ jobs:
 
       - name: Generate JWT keys
         run: npm run keys:generate
+
+      - name: Format check
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint:ci
@@ -50,12 +53,15 @@ jobs:
       - name: OpenAPI validate
         run: npm run test:docs
 
+      - name: Production dependency audit (high+)
+        run: npm run security:audit
+
       - name: Coverage
         run: npm run test:coverage
 
       - name: Upload coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: coverage/

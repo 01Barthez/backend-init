@@ -6,66 +6,66 @@ This repository’s automation lives under `.github/`.
 
 ```
 .github/
-├── README.md                 # This file
+├── README.md
 ├── CODEOWNERS
 ├── dependabot.yml
 ├── PULL_REQUEST_TEMPLATE.md
 ├── ISSUE_TEMPLATE/
-│   ├── bug.yml
-│   ├── feature.yml
-│   ├── security.yml
-│   └── config.yml
-├── actions/
-│   └── setup-node/           # Composite: Node + npm ci + Prisma generate
+├── actions/setup-node/       # Node + npm ci + Prisma generate
 └── workflows/
-    ├── ci.yml                # PR / push: lint → typecheck → tests → build
-    ├── security.yml          # npm audit + Trivy (fs) + optional secret scan
-    ├── codeql.yml            # GitHub CodeQL (JavaScript/TypeScript)
-    ├── dependency-review.yml # PR dependency diff review
+    ├── ci.yml                # lint → typecheck → tests → audit → build
+    ├── security.yml          # npm audit, Trivy, OSV, gitleaks, ESLint security
+    ├── codeql.yml            # CodeQL SAST
+    ├── dependency-review.yml # PR dependency diff
     ├── docker.yml            # Build & push image (GHCR by default)
-    ├── release.yml           # GitHub Release on version tags
-    └── deploy-vps.yml        # Deploy pulled image to a VPS (SSH)
+    ├── release.yml           # GitHub Release on v* tags
+    └── deploy-vps.yml        # SSH pull image + compose up (OVH / any VPS)
 ```
 
-## Pipeline overview
+## Pipeline flow
 
 ```
-Pull Request / push
-  ├── ci.yml            lint, typecheck, unit, integration, e2e, contract, coverage, build
-  ├── dependency-review.yml
+PR / push
+  ├── ci.yml
+  ├── security.yml
   ├── codeql.yml
-  └── security.yml
+  └── dependency-review.yml (PR only)
 
-Push to main (or version tag)
-  ├── docker.yml        build → push GHCR (swap registry via secrets)
-  ├── release.yml       on tags v*
-  └── deploy-vps.yml    SSH pull & restart (optional; needs secrets)
+Push to main (or v* tag)
+  └── docker.yml  →  GHCR image tags: main, latest, sha-<full>, semver
+
+After Docker succeeds on main
+  └── deploy-vps.yml  →  SSH → docker compose pull/up → health check
 ```
+
+Human checklist for secrets / Environments / package visibility:
+**[guide-github-config.md](../guide-github-config.md)** (repo root).
 
 ## Required status checks (recommended)
 
-In GitHub → Settings → Branches → Branch protection for `main`:
+Settings → Branches → protect `main`:
 
 - `CI / validate`
 - `Dependency Review`
 - `CodeQL`
 
-Mark them **required** before merge.
+## Secrets & variables (summary)
 
-## Secrets
+| Name                                                  | Type                                     | Used by                             |
+| ----------------------------------------------------- | ---------------------------------------- | ----------------------------------- |
+| `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_APP_PATH` | Environment `production` secrets         | deploy-vps                          |
+| `GHCR_USERNAME`, `GHCR_PULL_TOKEN`                    | Environment secrets (if package private) | deploy-vps                          |
+| `DEPLOY_HEALTH_URL`                                   | Variable (repo or environment)           | deploy-vps health probe             |
+| `CONTAINER_REGISTRY`                                  | Variable (optional)                      | docker / deploy (default `ghcr.io`) |
+| `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`              | Secrets (non-GHCR only)                  | docker                              |
 
-| Secret                                                   | Used by           | Purpose                                        |
-| -------------------------------------------------------- | ----------------- | ---------------------------------------------- |
-| `VPS_HOST` / `VPS_USER` / `VPS_SSH_KEY` / `VPS_APP_PATH` | deploy-vps        | SSH deploy                                     |
-| `CONTAINER_REGISTRY`                                     | docker (optional) | Override default `ghcr.io` (e.g. Harbor)       |
-| `REGISTRY_USERNAME` / `REGISTRY_PASSWORD`                | docker (optional) | Non-GHCR registries                            |
-| `SNYK_TOKEN`                                             | optional          | Not required; prefer native npm audit + CodeQL |
+App runtime `.env` (Mongo, JWT paths, SMTP, MinIO, …) lives **on the VPS**, not
+in GitHub Actions.
 
-`GITHUB_TOKEN` is enough for GHCR pushes with `packages: write`.
+## Image contract
 
-## Switching registries / clouds
-
-- **Harbor / Docker Hub / ECR**: set `CONTAINER_REGISTRY` + login secrets in
-  `docker.yml`.
-- **AWS / K8s later**: replace `deploy-vps.yml` with your CD job; keep
-  `docker.yml` as the image producer.
+- Name: `ghcr.io/<owner>/<repo>` (**lowercase**)
+- Tags on `main`: `main`, `latest`, `sha-<40-char-commit>`
+- Deploy after Docker uses the immutable `sha-<head_sha>` from the Docker run
+- VPS: repo checkout at `VPS_APP_PATH`; compose
+  `infra/docker/docker-compose.deploy.yml` + **root** `.env` only

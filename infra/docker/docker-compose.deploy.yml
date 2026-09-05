@@ -1,0 +1,202 @@
+# Production deploy Compose — pulls a pre-built image (GHCR / Harbor / …).
+#
+# Single env source: repo-root `.env` (same as local / `.env.example`).
+# Paths are relative to this file under `infra/docker/`.
+#
+# From repo root (local smoke or VPS checkout):
+#   export IMAGE_REF=ghcr.io/owner/repo:sha-<fullsha>
+#   printf 'IMAGE_REF=%s\n' "$IMAGE_REF" > .env.image
+#   docker compose -f infra/docker/docker-compose.deploy.yml \
+#     --env-file .env --env-file .env.image up -d
+#
+# Bake-from-source experiments: docker-compose.prod.example.yml
+
+services:
+  backend-api:
+    image: ${IMAGE_REF:?Set IMAGE_REF to the published image ref}
+    container_name: ${APP_NAME:-backend_api}-http
+    env_file: ../../.env
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      clamav:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: 'mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/${MONGO_DB}?replicaSet=rs0&authSource=admin'
+      REDIS_PORT: '6379'
+      MINIO_PORT: '9000'
+      CLAMAV_PORT: '3310'
+      REDIS_PASSWORD: ''
+      PROCESS_ROLE: api
+      NODE_ENV: production
+    volumes:
+      - ../../keys:/app/keys:ro
+    networks:
+      backend_network:
+        aliases:
+          - backend
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3000/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  backend-worker:
+    image: ${IMAGE_REF:?Set IMAGE_REF to the published image ref}
+    container_name: ${APP_NAME:-backend_api}-worker
+    env_file: ../../.env
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      clamav:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: 'mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/${MONGO_DB}?replicaSet=rs0&authSource=admin'
+      REDIS_PORT: '6379'
+      MINIO_PORT: '9000'
+      CLAMAV_PORT: '3310'
+      REDIS_PASSWORD: ''
+      PROCESS_ROLE: worker
+      NODE_ENV: production
+    volumes:
+      - ../../keys:/app/keys:ro
+    healthcheck:
+      disable: true
+    networks:
+      - backend_network
+
+  mongo:
+    image: mongo:6.0-jammy
+    container_name: ${MONGO_NAME:-mongo_db}
+    restart: unless-stopped
+    entrypoint: ['/scripts/start-mongo.sh']
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-admin}
+    volumes:
+      - mongo_keyfile:/mongo-keyfile:rw
+      - ../scripts/start-mongo.sh:/scripts/start-mongo.sh:ro
+      - mongo_data:/data/db
+    networks:
+      - backend_network
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+  redis:
+    image: redis:8-alpine
+    container_name: ${REDIS_NAME:-redis_cache}
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    networks:
+      - backend_network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  minio:
+    image: minio/minio:RELEASE.2023-10-25T06-33-25Z
+    container_name: ${MINIO_NAME:-minio_storage}
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    command: server /data --console-address ":9001" --address ":9000"
+    volumes:
+      - minio_data:/data
+    networks:
+      - backend_network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/ready']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: MINIO_INITIALIZER
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ['/bin/sh', '/scripts/init-minio.sh']
+    restart: on-failure
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_APP_BUCKET: ${MINIO_APP_BUCKET:-app-uploads}
+      MINIO_BACKUP_BUCKET: ${MINIO_BACKUP_BUCKET:-backups}
+    volumes:
+      - ../scripts/init-minio.sh:/scripts/init-minio.sh:ro
+    networks:
+      - backend_network
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: ${NGINX_NAME:-nginx}
+    restart: unless-stopped
+    depends_on:
+      backend-api:
+        condition: service_healthy
+    volumes:
+      - ../nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - '${NGINX_PORT:-80}:80'
+    networks:
+      - backend_network
+
+  clamav:
+    image: clamav/clamav:1.0.9
+    container_name: ${CLAMAV_NAME:-clamav}
+    environment:
+      - CLAMAV_NO_CLAMD=false
+      - CLAMAV_NO_FRESHCLAMD=false
+      - CLAMD_STARTUP_TIMEOUT=600
+    volumes:
+      - clamav_data:/var/lib/clamav
+      - ../monitoring/clamav/clamd.conf:/etc/clamav/clamd.conf
+      - clamav_logs:/var/log/clamav
+    networks:
+      - backend_network
+    healthcheck:
+      test: ['CMD', 'clamdscan', '--version']
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 120s
+    command: ['sh', '-c', 'freshclam --daemon --stdout && clamd --foreground']
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  mongo_keyfile:
+  minio_data:
+  clamav_data:
+  clamav_logs:
+
+networks:
+  backend_network:
+    driver: bridge
+    attachable: true

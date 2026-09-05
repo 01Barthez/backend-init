@@ -32,19 +32,56 @@ only creates an empty `/app/keys` directory. The Dockerfile copies
 | `clamav`               | Antivirus daemon for upload scanning              |
 | `nginx`                | Reverse proxy — public `/health` and `/api/` only |
 
-The `backend` service defaults to `PROCESS_ROLE=all` from `.env`. For a split
-deployment, run two replicas (`api` and `worker`). Do not HEALTHCHECK a
-worker-only container on `/health` — it never listens.
+The `backend` service defaults to `PROCESS_ROLE=all` from `.env` (HTTP + BullMQ
+workers in one process). That remains the recommended local default.
 
-Dockerfile `HEALTHCHECK` hits `http://localhost:3000/health` (Mongo + Redis).
+### Process role split (`PROCESS_ROLE`)
+
+| Value    | Behaviour                                             |
+| -------- | ----------------------------------------------------- |
+| `all`    | HTTP listen + register BullMQ workers (default)       |
+| `api`    | HTTP only — skips `startWorkers()`                    |
+| `worker` | Workers only — no HTTP listen (do not HEALTHCHECK it) |
+
+Optional Compose profile **`split`** adds `backend-api` (`PROCESS_ROLE=api`) and
+`backend-worker` (`PROCESS_ROLE=worker`). Enable with:
+
+```bash
+docker compose --profile split up -d backend-api backend-worker
+# stop or scale down the default `backend` service when using split
+```
+
+Do not HEALTHCHECK a worker-only container on `/health` — it never listens.
+
+### Production-oriented example
+
+`infra/docker/docker-compose.prod.example.yml` is a **starting point** for
+hardened deploys (not wired into the root Compose include):
+
+- No host ports for **mongo / redis / minio / clamav** (compose network only)
+- **`PROCESS_ROLE` split** (`backend-api` + `backend-worker`) — no combined
+  `all`
+- **No MailHog** — configure real `SMTP_*` in `.env`
+- Nginx publishes HTTP; terminate TLS at the load balancer
+
+```bash
+docker compose -f infra/docker/docker-compose.prod.example.yml --env-file .env up -d
+```
+
+Adapt healthchecks, SMTP, and secrets for your environment before using it.
+
+Dockerfile `HEALTHCHECK` hits `http://localhost:3000/health/live` (process up).
+Use `/health/ready` for dependency probes (Mongo + Redis).
 
 ### Tools profile (`profiles: [tools]`)
 
-| Service         | Role                                                           |
-| --------------- | -------------------------------------------------------------- |
-| `mongo-backup`  | Periodic `mongodump` into `infra/docker/backups`               |
-| `redisinsight`  | Redis UI                                                       |
-| `prisma-studio` | Prisma data browser on `:5555` (dev only — not for production) |
+| Service         | Role                                                                               |
+| --------------- | ---------------------------------------------------------------------------------- |
+| `mongo-backup`  | Periodic `mongodump` into `infra/docker/backups`                                   |
+| `redisinsight`  | Redis UI                                                                           |
+| `prisma-studio` | Prisma data browser on `:5555` (dev only — not for production)                     |
+| `flagsmith`     | Feature-flag UI + API on `:8000` (see [feature flags](../guides/feature-flags.md)) |
+| `flagsmith-db`  | Postgres for Flagsmith (tools only)                                                |
 
 Prefer the host script when the API runs outside Compose:
 

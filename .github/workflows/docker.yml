@@ -7,7 +7,6 @@ on:
   workflow_dispatch:
 
 env:
-  # Override with repo variable/secret CONTAINER_REGISTRY for Harbor, ECR, etc.
   DEFAULT_REGISTRY: ghcr.io
 
 permissions:
@@ -18,26 +17,42 @@ jobs:
   build-and-push:
     name: Build and push
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      image_main: ${{ steps.meta.outputs.tags }}
+      digest: ${{ steps.build.outputs.digest }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+
+      - name: Normalize image name (GHCR requires lowercase)
+        id: image
+        run: |
+          REGISTRY="${{ vars.CONTAINER_REGISTRY || env.DEFAULT_REGISTRY }}"
+          # owner/repo must be lowercase for GHCR
+          NAME="$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
+          echo "registry=${REGISTRY}" >> "$GITHUB_OUTPUT"
+          echo "name=${NAME}" >> "$GITHUB_OUTPUT"
+          echo "full=${REGISTRY}/${NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Image metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
-          images: ${{ vars.CONTAINER_REGISTRY || env.DEFAULT_REGISTRY }}/${{ github.repository }}
+          images: ${{ steps.image.outputs.full }}
           tags: |
-            type=ref,event=branch
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,prefix=sha-,format=long
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix=sha-
+            type=ref,event=tag
 
       - name: Set up Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to GHCR
         if: ${{ !vars.CONTAINER_REGISTRY || vars.CONTAINER_REGISTRY == 'ghcr.io' }}
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -45,7 +60,7 @@ jobs:
 
       - name: Login to custom registry
         if: ${{ vars.CONTAINER_REGISTRY && vars.CONTAINER_REGISTRY != 'ghcr.io' }}
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ vars.CONTAINER_REGISTRY }}
           username: ${{ secrets.REGISTRY_USERNAME }}
@@ -53,7 +68,7 @@ jobs:
 
       - name: Build and push
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: infra/docker/Dockerfile
@@ -62,12 +77,28 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Multi-stage Dockerfile; keep provenance for supply-chain tooling
+          provenance: true
+          sbom: true
 
       - name: Trivy image scan
         continue-on-error: true
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+          image-ref: ${{ steps.image.outputs.full }}@${{ steps.build.outputs.digest }}
           severity: HIGH,CRITICAL
           exit-code: '0'
           ignore-unfixed: true
+
+      - name: Summary
+        run: |
+          {
+            echo "## Image published"
+            echo ""
+            echo "- **Ref base:** \`${{ steps.image.outputs.full }}\`"
+            echo "- **Digest:** \`${{ steps.build.outputs.digest }}\`"
+            echo "- **Tags:**"
+            echo '```'
+            echo "${{ steps.meta.outputs.tags }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

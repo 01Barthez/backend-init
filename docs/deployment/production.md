@@ -3,6 +3,23 @@
 Checklist for running Backend Init beyond local Compose. Adjust to your cloud
 and compliance needs.
 
+## Continuous delivery (GHCR → VPS)
+
+1. `docker.yml` builds `infra/docker/Dockerfile` and pushes to GHCR (`main`,
+   `latest`, `sha-<full-commit>`).
+2. `deploy-vps.yml` SSHs to the host, sets `IMAGE_REF`, runs
+   `docker compose -f infra/docker/docker-compose.deploy.yml pull && up`.
+3. On the VPS, keep a **git checkout** of the repo. Runtime env is the **root**
+   `.env` (from `.env.example`). Compose file used by CD:
+   [`infra/docker/docker-compose.deploy.yml`](../../infra/docker/docker-compose.deploy.yml)
+   (`env_file: ../../.env` — no duplicate env under `infra/docker/`).
+
+Human setup (secrets, OVH, PAT, Environments): see the root tutorial
+[`guide-github-config.md`](../../guide-github-config.md).
+
+App `.env` and `keys/` stay on the server — Actions never injects runtime
+DB/SMTP secrets into the image.
+
 ## Secrets
 
 - Inject secrets at runtime (platform secrets, Vault, Infisical, Kubernetes
