@@ -47,3 +47,4 @@ docker-compose.override.yml
 keys/*.pem
 keys/*.key
 !keys/README.md
+guide-github-config.md
