@@ -7,6 +7,7 @@ Task-oriented recipes for common Backend Init extensions.
 | Document                                               | Purpose                                  |
 | ------------------------------------------------------ | ---------------------------------------- |
 | [Authentication](./authentication.md)                  | JWT, refresh, OTP, TOTP + recovery codes |
+| [Feature flags](./feature-flags.md)                    | Flagsmith + `FEATURE_*` env overrides    |
 | [Scaffolding a module](./scaffolding-a-module.md)      | `npm run scaffold:module`                |
 | [MongoDB indexes](./mongodb-indexes.md)                | Index push checklist + Atlas Search      |
 | [Storage providers](./storage-providers.md)            | MinIO vs S3-compatible storage           |
