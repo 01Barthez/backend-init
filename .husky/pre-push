@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# Gate pushes with the same checks CI runs (subset for local speed).
+npm run lint:ci
+npm run type-check
+npm run test:unit

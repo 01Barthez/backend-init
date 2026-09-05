@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# Block merges that leave the tree unlintable / mistyped (fast gate).
+# Full unit suite still runs on pre-push / CI.
+npm run lint:ci
+npm run type-check

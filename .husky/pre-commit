@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+# Lint and format only staged files (fast path for every commit).
+npx lint-staged

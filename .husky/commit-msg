@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+# Conventional Commits — keeps CHANGELOG and releases coherent.
+npx --no -- commitlint --edit "$1"

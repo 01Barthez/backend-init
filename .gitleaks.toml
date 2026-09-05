@@ -1,0 +1,25 @@
+# Gitleaks configuration — keep local scans aligned with CI.
+# https://github.com/gitleaks/gitleaks
+
+title = "backend-init"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Gitignored local secrets and known false positives"
+
+paths = [
+  '''^\.env$''',
+  '''^\.env\..+$''',
+  '''^keys/.*\.(pem|key)$''',
+  '''^coverage/''',
+  '''^dist/''',
+  '''^node_modules/''',
+]
+
+# Property access like secretKey: envs.S3_SECRET_KEY is not a hardcoded secret.
+regexes = [
+  '''envs\.(S3|MINIO)_SECRET_KEY''',
+  '''secretKey:\s*envs\.''',
+]

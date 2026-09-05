@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+# After merge, ensure Prisma client matches schema when lockfile/schema changed.
+if git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep -Eq '^(prisma/|package-lock\.json$)'; then
+  echo "Prisma/schema or lockfile changed — regenerating client…"
+  npm run prisma:generate
+fi

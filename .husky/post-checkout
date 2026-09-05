@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# Same as post-merge when switching branches that touched Prisma / lockfile.
+if [ -n "$ORIG_HEAD" ] && git diff-tree -r --name-only --no-commit-id "$ORIG_HEAD" HEAD 2>/dev/null | grep -Eq '^(prisma/|package-lock\.json$)'; then
+  npm run prisma:generate
+fi
