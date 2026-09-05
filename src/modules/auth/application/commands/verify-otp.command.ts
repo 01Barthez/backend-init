@@ -48,20 +48,17 @@ export class VerifyOtpCommand {
     }
 
     if (!otpMatches(email, otp, user.otp.code)) {
-      await this.deps.userRepository.update(user.id, {
-        otpFailedAttempts: (user.otpFailedAttempts ?? 0) + 1,
-      });
+      await this.deps.userRepository.incrementOtpFailedAttempts(user.id);
       throw new InvalidOtpError();
     }
 
     const now = new Date();
-    await this.deps.userRepository.update(user.id, {
-      isVerified: true,
-      isActive: true,
-      otp: null,
-      otpFailedAttempts: 0,
+    const claimed = await this.deps.userRepository.claimEmailVerification(user.id, {
       emailVerifiedAt: now,
     });
+    if (!claimed) {
+      throw new InvalidOtpError();
+    }
 
     await this.deps.userCache?.invalidate(user.id, email);
 

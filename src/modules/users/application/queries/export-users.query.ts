@@ -7,6 +7,9 @@ export type ExportUsersDeps = {
   usersRepository: UsersRepositoryPort;
 };
 
+/** Sync export row cap — larger dumps belong on the heavy-tasks queue (follow-up). */
+export const USERS_EXPORT_MAX_ROWS = 2000;
+
 const csvEscape = (value: unknown): string => {
   const raw = String(value ?? '');
   if (/[",\n\r]/.test(raw)) {
@@ -17,7 +20,7 @@ const csvEscape = (value: unknown): string => {
 
 /**
  * Builds a CSV export of non-deleted users (optional filters).
- * Row count is capped in the repository to avoid unbounded dumps.
+ * Row count is capped to keep the request path bounded.
  */
 export class ExportUsersQuery {
   constructor(private readonly deps: ExportUsersDeps) {}
@@ -29,6 +32,7 @@ export class ExportUsersQuery {
       ...(input.search?.trim() ? { search: input.search.trim() } : {}),
     });
 
+    const truncated = rows.length >= USERS_EXPORT_MAX_ROWS;
     const csvHeader = 'ID,Email,First Name,Last Name,Phone,Active,Verified,Created At\n';
     const csvRows = rows
       .map((user) =>
@@ -46,8 +50,8 @@ export class ExportUsersQuery {
       .join('\n');
     const csv = csvHeader + csvRows;
 
-    log.info('Users exported', { count: rows.length });
+    log.info('Users exported', { count: rows.length, truncated });
 
-    return { csv, count: rows.length, rows };
+    return { csv, count: rows.length, rows, truncated };
   }
 }

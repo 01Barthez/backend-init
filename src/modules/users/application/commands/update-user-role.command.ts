@@ -4,6 +4,7 @@ import type { AuditPort } from '@/shared/infrastructure/audit';
 import log from '@/shared/infrastructure/logging/logger';
 
 import type { UsersRepositoryPort } from '../../domain/repositories/users.repository';
+import { assertNotLastAdmin, assertNotSelfTarget } from '../services/admin-guards';
 import type { MailerPort } from '../services/mailer.port';
 import type { RbacPort } from '../services/rbac.port';
 import type { UserCachePort } from '../services/user-cache.port';
@@ -19,6 +20,7 @@ export type UpdateUserRoleDeps = {
 export type UpdateUserRoleInput = {
   userId: string;
   roleSlug: string;
+  actorId: string;
 };
 
 /**
@@ -28,11 +30,14 @@ export class UpdateUserRoleCommand {
   constructor(private readonly deps: UpdateUserRoleDeps) {}
 
   async execute(input: UpdateUserRoleInput): Promise<void> {
-    const { userId, roleSlug } = input;
+    const { userId, roleSlug, actorId } = input;
 
     if (!userId || !roleSlug) {
       throw AppError.badRequest('Missing required field(s): userId, role');
     }
+
+    assertNotSelfTarget(actorId, userId, 'change the role of');
+    await assertNotLastAdmin(this.deps.rbac, userId, roleSlug);
 
     const user = await this.deps.usersRepository.findLookupById(userId);
     if (!user) {

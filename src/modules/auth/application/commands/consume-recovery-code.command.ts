@@ -55,12 +55,13 @@ export class ConsumeRecoveryCodeCommand {
 
     if (!user?.passwordHash || !isPasswordValid) {
       if (user) {
-        const next = (user.failedLoginAttempts ?? 0) + 1;
+        const next = await this.deps.userRepository.incrementFailedLoginAttempts(user.id);
         const max = config.security.lockout.maxLoginAttempts;
-        await this.deps.userRepository.update(user.id, {
-          failedLoginAttempts: next,
-          lockedUntil: next >= max ? new Date(Date.now() + config.security.lockout.lockoutMs) : null,
-        });
+        if (next >= max) {
+          await this.deps.userRepository.update(user.id, {
+            lockedUntil: new Date(Date.now() + config.security.lockout.lockoutMs),
+          });
+        }
       }
       throw new InvalidCredentialsError();
     }
@@ -70,19 +71,33 @@ export class ConsumeRecoveryCodeCommand {
     if (!user.totpEnabled) throw AppError.badRequest('TOTP is not enabled on this account');
 
     const key = `${REDIS_PREFIX}${user.id}`;
-    const hashes = await redisClient.lrange(key, 0, -1);
-    if (!hashes.length) {
+    const incomingHash = crypto.createHash('sha256').update(recoveryCode.trim()).digest('hex');
+
+    // Atomically find the hash and remove one matching element (avoids LSET/LREM race).
+    const remaining = (await redisClient.eval(
+      `
+      local hashes = redis.call('LRANGE', KEYS[1], 0, -1)
+      if #hashes == 0 then return -2 end
+      for i, h in ipairs(hashes) do
+        if h == ARGV[1] then
+          redis.call('LSET', KEYS[1], i - 1, '__consumed__')
+          redis.call('LREM', KEYS[1], 1, '__consumed__')
+          return #hashes - 1
+        end
+      end
+      return -1
+      `,
+      1,
+      key,
+      incomingHash,
+    )) as number;
+
+    if (remaining === -2) {
       throw AppError.badRequest('No recovery codes available — contact support');
     }
-
-    const incomingHash = crypto.createHash('sha256').update(recoveryCode.trim()).digest('hex');
-    const idx = hashes.indexOf(incomingHash);
-    if (idx === -1) {
+    if (remaining === -1) {
       throw AppError.badRequest('Invalid recovery code');
     }
-
-    await redisClient.lset(key, idx, '__consumed__');
-    await redisClient.lrem(key, 1, '__consumed__');
 
     await this.deps.audit?.record({
       actorId: user.id,
@@ -130,7 +145,7 @@ export class ConsumeRecoveryCodeCommand {
       permissions,
       accessToken: tokenPair.accessToken,
       refreshToken: tokenPair.refreshToken,
-      remainingCodes: hashes.length - 1,
+      remainingCodes: remaining,
     };
   }
 }

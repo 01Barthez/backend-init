@@ -3,9 +3,14 @@
 Thin facade over shared mail infrastructure for transactional / templated
 emails.
 
+**Status:** intentionally deferred as a first-class product surface. There are
+no HTTP routes. Prefer `@/shared/infrastructure/mail` (`queueMail` /
+`sendMailDirect`) from other modules. This package remains a thin re-export so
+callers can migrate later without hunting imports.
+
 ## Layout
 
-```
+```text
 notifications/
 ├── application/commands/send-templated-mail.command.ts
 ├── index.ts

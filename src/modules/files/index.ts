@@ -1,5 +1,7 @@
 import type { Router } from 'express';
 
+import { type AuditPort, auditRepository } from '@/shared/infrastructure/audit';
+
 import { CreatePresignedDownloadCommand } from './application/commands/create-presigned-download.command';
 import { CreatePresignedUploadCommand } from './application/commands/create-presigned-upload.command';
 import { UploadAvatarCommand } from './application/commands/upload-avatar.command';
@@ -17,6 +19,7 @@ import { createFilesRoutes } from './presentation/routes/files.routes';
 export type FilesModuleDeps = {
   uploader: UploaderPort;
   scanner?: ScannerPort;
+  audit?: AuditPort;
 };
 
 export type FilesModule = {
@@ -35,6 +38,7 @@ export function createDefaultFilesDeps(overrides: Partial<FilesModuleDeps> = {})
   return {
     uploader: overrides.uploader ?? new MinioUploaderAdapter(defaultMinioUploader),
     scanner: overrides.scanner,
+    audit: overrides.audit ?? auditRepository,
   };
 }
 

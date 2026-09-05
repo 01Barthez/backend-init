@@ -36,9 +36,7 @@ export class AdminUnlinkOAuthCommand {
   async execute(input: AdminUnlinkOAuthInput): Promise<void> {
     const providerLower = input.provider?.toLowerCase();
     if (!VALID_PROVIDERS.includes(providerLower as (typeof VALID_PROVIDERS)[number])) {
-      throw AppError.badRequest(
-        `Invalid provider. Must be one of: ${VALID_PROVIDERS.join(', ')}`,
-      );
+      throw AppError.badRequest(`Invalid provider. Must be one of: ${VALID_PROVIDERS.join(', ')}`);
     }
 
     const user = await this.deps.usersRepository.findLookupById(input.targetUserId);

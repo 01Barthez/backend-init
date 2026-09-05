@@ -10,8 +10,8 @@ import type { ConfirmTotpCommand } from '../../application/commands/confirm-totp
 import type { ConsumeRecoveryCodeCommand } from '../../application/commands/consume-recovery-code.command';
 import type { DisableTotpCommand } from '../../application/commands/disable-totp.command';
 import type { EnrollTotpCommand } from '../../application/commands/enroll-totp.command';
-import type { GenerateRecoveryCodesCommand } from '../../application/commands/generate-recovery-codes.command';
 import type { ForgotPasswordCommand } from '../../application/commands/forgot-password.command';
+import type { GenerateRecoveryCodesCommand } from '../../application/commands/generate-recovery-codes.command';
 import type { LoginCommand } from '../../application/commands/login.command';
 import type { LogoutCommand } from '../../application/commands/logout.command';
 import type { RefreshTokenCommand } from '../../application/commands/refresh-token.command';

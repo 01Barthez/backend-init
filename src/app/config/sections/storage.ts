@@ -16,6 +16,8 @@ export const storageConfig = {
     secretKey: fromEnv.get('MINIO_SECRET_KEY').required().asString(),
     useSsl: fromEnv.get('MINIO_USE_SSL').default('false').asBool(),
     appBucket: fromEnv.get('MINIO_APP_BUCKET').default('app-uploads').asString(),
+    /** Encrypted mongodump objects — must match minio-init / STORAGE_BUCKETS.BACKUPS. */
+    backupBucket: fromEnv.get('MINIO_BACKUP_BUCKET').default('backups').asString(),
     basePath: fromEnv.get('MINIO_BASE_PATH').default('uploads/').asString(),
     publicUrl: fromEnv.get('MINIO_PUBLIC_URL').default('').asString(),
   },

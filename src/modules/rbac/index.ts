@@ -1,3 +1,7 @@
+/**
+ * Explicit dependencies for the rbac module.
+ * Register these in `src/app/container` when the composition root lands.
+ */
 import { SYSTEM_ROLES } from '@/shared/constants/app.constants';
 
 import { AssignRoleCommand } from './application/commands/assign-role.command';
@@ -6,12 +10,12 @@ import { GetUserAuthContextQuery } from './application/queries/get-user-auth-con
 import { permissionSatisfied } from './domain/permission-match';
 import type { RbacRepositoryPort } from './domain/repositories/rbac.repository';
 import type { UserAuthContext } from './domain/types/rbac.types';
+import {
+  getCachedUserAuthContext,
+  invalidateAuthContext,
+} from './infrastructure/cache/auth-context.cache';
 import { PrismaRbacRepository } from './infrastructure/repositories/prisma-rbac.repository';
 
-/**
- * Explicit dependencies for the rbac module.
- * Register these in `src/app/container` when the composition root lands.
- */
 export type RbacModuleDeps = {
   rbacRepository: RbacRepositoryPort;
 };
@@ -25,7 +29,9 @@ export type RbacService = {
   getUserAuthContext(userId: string): Promise<UserAuthContext>;
   hasPermission(userId: string, permission: string): Promise<boolean>;
   hasAnyRole(userId: string, slugs: string[]): Promise<boolean>;
-  canAccessResource(userId: string, permission: string, resourceOwnerId?: string): Promise<boolean>;
+  /** Count distinct users holding any of the given role slugs. */
+  countUsersWithAnyRole(slugs: string[]): Promise<number>;
+  invalidateAuthContext(userId: string): Promise<void>;
 };
 
 export type RbacModule = {
@@ -54,7 +60,7 @@ export function createRbacModule(deps: RbacModuleDeps): RbacModule {
     assignRole: new AssignRoleCommand(deps),
   };
 
-  const service = createRbacServiceFacade(useCases);
+  const service = createRbacServiceFacade(useCases, deps);
 
   return { deps, useCases, service };
 }
@@ -65,7 +71,10 @@ type RbacUseCases = RbacModule['useCases'];
  * Facade used by middlewares, bootstrap, and legacy imports.
  * Prefer injecting use cases in new module code.
  */
-function createRbacServiceFacade(useCases: RbacUseCases) {
+function createRbacServiceFacade(useCases: RbacUseCases, deps: RbacModuleDeps) {
+  const loadAuthContext = (userId: string): Promise<UserAuthContext> =>
+    getCachedUserAuthContext(userId, () => useCases.getUserAuthContext.execute(userId));
+
   return {
     async seedSystemRolesAndPermissions(): Promise<void> {
       await useCases.seedSystemRoles.execute();
@@ -73,43 +82,35 @@ function createRbacServiceFacade(useCases: RbacUseCases) {
 
     async assignDefaultRole(userId: string, slug: string = SYSTEM_ROLES.USER): Promise<void> {
       await useCases.assignRole.execute({ userId, roleSlug: slug, requireExists: false });
+      await invalidateAuthContext(userId);
     },
 
     async assignRole(userId: string, roleSlug: string): Promise<void> {
       await useCases.assignRole.execute({ userId, roleSlug, requireExists: true });
+      await invalidateAuthContext(userId);
     },
 
     async getUserAuthContext(userId: string): Promise<UserAuthContext> {
-      return useCases.getUserAuthContext.execute(userId);
+      return loadAuthContext(userId);
     },
 
     async hasPermission(userId: string, permission: string): Promise<boolean> {
-      const ctx = await useCases.getUserAuthContext.execute(userId);
+      const ctx = await loadAuthContext(userId);
       if (ctx.roles.includes(SYSTEM_ROLES.SUPER_ADMIN)) return true;
       return permissionSatisfied(ctx.permissions, permission);
     },
 
     async hasAnyRole(userId: string, slugs: string[]): Promise<boolean> {
-      const ctx = await useCases.getUserAuthContext.execute(userId);
+      const ctx = await loadAuthContext(userId);
       return slugs.some((slug) => ctx.roles.includes(slug));
     },
 
-    /**
-     * Optional helper for use cases that need ownership + `:own`/`:any` elevation.
-     * Route gates use `requirePermission`; keep resource IDOR checks in commands.
-     */
-    async canAccessResource(
-      userId: string,
-      permission: string,
-      resourceOwnerId?: string,
-    ): Promise<boolean> {
-      const ctx = await useCases.getUserAuthContext.execute(userId);
-      if (ctx.roles.includes(SYSTEM_ROLES.SUPER_ADMIN)) return true;
-      if (permission.endsWith(':own')) {
-        if (ctx.permissions.includes(permission.replace(/:own$/, ':any'))) return true;
-        return resourceOwnerId === userId && ctx.permissions.includes(permission);
-      }
-      return permissionSatisfied(ctx.permissions, permission);
+    async countUsersWithAnyRole(slugs: string[]): Promise<number> {
+      return deps.rbacRepository.countUsersWithAnyRole(slugs);
+    },
+
+    async invalidateAuthContext(userId: string): Promise<void> {
+      await invalidateAuthContext(userId);
     },
   };
 }
@@ -123,7 +124,8 @@ export default rbacService;
 export { AssignRoleCommand } from './application/commands/assign-role.command';
 export { SeedSystemRolesCommand } from './application/commands/seed-system-roles.command';
 export { GetUserAuthContextQuery } from './application/queries/get-user-auth-context.query';
+export { permissionSatisfied } from './domain/permission-match';
 export type { RbacRepositoryPort } from './domain/repositories/rbac.repository';
 export type { PermissionEntity, RoleEntity, UserAuthContext } from './domain/types/rbac.types';
-export { permissionSatisfied } from './domain/permission-match';
+export { invalidateAuthContext } from './infrastructure/cache/auth-context.cache';
 export { PrismaRbacRepository } from './infrastructure/repositories/prisma-rbac.repository';

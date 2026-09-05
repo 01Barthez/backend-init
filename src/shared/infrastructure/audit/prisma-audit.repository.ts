@@ -15,7 +15,7 @@ import type {
   AuditQueryFilters,
 } from './audit.port';
 
-const EXPORT_MAX_ROWS = 10_000;
+const EXPORT_MAX_ROWS = 2000;
 
 const csvEscape = (value: unknown): string => {
   const raw = String(value ?? '');

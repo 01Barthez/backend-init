@@ -63,7 +63,7 @@ export class MongoBackupProvider {
 
       const objectKey = `mongodb/${format(new Date(), 'yyyy/MM/dd')}/${path.basename(encryptedPath)}`;
       await storageService.uploadFile({
-        bucket: STORAGE_BUCKETS.BACKUPS,
+        bucket: config.storage.minio.backupBucket || STORAGE_BUCKETS.BACKUPS,
         key: objectKey,
         filePath: encryptedPath,
         contentType: 'application/octet-stream',

@@ -1,16 +1,9 @@
-// .lintstagedrc.js
-const path = require('path');
-
-const buildEslintCommand = (filenames) =>
-  `next lint --fix --file ${filenames
-    .map((f) => path.relative(process.cwd(), f))
-    .join(' --file ')}`.trim();
+/**
+ * Lint-staged for this Express + TypeScript backend (not Next.js).
+ */
 module.exports = {
-  '*.{js,jsx,ts,tsx}': [
-    'prettier --write',
-    buildEslintCommand,
-    'jest --bail --findRelatedTests --passWithNoTests',
-  ],
-  '*.{json,md,mdx,yml,yaml}': ['prettier --write'],
-  '*.{css,scss}': ['stylelint --fix', 'prettier --write'],
+  '*.{ts,tsx,js,jsx}': ['prettier --write', 'eslint --max-warnings=10 --fix'],
+  '*.{json,yml,yaml,mjs}': ['prettier --write'],
+  // Markdown: format only here; markdownlint runs in CI / lint:md (avoids double-run + OOM).
+  '*.{md,mdx}': ['prettier --write'],
 };

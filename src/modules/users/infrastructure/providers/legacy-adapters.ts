@@ -28,8 +28,7 @@ export const createUnlinkOAuthAdapter =
     const { oauthManager } = await import(
       '@/modules/oauth/infrastructure/manager/oauth-manager.service'
     );
-    const { OAuthProvider } = await import('@/modules/oauth/domain/types/oauth.types');
-    const providerEnum = provider.toUpperCase() as (typeof OAuthProvider)[keyof typeof OAuthProvider];
+    const providerEnum = provider.toUpperCase() as never;
     await oauthManager.unlinkOAuthAccount(userId, providerEnum);
   };
 
@@ -59,6 +58,16 @@ export const createRbacAdapter = (): RbacPort => ({
     const { rbacService } = await import('@/modules/rbac');
     const ctx = await rbacService.getUserAuthContext(userId);
     return ctx.roles;
+  },
+
+  async hasPermission(userId: string, permission: string): Promise<boolean> {
+    const { rbacService } = await import('@/modules/rbac');
+    return rbacService.hasPermission(userId, permission);
+  },
+
+  async countUsersWithAnyRole(slugs: string[]): Promise<number> {
+    const { rbacService } = await import('@/modules/rbac');
+    return rbacService.countUsersWithAnyRole(slugs);
   },
 });
 

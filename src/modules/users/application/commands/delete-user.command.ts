@@ -4,7 +4,9 @@ import type { AuditPort } from '@/shared/infrastructure/audit';
 import log from '@/shared/infrastructure/logging/logger';
 
 import type { UsersRepositoryPort } from '../../domain/repositories/users.repository';
+import { assertNotLastAdmin, assertNotSelfTarget } from '../services/admin-guards';
 import type { MailerPort } from '../services/mailer.port';
+import type { RbacPort } from '../services/rbac.port';
 import type { SessionPort } from '../services/session.port';
 import type { UserCachePort } from '../services/user-cache.port';
 
@@ -13,18 +15,33 @@ export type DeleteUserDeps = {
   userCache: UserCachePort;
   mailer: MailerPort;
   session: SessionPort;
+  rbac: RbacPort;
   audit?: AuditPort;
 };
 
+export type DeleteUserInput = {
+  userId: string;
+  actorId: string;
+  /** Self-service account deletion skips the admin self-target guard. */
+  allowSelf?: boolean;
+};
+
 /**
- * Soft-deletes a user (isDeleted + inactive), revokes sessions, notifies by email.
+ * Soft-deletes a user (isDeleted + deletedAt + inactive), revokes sessions, notifies by email.
  */
 export class DeleteUserCommand {
   constructor(private readonly deps: DeleteUserDeps) {}
 
-  async execute(userId: string): Promise<void> {
+  async execute(input: DeleteUserInput): Promise<void> {
+    const { userId, actorId, allowSelf } = input;
+
     if (!userId) {
       throw AppError.badRequest('User ID is required');
+    }
+
+    if (!allowSelf) {
+      assertNotSelfTarget(actorId, userId, 'delete');
+      await assertNotLastAdmin(this.deps.rbac, userId);
     }
 
     const user = await this.deps.usersRepository.findLookupById(userId, { includeDeleted: true });

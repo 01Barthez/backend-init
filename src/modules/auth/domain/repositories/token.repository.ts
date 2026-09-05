@@ -31,6 +31,12 @@ export interface TokenRepositoryPort {
 
   findRefreshTokenByJti(jti: string): Promise<StoredRefreshToken | null>;
 
+  /**
+   * Atomically claim a live refresh token for rotation.
+   * Returns false if already revoked / raced (count !== 1).
+   */
+  claimRefreshTokenForRotation(jti: string, replacedBy: string): Promise<boolean>;
+
   markRefreshTokenReplaced(jti: string, replacedBy: string): Promise<void>;
 
   revokeToken(input: RevokeTokenInput): Promise<void>;

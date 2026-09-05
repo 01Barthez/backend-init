@@ -60,7 +60,7 @@ export function createAuthRoutes(controller: AuthController): Router {
   );
 
   /** POST /refresh — Issue a new access token from refresh cookie or body. */
-  auth.post('/refresh', controller.refreshToken);
+  auth.post('/refresh', rateLimitingAuth, controller.refreshToken);
 
   /** POST /forgot-password — Email a password-reset token/link. */
   auth.post(

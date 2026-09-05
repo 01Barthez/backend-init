@@ -77,6 +77,19 @@ export class MinioProvider {
     this.logger.info('removed object', key);
   }
 
+  /**
+   * Download an object into memory. Throws MinIO NoSuchKey/NotFound when
+   * the object is not present yet (e.g. client still uploading).
+   */
+  async getObjectBuffer(key: string): Promise<Buffer> {
+    const stream = await this.client.getObject(this.bucket, key);
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    return Buffer.concat(chunks);
+  }
+
   async presignedPutUrl(key: string, expiresSeconds: number) {
     return this.client.presignedPutObject(this.bucket, key, expiresSeconds);
   }

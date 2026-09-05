@@ -137,6 +137,7 @@ export class MinioUploader extends EventEmitter {
     filename: string;
     contentType: string;
     size: number;
+    ownerId?: string;
   }): Promise<{ url: string; key: string; expiresIn: number }> {
     const max = config.storage.upload.presignMaxBytes;
     if (input.size > max) {
@@ -153,7 +154,7 @@ export class MinioUploader extends EventEmitter {
       undefined,
     );
 
-    const { key } = generateFilePath(input.filename, 'uploads');
+    const { key } = generateFilePath(input.filename, 'uploads', input.ownerId);
     const expiresIn = config.storage.upload.presignTtlSeconds;
     const url = await this.presigned.presignedPut(input.filename, key, expiresIn);
     return { url: url.url, key, expiresIn };

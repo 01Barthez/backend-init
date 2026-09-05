@@ -3,6 +3,8 @@ import type { AuditPort } from '@/shared/infrastructure/audit';
 import log from '@/shared/infrastructure/logging/logger';
 
 import type { UsersRepositoryPort } from '../../domain/repositories/users.repository';
+import { assertNotLastAdmin, assertNotSelfTarget } from '../services/admin-guards';
+import type { RbacPort } from '../services/rbac.port';
 import type { SessionPort } from '../services/session.port';
 import type { UserCachePort } from '../services/user-cache.port';
 
@@ -10,6 +12,7 @@ export type DeleteUserPermanentlyDeps = {
   usersRepository: UsersRepositoryPort;
   userCache: UserCachePort;
   session: SessionPort;
+  rbac: RbacPort;
   audit?: AuditPort;
 };
 
@@ -19,10 +22,13 @@ export type DeleteUserPermanentlyDeps = {
 export class DeleteUserPermanentlyCommand {
   constructor(private readonly deps: DeleteUserPermanentlyDeps) {}
 
-  async execute(userId: string): Promise<void> {
+  async execute(userId: string, actorId: string): Promise<void> {
     if (!userId) {
       throw AppError.badRequest('User ID is required');
     }
+
+    assertNotSelfTarget(actorId, userId, 'permanently delete');
+    await assertNotLastAdmin(this.deps.rbac, userId);
 
     const user = await this.deps.usersRepository.findLookupById(userId, { includeDeleted: true });
     if (!user) {

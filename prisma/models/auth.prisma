@@ -45,7 +45,7 @@ model RefreshToken {
   lastUsedAt   DateTime?
 
   @@index([userId])
-  @@index([familyId])
+  @@index([familyId, isRevoked])
   @@index([expiresAt])
   @@index([isRevoked])
 }

@@ -50,8 +50,7 @@ export function buildMailBrandLocals(
     envs.USER_EMAIL ||
     '';
 
-  const clientUrl =
-    (data.clientUrl as string | undefined)?.trim() || envs.CLIENT_URL || '';
+  const clientUrl = (data.clientUrl as string | undefined)?.trim() || envs.CLIENT_URL || '';
 
   const headerGradient = (tone: MailHeaderTone = 'brand') => {
     switch (tone) {

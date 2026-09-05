@@ -36,7 +36,7 @@ export const cacheData = async <T extends CacheableData>(
 
   const cachedDataLocal = localCache.get(cacheKey);
   if (cachedDataLocal) {
-    log.info(`data fetching from localCache at the key: ${cacheKey}`);
+    log.debug(`data fetching from localCache at the key: ${cacheKey}`);
     return cachedDataLocal as T;
   }
 
@@ -58,7 +58,7 @@ export const cacheData = async <T extends CacheableData>(
         }
 
         if (data !== null) localCache.set(cacheKey, data);
-        log.info(`data fetching from redis at the key: ${cacheKey}`);
+        log.debug(`data fetching from redis at the key: ${cacheKey}`);
         return data;
       } catch (error) {
         log.warn(`Failed to decompress or parse Redis data: ${error} ! Fetching new data...`);
@@ -71,10 +71,10 @@ export const cacheData = async <T extends CacheableData>(
   }
 
   try {
-    log.info('data are not in the cache, execution of the function...');
+    log.debug('data are not in the cache, execution of the function...');
     const startTime = Date.now();
     const data = await fetchFn();
-    log.info(`fetchFn executed in ${Date.now() - startTime}ms.`);
+    log.debug(`fetchFn executed in ${Date.now() - startTime}ms.`);
 
     const serializedData = JSON.stringify(data);
     let dataToStore: string;
@@ -90,7 +90,7 @@ export const cacheData = async <T extends CacheableData>(
 
     try {
       await redisClient.setex(cacheKey, ttl, dataToStore);
-      log.info(
+      log.debug(
         `data fetching, saved in the cache with TTL: ${ttl} and in the localcache under the key: ${cacheKey}...`,
       );
     } catch (error) {
@@ -125,14 +125,30 @@ export const invalidateCache = async (cacheKey: string): Promise<void> => {
   }
 };
 
-/** Drop all keys matching a Redis KEYS pattern (use sparingly in production). */
+/** Drop all keys matching a Redis pattern via SCAN (never KEYS in production). */
 export const invalidateCachePattern = async (pattern: string): Promise<void> => {
   try {
-    const keys = await redisClient.keys(pattern);
-    if (keys.length > 0) {
-      await redisClient.del(...keys);
-      keys.forEach((key) => localCache.delete(key));
-      log.info(`Cache invalidated for pattern: ${pattern}, ${keys.length} keys deleted`);
+    let cursor = '0';
+    let deleted = 0;
+
+    do {
+      // Sequential SCAN pages — parallelizing would race the cursor.
+      // eslint-disable-next-line no-await-in-loop -- intentional cursor iteration
+      const [nextCursor, keys] = await redisClient.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = nextCursor;
+
+      if (keys.length > 0) {
+        // eslint-disable-next-line no-await-in-loop -- delete each SCAN page before next
+        await redisClient.del(...keys);
+        for (const key of keys) {
+          localCache.delete(key);
+        }
+        deleted += keys.length;
+      }
+    } while (cursor !== '0');
+
+    if (deleted > 0) {
+      log.debug(`Cache invalidated for pattern: ${pattern}, ${deleted} keys deleted`);
     }
   } catch (error) {
     log.error(`Failed to invalidate cache pattern: ${pattern}`, { error });

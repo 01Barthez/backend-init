@@ -23,5 +23,3 @@ export type PermissionEntity = {
   action: string;
   isSystem: boolean;
 };
-
-export type AclEffect = 'ALLOW' | 'DENY';

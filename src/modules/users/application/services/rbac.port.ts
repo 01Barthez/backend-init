@@ -7,4 +7,9 @@ export interface RbacPort {
 
   /** Role slugs currently assigned to the user. */
   getRoles(userId: string): Promise<string[]>;
+
+  hasPermission(userId: string, permission: string): Promise<boolean>;
+
+  /** Distinct users holding any of the given role slugs. */
+  countUsersWithAnyRole(slugs: string[]): Promise<number>;
 }

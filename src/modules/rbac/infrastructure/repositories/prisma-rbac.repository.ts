@@ -53,7 +53,6 @@ export class PrismaRbacRepository implements RbacRepositoryPort {
           'user:delete:any',
           'user:export',
           'user:role:assign',
-          'blog:read',
           'blog:update:any',
           'blog:delete:any',
           'blog:publish',
@@ -64,7 +63,7 @@ export class PrismaRbacRepository implements RbacRepositoryPort {
         name: 'User',
         slug: SYSTEM_ROLES.USER,
         description: 'Standard user',
-        perms: ['blog:read', 'blog:create', 'blog:update:own', 'blog:delete:own', 'blog:publish'],
+        perms: ['blog:create', 'blog:update:own', 'blog:delete:own', 'blog:publish'],
       },
       {
         name: 'Guest',
@@ -108,15 +107,24 @@ export class PrismaRbacRepository implements RbacRepositoryPort {
     return role ? toRoleEntity(role) : null;
   }
 
+  /**
+   * Replaces all UserRole rows for the user with a single role.
+   * Prevents privilege stacking (e.g. admin+user after a "demotion").
+   */
   async assignRole(userId: string, slug: string): Promise<void> {
     const role = await prisma.role.findUnique({ where: { slug } });
     if (!role) return;
 
-    await prisma.userRole.upsert({
-      where: { userId_roleId: { userId, roleId: role.id } },
-      create: { userId, roleId: role.id },
-      update: {},
-    });
+    await prisma.$transaction([
+      prisma.userRole.deleteMany({ where: { userId } }),
+      prisma.userRole.create({ data: { userId, roleId: role.id } }),
+    ]);
+  }
+
+  async countUsersWithRole(slug: string): Promise<number> {
+    const role = await prisma.role.findUnique({ where: { slug } });
+    if (!role) return 0;
+    return prisma.userRole.count({ where: { roleId: role.id } });
   }
 
   async getUserAuthContext(userId: string): Promise<UserAuthContext> {
@@ -142,5 +150,21 @@ export class PrismaRbacRepository implements RbacRepositoryPort {
     }
 
     return { permissions: [...permissions], roles };
+  }
+
+  async countUsersWithAnyRole(slugs: string[]): Promise<number> {
+    if (slugs.length === 0) return 0;
+
+    const roles = await prisma.role.findMany({
+      where: { slug: { in: slugs } },
+      select: { id: true },
+    });
+    if (roles.length === 0) return 0;
+
+    const rows = await prisma.userRole.findMany({
+      where: { roleId: { in: roles.map((role) => role.id) } },
+      select: { userId: true },
+    });
+    return new Set(rows.map((row) => row.userId)).size;
   }
 }

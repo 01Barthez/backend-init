@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express';
 
-import { SYSTEM_ROLES } from '@/shared/constants/app.constants';
 import { asyncHandler, response } from '@/shared/utils/http/responses/helpers';
 
 import type { CreateBlogCommand } from '../../application/commands/create-blog.command';
@@ -31,11 +30,9 @@ export type BlogControllerDeps = {
 
 /**
  * Thin Express handlers — HTTP concerns only; business rules live in commands/queries.
+ * Ownership elevation uses :any permissions (not role slug checks).
  */
 export function createBlogController(deps: BlogControllerDeps) {
-  const isAdmin = async (userId: string): Promise<boolean> =>
-    deps.rbac.hasAnyRole(userId, [SYSTEM_ROLES.ADMIN, SYSTEM_ROLES.SUPER_ADMIN]);
-
   const list = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const page = req.pagination?.page ?? 1;
     const limit = req.pagination?.limit ?? 10;
@@ -70,12 +67,12 @@ export function createBlogController(deps: BlogControllerDeps) {
   });
 
   const update = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const admin = await isAdmin(req.user!.id);
+    const canUpdateAny = await deps.rbac.hasPermission(req.user!.id, 'blog:update:any');
     const { title, content, excerpt, coverImage, visibility } = req.body;
     const blog = await deps.updateBlog.execute({
       id: req.params.id,
       authorId: req.user!.id,
-      isAdmin: admin,
+      isAdmin: canUpdateAny,
       title,
       content,
       excerpt,
@@ -86,21 +83,22 @@ export function createBlogController(deps: BlogControllerDeps) {
   });
 
   const publish = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const admin = await isAdmin(req.user!.id);
+    // Elevation for others' posts: blog:update:any (blog:publish is also held by authors).
+    const canPublishAny = await deps.rbac.hasPermission(req.user!.id, 'blog:update:any');
     const blog = await deps.publishBlog.execute({
       id: req.params.id,
       authorId: req.user!.id,
-      isAdmin: admin,
+      isAdmin: canPublishAny,
     });
     return response.ok(req, res, BlogSerializer.one(blog), 'Blog published successfully');
   });
 
   const deleteBlog = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const admin = await isAdmin(req.user!.id);
+    const canDeleteAny = await deps.rbac.hasPermission(req.user!.id, 'blog:delete:any');
     await deps.deleteBlog.execute({
       id: req.params.id,
       authorId: req.user!.id,
-      isAdmin: admin,
+      isAdmin: canDeleteAny,
     });
     return response.ok(req, res, null, 'Blog deleted successfully');
   });

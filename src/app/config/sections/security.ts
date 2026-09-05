@@ -22,13 +22,17 @@ export const securityConfig = {
   hstsPreload: fromEnv.get('HSTS_PRELOAD').default('false').asBool(),
 
   rateLimit: {
+    /**
+     * Deprecated legacy knobs — unused by middleware.
+     * Prefer MAX_GLOBAL_QUERY_* / MAX_UNIQ_QUERY_* / MAX_AUTH_QUERY_*.
+     */
     windowMs: fromEnv.get('RATE_LIMIT_WINDOW_MS').default(900000).asInt(),
     maxRequests: fromEnv.get('RATE_LIMIT_MAX_REQUESTS').default(100).asInt(),
     globalMax: fromEnv.get('MAX_GLOBAL_QUERY_NUMBER').default(100).asInt(),
     globalWindowMs: fromEnv.get('MAX_GLOBAL_QUERY_WINDOW').default(900000).asInt(),
     uniqueMax: fromEnv.get('MAX_UNIQ_QUERY_NUMBER').default(200).asInt(),
     uniqueWindowMs: fromEnv.get('MAX_UNIQ_QUERY_WINDOW').default(900000).asInt(),
-    /** Stricter bucket for login / OTP / forgot / reset. */
+    /** Stricter bucket for login / OTP / forgot / reset / refresh. */
     authMax: fromEnv.get('MAX_AUTH_QUERY_NUMBER').default(10).asInt(),
     authWindowMs: fromEnv.get('MAX_AUTH_QUERY_WINDOW').default(900000).asInt(),
   },

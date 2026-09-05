@@ -10,12 +10,20 @@ export interface RbacRepositoryPort {
 
   findRoleBySlug(slug: string): Promise<RoleEntity | null>;
 
-  /** Upsert UserRole for the given role slug. No-op if the role is missing. */
+  /**
+   * Replace the user's role membership with a single role (no stacking).
+   * No-op if the role slug is missing.
+   */
   assignRole(userId: string, slug: string): Promise<void>;
+
+  /** Count users that currently hold the given role slug (active role row). */
+  countUsersWithRole(slug: string): Promise<number>;
 
   /**
    * Resolve effective permissions and role slugs for a user.
-   * Merges role permissions with ACL allow/deny overrides.
    */
   getUserAuthContext(userId: string): Promise<UserAuthContext>;
+
+  /** Distinct users that currently hold any of the given role slugs. */
+  countUsersWithAnyRole(slugs: string[]): Promise<number>;
 }

@@ -1,7 +1,11 @@
 import type { Request, Response } from 'express';
 
 import { AppError } from '@/shared/domain/errors/app-error';
-import type { AuditExportFormat, AuditPort, AuditQueryFilters } from '@/shared/infrastructure/audit';
+import type {
+  AuditExportFormat,
+  AuditPort,
+  AuditQueryFilters,
+} from '@/shared/infrastructure/audit';
 import { asyncHandler, response } from '@/shared/utils/http/responses/helpers';
 
 export type AuditControllerDeps = {
@@ -71,6 +75,13 @@ export function createAuditController(deps: AuditControllerDeps) {
     res.setHeader('Content-Type', result.contentType);
     res.setHeader('Content-Disposition', `attachment; filename=${result.filename}`);
     res.setHeader('X-Export-Count', String(result.count));
+    if (result.count >= 2000) {
+      res.setHeader('X-Export-Truncated', 'true');
+      res.setHeader(
+        'Warning',
+        '199 - "Export capped at 2000 rows; async MinIO export via heavy-tasks is a follow-up"',
+      );
+    }
     return res.send(result.body);
   });
 

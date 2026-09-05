@@ -28,13 +28,14 @@ const ASSIGNABLE = [SYSTEM_ROLES.ADMIN, SYSTEM_ROLES.USER, SYSTEM_ROLES.GUEST] a
 /**
  * Admin invite: create a verified+active user, assign a role, email a set-password link.
  * Password is a random hash placeholder — the invitee sets their own via reset token.
+ * Non-USER roles require the actor to hold `user:role:assign`.
  */
 export class InviteUserCommand {
   constructor(private readonly deps: InviteUserDeps) {}
 
   async execute(input: InviteUserInput): Promise<InviteUserResult> {
     const email = input.email?.toLowerCase().trim();
-    const { firstName, lastName, phone } = input;
+    const { firstName, lastName, phone, actorId } = input;
     const roleSlug = input.roleSlug?.trim() || SYSTEM_ROLES.USER;
 
     if (!email || !firstName || !lastName) {
@@ -43,6 +44,16 @@ export class InviteUserCommand {
 
     if (!(ASSIGNABLE as readonly string[]).includes(roleSlug)) {
       throw AppError.badRequest(`Invalid role. Must be one of: ${ASSIGNABLE.join(', ')}`);
+    }
+
+    if (roleSlug !== SYSTEM_ROLES.USER) {
+      if (!actorId) {
+        throw AppError.forbidden('Missing permission: user:role:assign');
+      }
+      const canAssign = await this.deps.rbac.hasPermission(actorId, 'user:role:assign');
+      if (!canAssign) {
+        throw AppError.forbidden('Missing permission: user:role:assign');
+      }
     }
 
     const existing = await this.deps.usersRepository.findLookupByEmail(email);

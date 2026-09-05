@@ -1,3 +1,5 @@
+import type { AuditPort } from '@/shared/infrastructure/audit';
+
 import type { BlogEntity } from '../../domain/entities/blog.entity';
 import type { BlogRepositoryPort } from '../../domain/repositories/blog.repository';
 import type { CreateBlogDto } from '../dto/blog.dto';
@@ -6,6 +8,7 @@ import type { BlogCachePort } from '../services/blog-cache.port';
 export type CreateBlogCommandDeps = {
   blogRepository: BlogRepositoryPort;
   cache?: BlogCachePort;
+  audit?: AuditPort;
 };
 
 const slugify = (value: string): string =>
@@ -36,6 +39,14 @@ export class CreateBlogCommand {
     });
 
     await this.deps.cache?.invalidatePattern('blogs:*');
+
+    await this.deps.audit?.record({
+      actorId: input.authorId,
+      action: 'blog.create',
+      resource: 'blog',
+      resourceId: blog.id,
+    });
+
     return blog;
   }
 }

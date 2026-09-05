@@ -40,23 +40,41 @@ const lookupSelect = {
 
 const isObjectId = (value: string): boolean => /^[a-f\d]{24}$/i.test(value);
 
+/** Sync export cap — keep in sync with ExportUsersQuery / audit export. */
+const USERS_EXPORT_MAX_ROWS = 2000;
+
+/** Active (not soft-deleted) filter: dual isDeleted + deletedAt for Mongo unset-safety. */
+const notSoftDeletedClause = (): Record<string, unknown>[] => [
+  { isDeleted: false },
+  prismaNotDeleted,
+];
+
 const buildListWhere = (
   filters: Omit<UserListFilters, 'page' | 'limit'>,
 ): Record<string, unknown> => {
-  const where: Record<string, unknown> = { isDeleted: false };
-  if (filters.isActive !== undefined) where.isActive = filters.isActive;
-  if (filters.isVerified !== undefined) where.isVerified = filters.isVerified;
-  if (filters.isDeleted !== undefined) where.isDeleted = filters.isDeleted;
+  const clauses: Record<string, unknown>[] = [];
+
+  if (filters.isDeleted === true) {
+    clauses.push({ isDeleted: true });
+  } else {
+    clauses.push(...notSoftDeletedClause());
+  }
+
+  if (filters.isActive !== undefined) clauses.push({ isActive: filters.isActive });
+  if (filters.isVerified !== undefined) clauses.push({ isVerified: filters.isVerified });
   if (filters.search?.trim()) {
     const term = filters.search.trim();
-    where.OR = [
-      { email: { contains: term } },
-      { firstName: { contains: term } },
-      { lastName: { contains: term } },
-      { phone: { contains: term } },
-    ];
+    clauses.push({
+      OR: [
+        { email: { contains: term } },
+        { firstName: { contains: term } },
+        { lastName: { contains: term } },
+        { phone: { contains: term } },
+      ],
+    });
   }
-  return where;
+
+  return clauses.length === 1 ? clauses[0]! : { AND: clauses };
 };
 
 /**
@@ -70,7 +88,7 @@ export class PrismaUsersRepository implements UsersRepositoryPort {
     const user = await prisma.user.findFirst({
       where: {
         id,
-        ...(options?.includeDeleted ? {} : { isDeleted: false }),
+        ...(options?.includeDeleted ? {} : { AND: notSoftDeletedClause() }),
       },
       select: publicSelect,
     });
@@ -84,7 +102,7 @@ export class PrismaUsersRepository implements UsersRepositoryPort {
     const user = await prisma.user.findFirst({
       where: {
         id,
-        ...(options?.includeDeleted ? {} : { isDeleted: false }),
+        ...(options?.includeDeleted ? {} : { AND: notSoftDeletedClause() }),
       },
       select: lookupSelect,
     });
@@ -93,7 +111,7 @@ export class PrismaUsersRepository implements UsersRepositoryPort {
 
   async findLookupByEmail(email: string): Promise<UserLookupRecord | null> {
     return prisma.user.findFirst({
-      where: { email: email.toLowerCase().trim(), isDeleted: false },
+      where: { email: email.toLowerCase().trim(), AND: notSoftDeletedClause() },
       select: lookupSelect,
     });
   }
@@ -122,19 +140,23 @@ export class PrismaUsersRepository implements UsersRepositoryPort {
 
     if (isObjectId(term)) {
       const user = await prisma.user.findFirst({
-        where: { id: term, isDeleted: false },
+        where: { id: term, AND: notSoftDeletedClause() },
         select: publicSelect,
       });
       return { users: user ? [user] : [], total: user ? 1 : 0 };
     }
 
     const where = {
-      isDeleted: false,
-      OR: [
-        { email: { contains: term } },
-        { firstName: { contains: term } },
-        { lastName: { contains: term } },
-        { phone: { contains: term } },
+      AND: [
+        ...notSoftDeletedClause(),
+        {
+          OR: [
+            { email: { contains: term } },
+            { firstName: { contains: term } },
+            { lastName: { contains: term } },
+            { phone: { contains: term } },
+          ],
+        },
       ],
     };
 
@@ -168,7 +190,7 @@ export class PrismaUsersRepository implements UsersRepositoryPort {
         createdAt: true,
       },
       orderBy: { createdAt: 'desc' },
-      take: 10_000,
+      take: USERS_EXPORT_MAX_ROWS,
     });
   }
 

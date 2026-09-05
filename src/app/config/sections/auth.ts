@@ -8,10 +8,17 @@ import { parseDurationMs } from '../parse-duration';
 
 export const authConfig = {
   jwt: {
-    algorithm: fromEnv.get('JWT_ALGORITHM').default('RS256').asString(),
+    /**
+     * Always RS256 — `JWT_ALGORITHM` env is ignored (kept in .env.example for docs only).
+     * HMAC/alg confusion is not configurable.
+     */
+    algorithm: 'RS256' as const,
     accessExpiresIn: fromEnv.get('JWT_ACCESS_EXPIRES_IN').default('15m').asString(),
     refreshExpiresIn: fromEnv.get('JWT_REFRESH_EXPIRES_IN').default('7d').asString(),
-    /** Legacy alias kept for compatibility with older deployments. */
+    /**
+     * Deprecated — not used for signing. Prefer JWT_ACCESS_EXPIRES_IN /
+     * JWT_REFRESH_EXPIRES_IN. Kept so older .env files still parse.
+     */
     expiresIn: fromEnv.get('JWT_EXPIRES_IN').default('1h').asString(),
     passwordResetExpiresInMs: parseDurationMs(
       fromEnv.get('PASSWORD_RESET_EXPIRES_IN').default('1h').asString(),

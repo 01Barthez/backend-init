@@ -1,5 +1,6 @@
 import { MAIL } from '@/shared/constants/mail.constants';
 import { AppError } from '@/shared/domain/errors/app-error';
+import type { AuditPort } from '@/shared/infrastructure/audit';
 import log from '@/shared/infrastructure/logging/logger';
 import { hashPassword } from '@/shared/utils/crypto';
 import generateOtp from '@/shared/utils/otp/generate-otp';
@@ -18,6 +19,7 @@ export type SignupCommandDeps = {
   rbac: RbacPort;
   mailer: MailerPort;
   avatarUploader: AvatarUploaderPort;
+  audit?: AuditPort;
 };
 
 /**
@@ -86,6 +88,13 @@ export class SignupCommand {
       });
 
     log.info('User created successfully', { email });
+
+    await this.deps.audit?.record({
+      actorId: newUser.id,
+      action: 'auth.signup',
+      resource: 'user',
+      resourceId: newUser.id,
+    });
 
     return {
       email,

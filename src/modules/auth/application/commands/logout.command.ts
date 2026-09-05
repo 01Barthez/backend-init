@@ -1,4 +1,5 @@
 import { AppError } from '@/shared/domain/errors/app-error';
+import type { AuditPort } from '@/shared/infrastructure/audit';
 import log from '@/shared/infrastructure/logging/logger';
 
 import type { TokenRepositoryPort } from '../../domain/repositories/token.repository';
@@ -8,6 +9,7 @@ import type { TokenServicePort } from '../services/token.service.port';
 export type LogoutCommandDeps = {
   tokenRepository: TokenRepositoryPort;
   tokenService: TokenServicePort;
+  audit?: AuditPort;
 };
 
 /**
@@ -58,6 +60,14 @@ export class LogoutCommand {
     }
 
     log.info('User logged out successfully', { userId });
+
+    await this.deps.audit?.record({
+      actorId: userId,
+      action: 'auth.logout',
+      resource: 'user',
+      resourceId: userId,
+    });
+
     return { refreshCookieName };
   }
 }

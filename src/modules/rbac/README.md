@@ -4,15 +4,15 @@ Vertical slice for roles, permissions, and role assignment.
 
 Authorization style for this template:
 
-- **Routes:** string permissions via `requirePermission` (exact match, or
-  `:any` elevating a required `:own`)
+- **Routes:** string permissions via `requirePermission` (exact match, or `:any`
+  elevating a required `:own`)
 - **Ownership / IDOR:** enforced in application use cases (e.g. blog author)
 - **No CASL / ability engine** and **no per-row ACL model** — keep the surface
   library-free so projects can plug their own policy engine later
 
 ## Layout
 
-```
+```text
 rbac/
 ├── domain/            # Types, permissionSatisfied, RbacRepositoryPort
 ├── application/       # SeedSystemRoles, AssignRole, GetUserAuthContext

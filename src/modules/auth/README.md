@@ -5,7 +5,7 @@ sessions, refresh, logout, and password flows.
 
 ## Layout
 
-```
+```text
 auth/
 ├── domain/            # User entity, repository ports, JWT types, domain errors
 ├── application/       # Use-case commands + DTOs + TokenServicePort / Mailer / RBAC ports
@@ -26,25 +26,25 @@ auth/
 
 ## HTTP (mounted at `{API_PREFIX}/auth`)
 
-| Method | Path                  | Notes                                         |
-| ------ | --------------------- | --------------------------------------------- |
-| POST   | `/signup`             | Multipart `profile`; optional Idempotency-Key |
-| POST   | `/verify`             | Email OTP                                     |
-| POST   | `/resend-otp`         |                                               |
-| POST   | `/login`              | `totpCode` when TOTP is enabled               |
-| POST   | `/refresh`            | Cookie or body                                |
-| POST   | `/forgot-password`    |                                               |
-| POST   | `/reset-password`     | Opaque Redis token                            |
-| POST   | `/logout`             | Auth                                          |
-| POST   | `/change-password`    | Auth; revokes all sessions                    |
-| GET    | `/me`                 | Auth                                          |
-| GET    | `/sessions`           | Auth                                          |
-| DELETE | `/sessions/:familyId` | Auth                                          |
-| POST   | `/totp/enroll`          | Returns otpauth URL + secret once               |
-| POST   | `/totp/confirm`         | Enables TOTP after a valid authenticator code   |
-| POST   | `/totp/disable`         | Password + current TOTP code                    |
-| POST   | `/totp/recovery-codes`  | Auth; issues 8 one-time codes (shown once)      |
-| POST   | `/totp/recover`         | Public; login with email + password + recovery  |
+| Method | Path                   | Notes                                          |
+| ------ | ---------------------- | ---------------------------------------------- |
+| POST   | `/signup`              | Multipart `profile`; optional Idempotency-Key  |
+| POST   | `/verify`              | Email OTP                                      |
+| POST   | `/resend-otp`          |                                                |
+| POST   | `/login`               | `totpCode` when TOTP is enabled                |
+| POST   | `/refresh`             | Cookie or body                                 |
+| POST   | `/forgot-password`     |                                                |
+| POST   | `/reset-password`      | Opaque Redis token                             |
+| POST   | `/logout`              | Auth                                           |
+| POST   | `/change-password`     | Auth; revokes all sessions                     |
+| GET    | `/me`                  | Auth                                           |
+| GET    | `/sessions`            | Auth                                           |
+| DELETE | `/sessions/:familyId`  | Auth                                           |
+| POST   | `/totp/enroll`         | Returns otpauth URL + secret once              |
+| POST   | `/totp/confirm`        | Enables TOTP after a valid authenticator code  |
+| POST   | `/totp/disable`        | Password + current TOTP code                   |
+| POST   | `/totp/recovery-codes` | Auth; issues 8 one-time codes (shown once)     |
+| POST   | `/totp/recover`        | Public; login with email + password + recovery |
 
 TOTP secrets are AES-256-GCM (`AUTH_ENCRYPTION_KEY`). Required in production.
 Recovery code hashes live in Redis (90-day TTL); plaintext is never stored.

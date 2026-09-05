@@ -14,6 +14,7 @@ import { validateRuntimeConfig } from '@/app/config/validate-runtime';
 import { type AppContainer, getContainer } from '@/app/container';
 import { initMiddlewares } from '@/app/middleware/init-middlewares';
 import { registerRoutes } from '@/app/routes';
+import { featureFlagService } from '@/shared/infrastructure/feature-flags';
 import log from '@/shared/infrastructure/logging/logger';
 import { verifyMailTransport } from '@/shared/infrastructure/mail/mail.service';
 import { registerRepeatableJobs } from '@/shared/infrastructure/queue/queue.service';
@@ -53,6 +54,14 @@ export async function bootstrapApplication(
   }
 
   validateRuntimeConfig();
+
+  await featureFlagService.start();
+
+  if (config.observability.otelEnabled) {
+    log.warn(
+      'OTEL_ENABLED=true but the OpenTelemetry Node SDK is not wired in this template — tracing stays ALS/traceparent-only until you integrate an exporter',
+    );
+  }
 
   await container.rbac.useCases.seedSystemRoles.execute();
   await storageService.ensureBuckets();

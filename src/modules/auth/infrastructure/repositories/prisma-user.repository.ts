@@ -5,7 +5,10 @@ import type {
   UpdateUserInput,
   UserEntity,
 } from '../../domain/entities/user.entity';
-import type { UserRepositoryPort } from '../../domain/repositories/user.repository';
+import type {
+  ClaimEmailVerificationData,
+  UserRepositoryPort,
+} from '../../domain/repositories/user.repository';
 import { UserMapper } from '../persistence/user.mapper';
 
 /**
@@ -95,5 +98,34 @@ export class PrismaUserRepository implements UserRepositoryPort {
       where: { id },
       data: { isActive },
     });
+  }
+
+  async claimEmailVerification(userId: string, data: ClaimEmailVerificationData): Promise<boolean> {
+    const result = await prisma.user.updateMany({
+      where: { id: userId, isVerified: false },
+      data: {
+        isVerified: true,
+        isActive: true,
+        otp: null,
+        otpFailedAttempts: 0,
+        emailVerifiedAt: data.emailVerifiedAt,
+      },
+    });
+    return result.count === 1;
+  }
+
+  async incrementOtpFailedAttempts(userId: string): Promise<void> {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { otpFailedAttempts: { increment: 1 } },
+    });
+  }
+
+  async incrementFailedLoginAttempts(userId: string): Promise<number> {
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { failedLoginAttempts: { increment: 1 } },
+    });
+    return updated.failedLoginAttempts;
   }
 }

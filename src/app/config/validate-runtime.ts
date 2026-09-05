@@ -43,6 +43,23 @@ export const validateRuntimeConfig = (): void => {
       );
     }
 
+    if (!config.security.csrf.enabled) {
+      throw new Error('ALLOW_CSRF_PROTECTION must be true in production (fail-closed)');
+    }
+
+    if (!config.security.cookie.secure) {
+      throw new Error('COOKIE_SECURE must be true in production (fail-closed)');
+    }
+
+    if (!config.storage.clamav.required) {
+      throw new Error('CLAMAV_REQUIRED must be true in production (fail-closed)');
+    }
+
+    const backupKey = config.queue.backup.encryptionKey.trim();
+    if (!backupKey || backupKey.startsWith('change-me')) {
+      throw new Error('BACKUP_ENCRYPTION_KEY must be set to a non-placeholder value in production');
+    }
+
     if (config.security.swagger.enabled) {
       log.warn('Swagger UI is enabled in production — keep it off the public internet');
     }

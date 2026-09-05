@@ -8,10 +8,7 @@
  * Ownership checks stay in application commands; this helper only compares
  * permission strings so projects can swap in CASL/OPA later without rewriting routes.
  */
-export function permissionSatisfied(
-  granted: readonly string[],
-  required: string,
-): boolean {
+export function permissionSatisfied(granted: readonly string[], required: string): boolean {
   if (granted.includes(required)) {
     return true;
   }

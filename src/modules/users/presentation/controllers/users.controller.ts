@@ -5,6 +5,7 @@ import type { Request, Response } from 'express';
 
 import { asyncHandler, response } from '@/shared/utils/http/responses/helpers';
 
+import type { AdminUnlinkOAuthCommand } from '../../application/commands/admin-unlink-oauth.command';
 import type { DeleteUserPermanentlyCommand } from '../../application/commands/delete-user-permanently.command';
 import type { DeleteUserCommand } from '../../application/commands/delete-user.command';
 import type { InviteUserCommand } from '../../application/commands/invite-user.command';
@@ -15,7 +16,6 @@ import type { UnlockUserCommand } from '../../application/commands/unlock-user.c
 import type { UpdateUserRoleCommand } from '../../application/commands/update-user-role.command';
 import type { UpdateUserCommand } from '../../application/commands/update-user.command';
 import type { VerifyUserEmailCommand } from '../../application/commands/verify-user-email.command';
-import type { AdminUnlinkOAuthCommand } from '../../application/commands/admin-unlink-oauth.command';
 import type { ExportUsersQuery } from '../../application/queries/export-users.query';
 import type { GetUserByIdQuery } from '../../application/queries/get-user-by-id.query';
 import type { GetUserSessionsQuery } from '../../application/queries/get-user-sessions.query';
@@ -153,25 +153,36 @@ export function createUsersController(deps: UsersControllerDeps) {
 
   const deleteOwnAccount = asyncHandler(async (req: Request, res: Response) => {
     const authUser = (req as AuthenticatedRequest).user;
-    await deps.deleteUser.execute(authUser?.id ?? '');
+    await deps.deleteUser.execute({
+      userId: authUser?.id ?? '',
+      actorId: authUser?.id ?? '',
+      allowSelf: true,
+    });
     return response.ok(req, res, null, 'Your account has been deleted');
   });
 
   const updateUserRole = asyncHandler(async (req: Request, res: Response) => {
+    const authUser = (req as AuthenticatedRequest).user;
     await deps.updateUserRole.execute({
       userId: req.params.userId,
       roleSlug: req.body.role,
+      actorId: authUser?.id ?? '',
     });
     return response.ok(req, res, null, 'User role updated successfully');
   });
 
   const deleteUser = asyncHandler(async (req: Request, res: Response) => {
-    await deps.deleteUser.execute(req.params.userId);
+    const authUser = (req as AuthenticatedRequest).user;
+    await deps.deleteUser.execute({
+      userId: req.params.userId,
+      actorId: authUser?.id ?? '',
+    });
     return response.ok(req, res, null, 'User deleted successfully');
   });
 
   const deleteUserPermanently = asyncHandler(async (req: Request, res: Response) => {
-    await deps.deleteUserPermanently.execute(req.params.userId);
+    const authUser = (req as AuthenticatedRequest).user;
+    await deps.deleteUserPermanently.execute(req.params.userId, authUser?.id ?? '');
     return response.ok(req, res, null, 'User permanently deleted');
   });
 
@@ -181,12 +192,14 @@ export function createUsersController(deps: UsersControllerDeps) {
   });
 
   const activateUser = asyncHandler(async (req: Request, res: Response) => {
-    const user = await deps.setUserActive.execute(req.params.userId, true);
+    const authUser = (req as AuthenticatedRequest).user;
+    const user = await deps.setUserActive.execute(req.params.userId, true, authUser?.id ?? '');
     return response.ok(req, res, UsersSerializer.adminUser(user), 'User activated');
   });
 
   const deactivateUser = asyncHandler(async (req: Request, res: Response) => {
-    const user = await deps.setUserActive.execute(req.params.userId, false);
+    const authUser = (req as AuthenticatedRequest).user;
+    const user = await deps.setUserActive.execute(req.params.userId, false, authUser?.id ?? '');
     return response.ok(req, res, UsersSerializer.adminUser(user), 'User deactivated');
   });
 
@@ -225,12 +238,14 @@ export function createUsersController(deps: UsersControllerDeps) {
   });
 
   const inviteUser = asyncHandler(async (req: Request, res: Response) => {
+    const authUser = (req as AuthenticatedRequest).user;
     const invited = await deps.inviteUser.execute({
       email: req.body.email,
       firstName: req.body.firstName,
       lastName: req.body.lastName,
       phone: req.body.phone,
       roleSlug: req.body.role,
+      actorId: authUser?.id ?? '',
     });
     return response.created(req, res, invited, 'User invited successfully');
   });
@@ -244,6 +259,14 @@ export function createUsersController(deps: UsersControllerDeps) {
     });
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename=users-export.csv');
+    res.setHeader('X-Export-Count', String(result.count));
+    if (result.truncated) {
+      res.setHeader('X-Export-Truncated', 'true');
+      res.setHeader(
+        'Warning',
+        '199 - "Export capped at 2000 rows; async MinIO export via heavy-tasks is a follow-up"',
+      );
+    }
     return res.send(result.csv);
   });
 

@@ -2,6 +2,7 @@ import { config } from '@/app/config';
 import { MAIL } from '@/shared/constants/mail.constants';
 import { AppError } from '@/shared/domain/errors/app-error';
 import { TotpInvalidError, TotpRequiredError } from '@/shared/domain/errors/security.errors';
+import type { AuditPort } from '@/shared/infrastructure/audit';
 import log from '@/shared/infrastructure/logging/logger';
 import { DUMMY_PASSWORD_HASH, comparePassword } from '@/shared/utils/crypto';
 
@@ -23,6 +24,7 @@ export type LoginCommandDeps = {
   tokenService: TokenServicePort;
   rbac: RbacPort;
   mailer: MailerPort;
+  audit?: AuditPort;
 };
 
 const isLocked = (lockedUntil?: Date | null): boolean =>
@@ -118,6 +120,13 @@ export class LoginCommand {
         log.warn('Failed to queue login alert email', { email, error: error.message });
       });
 
+    await this.deps.audit?.record({
+      actorId: user.id,
+      action: 'auth.login',
+      resource: 'user',
+      resourceId: user.id,
+    });
+
     return {
       id: user.id,
       email: user.email,
@@ -132,15 +141,13 @@ export class LoginCommand {
     };
   }
 
-  private async registerFailure(userId: string, previous: number): Promise<void> {
-    const next = previous + 1;
+  private async registerFailure(userId: string, _previous: number): Promise<void> {
+    const next = await this.deps.userRepository.incrementFailedLoginAttempts(userId);
     const max = config.security.lockout.maxLoginAttempts;
-    const lockedUntil =
-      next >= max ? new Date(Date.now() + config.security.lockout.lockoutMs) : null;
-
-    await this.deps.userRepository.update(userId, {
-      failedLoginAttempts: next,
-      lockedUntil,
-    });
+    if (next >= max) {
+      await this.deps.userRepository.update(userId, {
+        lockedUntil: new Date(Date.now() + config.security.lockout.lockoutMs),
+      });
+    }
   }
 }

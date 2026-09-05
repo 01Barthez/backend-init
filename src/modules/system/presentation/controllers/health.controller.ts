@@ -6,6 +6,10 @@ import { response } from '@/shared/utils/http/responses/helpers';
 
 type Check = { name: string; ok: boolean; error?: string };
 
+const READY_CACHE_TTL_MS = 3000;
+
+let readyCache: { at: number; ok: boolean; checks: Check[] } | null = null;
+
 const pingMongo = async (): Promise<Check> => {
   try {
     await prisma.$runCommandRaw({ ping: 1 });
@@ -34,7 +38,7 @@ const pingRedis = async (): Promise<Check> => {
 
 /**
  * Liveness vs readiness.
- * Live = process is up. Ready = Mongo + Redis answered.
+ * Live = process is up. Ready = Mongo + Redis answered (result cached ~3s).
  */
 export function createHealthController() {
   const live = async (req: Request, res: Response): Promise<void> => {
@@ -42,8 +46,23 @@ export function createHealthController() {
   };
 
   const ready = async (req: Request, res: Response): Promise<void> => {
+    const now = Date.now();
+    if (readyCache && now - readyCache.at < READY_CACHE_TTL_MS) {
+      const payload = {
+        status: readyCache.ok ? 'ready' : 'not_ready',
+        checks: readyCache.checks,
+      };
+      if (!readyCache.ok) {
+        res.status(503).json({ success: false, message: 'Dependency check failed', data: payload });
+        return;
+      }
+      response.ok(req, res, payload, 'Ready');
+      return;
+    }
+
     const checks = await Promise.all([pingMongo(), pingRedis()]);
     const ok = checks.every((check) => check.ok);
+    readyCache = { at: now, ok, checks };
     const payload = { status: ok ? 'ready' : 'not_ready', checks };
 
     if (!ok) {
@@ -54,7 +73,7 @@ export function createHealthController() {
     response.ok(req, res, payload, 'Ready');
   };
 
-  /** Combined probe used by Docker HEALTHCHECK (ready). */
+  /** Combined probe — historically readiness; Docker HEALTHCHECK now uses /health/live. */
   const health = ready;
 
   return { live, ready, health };

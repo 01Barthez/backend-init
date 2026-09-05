@@ -137,7 +137,6 @@ export function createAuthModule(deps: AuthModuleDeps): AuthModule {
     tokenService: deps.tokenService,
   });
 
-
   const router = createAuthRoutes(controller);
 
   return { deps, useCases, controller, router };
@@ -157,10 +156,7 @@ export type {
   TokenPair,
   UserJwtPayload,
 } from './domain/types/auth.types';
-export {
-  BlacklistProvider,
-  blacklistProvider,
-} from './infrastructure/providers/blacklist.provider';
+export { BlacklistProvider, blacklistProvider } from './infrastructure/providers/blacklist.port';
 export { JwtTokenProvider } from './infrastructure/providers/jwt-token.provider';
 export { PrismaTokenRepository } from './infrastructure/repositories/prisma-token.repository';
 export { PrismaUserRepository } from './infrastructure/repositories/prisma-user.repository';

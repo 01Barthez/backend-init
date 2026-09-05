@@ -1,4 +1,3 @@
-import FileType from 'file-type';
 import { lookup as mimeLookup } from 'mime-types';
 
 import { ValidationError } from '../core/errors';
@@ -8,6 +7,8 @@ import type { FileMeta, ValidationPolicy } from '../core/validation-policy';
 /**
  * Size / MIME / extension checks, plus magic-byte sniffing when a buffer is
  * provided so a renamed `.exe` cannot pass as `image/jpeg`.
+ *
+ * Uses dynamic import: `file-type` ≥22 is ESM-only (fixes GHSA-5v7r-6r5c-r473).
  */
 export class Validator {
   constructor(
@@ -28,7 +29,9 @@ export class Validator {
     let detectedMime = meta.contentType || mimeLookup(meta.filename) || 'application/octet-stream';
 
     if (buffer && buffer.length > 0) {
-      const magic = await FileType.fromBuffer(buffer);
+      // ESM-only package — keep CommonJS/TS emit compatible via dynamic import.
+      const { fileTypeFromBuffer } = await import('file-type');
+      const magic = await fileTypeFromBuffer(buffer);
       if (!magic) {
         throw new ValidationError('magic_bytes_unknown', { filename: meta.filename });
       }

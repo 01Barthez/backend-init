@@ -99,17 +99,11 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,mjs,json,md,mdx,yml,yaml}\"",
     "format:check": "prettier --check .",
     "type-check": "tsc --noEmit",
+    "security:audit": "npm audit --omit=dev --audit-level=high",
+    "security:secrets": "gitleaks detect --source . --no-git -c .gitleaks.toml",
+    "security:trivy": "docker run --rm -v \"$PWD:/src\" -v trivy-cache:/root/.cache/ aquasec/trivy:0.70.0 fs --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed --timeout 15m /src",
     "prepare": "husky install",
     "precommit": "lint-staged"
-  },
-  "lint-staged": {
-    "*.{ts,tsx,js,json,md,yml,yaml}": [
-      "prettier --write",
-      "eslint --max-warnings=10 --fix"
-    ],
-    "*.{md,mdx}": [
-      "markdownlint-cli2 --fix"
-    ]
   },
   "dependencies": {
     "@bull-board/api": "^6.21.3",
@@ -130,33 +124,35 @@
     "dotenv-safe": "^9.1.0",
     "ejs": "^3.1.10",
     "env-var": "^7.5.0",
-    "express": "^4.21.2",
+    "express": "^4.22.2",
     "express-rate-limit": "^8.0.1",
-    "express-validator": "^7.2.1",
-    "file-type": "^16.5.4",
-    "flagsmith": "^9.3.5",
+    "express-validator": "^7.3.2",
+    "file-type": "^22.0.2",
+    "flagsmith-nodejs": "^8.1.2",
     "fs-extra": "^11.4.0",
     "helmet": "^8.1.0",
     "ioredis": "^5.8.1",
     "jsonwebtoken": "^9.0.2",
     "lru-cache": "^11.3.6",
     "mime-types": "^3.0.1",
-    "minio": "^8.0.5",
+    "minio": "^8.0.7",
     "module-alias": "^2.2.3",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
-    "nodemailer": "^7.0.6",
+    "nodemailer": "^10.0.0",
     "otp-generator": "^4.0.1",
     "otplib": "^13.5.0",
     "prom-client": "^15.1.3",
+    "qs": "^6.16.0",
     "rate-limit-redis": "^6.0.1",
     "rimraf": "^6.0.1",
     "side-channel": "^1.1.1",
     "swagger-ui-express": "^5.0.1",
-    "uuid": "^13.0.0",
+    "uuid": "^14.0.2",
+    "validator": "^13.15.35",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0",
-    "winston-loki": "^6.1.3",
+    "winston-loki": "^6.1.7",
     "yamljs": "^0.3.0"
   },
   "_moduleAliases": {
@@ -207,7 +203,7 @@
     "eslint-plugin-unused-imports": "^4.2.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.4.3",
-    "markdownlint-cli2": "^0.18.1",
+    "markdownlint-cli2": "^0.23.2",
     "prettier": "^3.6.2",
     "prisma": "^6.19.3",
     "supertest": "^7.1.4",
@@ -221,6 +217,19 @@
   },
   "prisma": {
     "seed": "ts-node -r tsconfig-paths/register --project prisma/tsconfig.json prisma/seed.ts"
+  },
+  "overrides": {
+    "protobufjs": "^7.6.5",
+    "qs": "^6.16.0",
+    "validator": "^13.15.35",
+    "path-to-regexp": "^0.1.13",
+    "deepmerge-ts": "^8.0.0",
+    "minimatch": "^10.2.3",
+    "cookie": "^0.7.2",
+    "decode-uri-component": "^0.5.0",
+    "swagger-ui-express": {
+      "swagger-ui-dist": "5.32.15"
+    }
   },
   "config": {
     "commitizen": {

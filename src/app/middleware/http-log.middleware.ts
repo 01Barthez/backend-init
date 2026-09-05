@@ -6,7 +6,7 @@ import { SecurityLogger } from '@/shared/infrastructure/logging/security-logger'
 import { recordHttpRequest } from '@/shared/infrastructure/metrics/http-metrics';
 import { getLogMeta, getRequestContext } from '@/shared/infrastructure/request-context';
 
-const SKIP_PREFIXES = ['/api-docs', '/static/'];
+const SKIP_PREFIXES = ['/api-docs', '/static/', '/health', '/metrics'];
 
 const routeLabel = (req: Request): string => {
   const matched = req.route?.path;

@@ -16,4 +16,5 @@ model AuditLog {
   @@index([resource, resourceId])
   @@index([requestId])
   @@index([createdAt])
+  @@index([action, createdAt])
 }

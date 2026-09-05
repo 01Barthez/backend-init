@@ -1,3 +1,4 @@
+import { invalidateAuthContext } from '@/modules/rbac';
 import {
   CacheTTL,
   cacheData,
@@ -52,6 +53,7 @@ export class UserCacheAdapter implements UserCachePort {
       }
       await invalidateCachePattern(UserCacheKeys.usersListPattern);
       await invalidateCachePattern(UserCacheKeys.usersSearchPattern);
+      await invalidateAuthContext(userId);
       log.info(`User cache invalidated for userId: ${userId}`);
     } catch (error) {
       log.error(`Failed to invalidate user cache for userId: ${userId}`, { error });

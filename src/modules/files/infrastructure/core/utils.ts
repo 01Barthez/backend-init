@@ -32,6 +32,7 @@ export function generateSafeFilename(originalName: string): string {
 export function generateFilePath(
   originalName: string,
   category = 'misc',
+  ownerId?: string,
 ): { key: string; path: string } {
   const now = new Date();
   const year = now.getFullYear();
@@ -39,7 +40,8 @@ export function generateFilePath(
   const day = String(now.getDate()).padStart(2, '0');
 
   const safeName = generateSafeFilename(originalName);
-  const key = `${category}/${year}/${month}/${day}/${safeName}`;
+  const ownerSegment = ownerId ? `${ownerId}/` : '';
+  const key = `${category}/${ownerSegment}${year}/${month}/${day}/${safeName}`;
 
   return {
     key,

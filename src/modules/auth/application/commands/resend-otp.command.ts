@@ -1,6 +1,7 @@
 import { envs } from '@/app/config';
 import { MAIL } from '@/shared/constants/mail.constants';
 import { AppError } from '@/shared/domain/errors/app-error';
+import redisClient from '@/shared/infrastructure/cache/clients/redis-client';
 import log from '@/shared/infrastructure/logging/logger';
 import generateOtp from '@/shared/utils/otp/generate-otp';
 import { getOtpExpirationDate } from '@/shared/utils/otp/otp-expiration';
@@ -12,6 +13,8 @@ import type { MailerPort } from '../services/mailer.port';
 import { hashOtpCode } from '../services/otp-hash';
 import type { UserCachePort } from '../services/user-cache.port';
 
+const OTP_RESEND_REDIS_PREFIX = 'otp-resend:';
+
 export type ResendOtpCommandDeps = {
   userRepository: UserRepositoryPort;
   mailer: MailerPort;
@@ -20,7 +23,7 @@ export type ResendOtpCommandDeps = {
 
 /**
  * Issues a fresh OTP for an unverified account and queues the email.
- * Enforces a short cooldown after the previous issue (signup or resend).
+ * Enforces a Redis NX cooldown so concurrent resends cannot race.
  * Unlike signup, a mail failure surfaces as an error (user expects delivery).
  */
 export class ResendOtpCommand {
@@ -38,7 +41,7 @@ export class ResendOtpCommand {
       return { emailSent: true };
     }
 
-    this.assertResendAllowed(user.otp?.expireAt);
+    await this.claimResendCooldown(email);
 
     const userOtp = generateOtp();
     const now = new Date();
@@ -71,21 +74,18 @@ export class ResendOtpCommand {
   }
 
   /**
-   * OTP `expireAt` is issuedAt + OTP_DELAY, so issuedAt = expireAt - OTP_DELAY.
+   * SET otp-resend:{email} NX EX cooldownSeconds — first caller wins.
    */
-  private assertResendAllowed(expireAt: Date | undefined | null): void {
-    if (!expireAt) return;
-
+  private async claimResendCooldown(email: string): Promise<void> {
     const cooldownMs = envs.OTP_RESEND_COOLDOWN;
     if (!Number.isFinite(cooldownMs) || cooldownMs <= 0) return;
 
-    const issuedAtMs = new Date(expireAt).getTime() - envs.OTP_DELAY;
-    if (!Number.isFinite(issuedAtMs)) return;
-
-    const elapsedMs = Date.now() - issuedAtMs;
-    const remainingMs = cooldownMs - elapsedMs;
-    if (remainingMs > 0) {
-      throw new OtpResendCooldownError(remainingMs / 1000);
+    const cooldownSeconds = Math.max(1, Math.ceil(cooldownMs / 1000));
+    const key = `${OTP_RESEND_REDIS_PREFIX}${email.toLowerCase()}`;
+    const acquired = await redisClient.set(key, '1', 'EX', cooldownSeconds, 'NX');
+    if (acquired !== 'OK') {
+      const ttl = await redisClient.ttl(key);
+      throw new OtpResendCooldownError(ttl > 0 ? ttl : cooldownSeconds);
     }
   }
 }

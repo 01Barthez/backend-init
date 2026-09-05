@@ -3,7 +3,7 @@
  */
 import fs from 'fs-extra';
 
-import { envs } from '@/app/config';
+import { config, envs } from '@/app/config';
 import { STORAGE_BUCKETS } from '@/shared/constants/app.constants';
 import log from '@/shared/infrastructure/logging/logger';
 import { MinioStorageProvider } from '@/shared/infrastructure/storage/providers/minio.provider';
@@ -31,10 +31,12 @@ class StorageService {
   }
 
   async ensureBuckets(): Promise<void> {
-    await Promise.all(
-      Object.values(STORAGE_BUCKETS).map((bucket) => this.provider.ensureBucket(bucket)),
-    );
-    log.info('Storage buckets ensured');
+    const buckets = [
+      config.storage.minio.appBucket || STORAGE_BUCKETS.UPLOADS,
+      config.storage.minio.backupBucket || STORAGE_BUCKETS.BACKUPS,
+    ];
+    await Promise.all(buckets.map((bucket) => this.provider.ensureBucket(bucket)));
+    log.info('Storage buckets ensured', { buckets });
   }
 
   uploadFile(params: UploadFileParams): Promise<string> {

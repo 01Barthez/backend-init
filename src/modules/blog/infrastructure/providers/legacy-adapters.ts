@@ -21,8 +21,8 @@ export const createBlogCacheAdapter = (): BlogCachePort => ({
 });
 
 export const createBlogRbacAdapter = (): BlogRbacPort => ({
-  async hasAnyRole(userId: string, roles: string[]): Promise<boolean> {
+  async hasPermission(userId: string, permission: string): Promise<boolean> {
     const { rbacService } = await import('@/modules/rbac');
-    return rbacService.hasAnyRole(userId, roles);
+    return rbacService.hasPermission(userId, permission);
   },
 });

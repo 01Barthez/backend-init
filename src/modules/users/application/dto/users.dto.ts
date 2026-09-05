@@ -55,6 +55,8 @@ export type ExportUsersResult = {
   csv: string;
   count: number;
   rows: UserExportRow[];
+  /** True when the repository hit the sync export row cap. */
+  truncated?: boolean;
 };
 
 export type InviteUserInput = {
@@ -63,6 +65,8 @@ export type InviteUserInput = {
   lastName: string;
   phone?: string;
   roleSlug?: string;
+  /** Required when inviting with a non-USER role (checked for user:role:assign). */
+  actorId?: string;
 };
 
 export type InviteUserResult = {

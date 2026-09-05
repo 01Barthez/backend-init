@@ -15,7 +15,8 @@ import { getJwtKeys } from './jwt-keys';
 const generateJti = (): string => uuidv4();
 const generateFamilyId = (): string => randomHex(16);
 
-const jwtAlgorithm = (): jwt.Algorithm => envs.JWT_ALGORITHM as jwt.Algorithm;
+/** Pinned — env JWT_ALGORITHM is ignored (see auth config). */
+const JWT_ALGORITHM: jwt.Algorithm = 'RS256';
 
 const keys = () =>
   getJwtKeys({
@@ -43,8 +44,6 @@ export class JwtTokenProvider implements TokenServicePort {
     const refreshJti = generateJti();
     const familyId = generateFamilyId();
     const pem = keys();
-    const alg = jwtAlgorithm();
-
     const payload = {
       id: user.id,
       email: user.email,
@@ -61,7 +60,7 @@ export class JwtTokenProvider implements TokenServicePort {
       { ...payload, jti: accessJti, type: 'ACCESS' },
       pem.accessPrivate,
       {
-        algorithm: alg,
+        algorithm: JWT_ALGORITHM,
         expiresIn: envs.JWT_ACCESS_EXPIRES_IN as jwt.SignOptions['expiresIn'],
       },
     );
@@ -70,7 +69,7 @@ export class JwtTokenProvider implements TokenServicePort {
       { ...payload, jti: refreshJti, familyId, type: 'REFRESH' },
       pem.refreshPrivate,
       {
-        algorithm: alg,
+        algorithm: JWT_ALGORITHM,
         expiresIn: envs.JWT_REFRESH_EXPIRES_IN as jwt.SignOptions['expiresIn'],
       },
     );
@@ -100,7 +99,7 @@ export class JwtTokenProvider implements TokenServicePort {
 
   verifyAccessToken(token: string): UserJwtPayload {
     const decoded = jwt.verify(token, keys().accessPublic, {
-      algorithms: [jwtAlgorithm()],
+      algorithms: [JWT_ALGORITHM],
     }) as UserJwtPayload;
 
     if (decoded.type !== 'ACCESS') {
@@ -112,7 +111,7 @@ export class JwtTokenProvider implements TokenServicePort {
 
   verifyRefreshToken(token: string): UserJwtPayload & { familyId: string; jti: string } {
     const decoded = jwt.verify(token, keys().refreshPublic, {
-      algorithms: [jwtAlgorithm()],
+      algorithms: [JWT_ALGORITHM],
     }) as UserJwtPayload & { familyId: string; jti: string };
 
     if (decoded.type !== 'REFRESH') {
@@ -140,6 +139,7 @@ export class JwtTokenProvider implements TokenServicePort {
   /**
    * Rotate with reuse detection: a revoked/unknown jti or hash mismatch
    * revokes the entire refresh-token family.
+   * Concurrent refreshes compete via atomic claim — loser is treated as reuse.
    */
   async rotateRefreshToken(oldToken: string): Promise<TokenPair> {
     const decoded = this.verifyRefreshToken(oldToken);
@@ -178,7 +178,15 @@ export class JwtTokenProvider implements TokenServicePort {
       roles,
     );
 
-    await this.deps.tokenRepository.markRefreshTokenReplaced(decoded.jti, pair.refreshJti);
+    const claimed = await this.deps.tokenRepository.claimRefreshTokenForRotation(
+      decoded.jti,
+      pair.refreshJti,
+    );
+    if (!claimed) {
+      await this.deps.tokenRepository.revokeFamily(stored.familyId, 'REUSE_DETECTED');
+      throw new Error('Refresh token reuse detected');
+    }
+
     await this.persistRefreshToken(user.id, pair.refreshToken, pair.refreshJti, decoded.familyId);
 
     return pair;

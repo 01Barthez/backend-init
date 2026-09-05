@@ -63,6 +63,17 @@ export class PrismaTokenRepository implements TokenRepositoryPort {
     });
   }
 
+  /**
+   * Compare-and-swap revoke used by refresh rotation to prevent dual live tokens.
+   */
+  async claimRefreshTokenForRotation(jti: string, replacedBy: string): Promise<boolean> {
+    const result = await prisma.refreshToken.updateMany({
+      where: { jti, isRevoked: false },
+      data: { isRevoked: true, replacedBy, lastUsedAt: new Date() },
+    });
+    return result.count === 1;
+  }
+
   async revokeToken(input: RevokeTokenInput): Promise<void> {
     const tokenHash = hashToken(input.token);
     const ttlSeconds = Math.max(1, Math.floor((input.expireAt.getTime() - Date.now()) / 1000));
@@ -189,9 +200,8 @@ export class PrismaTokenRepository implements TokenRepositoryPort {
 
   async consumePasswordResetToken(tokenHash: string): Promise<string | null> {
     const key = `pwd-reset:${tokenHash}`;
-    const userId = await redisClient.get(key);
-    if (!userId) return null;
-    await redisClient.del(key);
+    // Atomic get-and-delete — prevents double consume under concurrent resets.
+    const userId = await redisClient.getdel(key);
     return userId;
   }
 

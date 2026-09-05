@@ -6,15 +6,6 @@
 /** Cookie names used by the auth presentation layer. */
 export const AUTH_COOKIES = {
   REFRESH_TOKEN: 'refresh_token',
-  OAUTH_STATE: 'oauth_state',
-} as const;
-
-/** JWT token family labels stored alongside refresh tokens. */
-export const TOKEN_FAMILIES = {
-  ACCESS: 'ACCESS',
-  REFRESH: 'REFRESH',
-  PASSWORD_RESET: 'PASSWORD_RESET',
-  EMAIL_VERIFY: 'EMAIL_VERIFY',
 } as const;
 
 /** Built-in role slugs seeded at bootstrap. */
@@ -25,17 +16,18 @@ export const SYSTEM_ROLES = {
   GUEST: 'guest',
 } as const;
 
-/** Built-in permission catalogue seeded at bootstrap. */
+/**
+ * Built-in permission catalogue seeded at bootstrap.
+ * Role/permission CRUD APIs are not shipped — those names are omitted so the
+ * catalogue matches enforced routes. `blog:read` remains for guest seed only
+ * (public list/search do not require it).
+ */
 export const SYSTEM_PERMISSIONS = [
   { name: 'user:read:any', resource: 'user', action: 'read:any' },
   { name: 'user:update:any', resource: 'user', action: 'update:any' },
   { name: 'user:delete:any', resource: 'user', action: 'delete:any' },
   { name: 'user:export', resource: 'user', action: 'export' },
   { name: 'user:role:assign', resource: 'user', action: 'role:assign' },
-  { name: 'role:create', resource: 'role', action: 'create' },
-  { name: 'role:delete', resource: 'role', action: 'delete' },
-  { name: 'role:update', resource: 'role', action: 'update' },
-  { name: 'permission:manage', resource: 'permission', action: 'manage' },
   { name: 'blog:read', resource: 'blog', action: 'read' },
   { name: 'blog:create', resource: 'blog', action: 'create' },
   { name: 'blog:update:own', resource: 'blog', action: 'update:own' },
@@ -46,7 +38,10 @@ export const SYSTEM_PERMISSIONS = [
   { name: 'audit:read', resource: 'audit', action: 'read' },
 ] as const;
 
-/** Logical storage buckets created at bootstrap. */
+/**
+ * Logical storage bucket *defaults*. Runtime names come from
+ * `config.storage.minio.appBucket` / `backupBucket` (MINIO_*_BUCKET env).
+ */
 export const STORAGE_BUCKETS = {
   UPLOADS: 'app-uploads',
   BACKUPS: 'backups',
@@ -55,9 +50,6 @@ export const STORAGE_BUCKETS = {
 /** Object-key prefixes inside the uploads bucket. */
 export const STORAGE_PATHS = {
   USER_AVATARS: 'users/avatars',
-  USER_DOCUMENTS: 'users/documents',
-  BLOG_COVERS: 'blog/covers',
-  TEMP: 'tmp',
 } as const;
 
 /** BullMQ queue names. */
