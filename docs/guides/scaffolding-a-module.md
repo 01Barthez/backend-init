@@ -19,26 +19,31 @@ npm run scaffold:module -- invoice --wire --dry-run
 
 ## What you get
 
-| Artefact | Purpose |
-| -------- | ------- |
-| `src/modules/<plural>/` | Full modular layout matching `blog` |
-| CRUD commands/queries | create / update / soft-delete / get / list |
-| Ownership gates | `:own` + admin `:any` elevation |
-| `prisma/models/<singular>.prisma` | Soft-delete Mongo model |
-| `docs/api/generator/paths/<plural>.js` | OpenAPI path stubs |
-| Unit test | `Create*Command` with fake repository |
+| Artefact                               | Purpose                                    |
+| -------------------------------------- | ------------------------------------------ |
+| `src/modules/<plural>/`                | Full modular layout matching `blog`        |
+| CRUD commands/queries                  | create / update / soft-delete / get / list |
+| Ownership gates                        | `:own` + admin `:any` elevation            |
+| `prisma/models/<singular>.prisma`      | Soft-delete Mongo model                    |
+| `docs/api/generator/paths/<plural>.js` | OpenAPI path stubs                         |
+| Unit test                              | `Create*Command` with fake repository      |
 
 Placeholder fields are `title` + `description` + `ownerId` — replace them with
 your real domain.
 
 ## Flags
 
-| Flag | Meaning |
-| ---- | ------- |
-| `--wire` | Patch composition root, routes, OpenAPI, `SYSTEM_PERMISSIONS`, admin/user seed |
-| `--force` | Overwrite existing scaffold files |
-| `--dry-run` | Print actions without writing |
-| `--mount <slug>` | Force folder/URL plural (e.g. `--mount order-items`) |
+| Flag             | Meaning                                                                                                               |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `--wire`         | Patch composition root, routes, OpenAPI, `SYSTEM_PERMISSIONS`, admin/user seed                                        |
+| `--with-audit`   | Inject optional `AuditPort.record` into create / update / delete commands (and wire `auditRepository` in module deps) |
+| `--force`        | Overwrite existing scaffold files                                                                                     |
+| `--dry-run`      | Print actions without writing                                                                                         |
+| `--mount <slug>` | Force folder/URL plural (e.g. `--mount order-items`)                                                                  |
+
+```bash
+npm run scaffold:module -- invoices --wire --with-audit
+```
 
 Reserved names (template modules) are rejected: `auth`, `users`, `blog`, …
 `oauth`, `files`, `rbac`, `system`, etc.
@@ -58,4 +63,5 @@ Reserved names (template modules) are rejected: `auth`, `users`, `blog`, …
 
 The CLI optimizes for **shipping a credible first slice** aligned with this
 template’s patterns. It does not invent a second architecture. Prefer editing
-generated code over extending the generator with one-off flags.
+generated code over extending the generator with one-off flags. `--with-audit`
+is the exception for a common security concern — keep metadata light.

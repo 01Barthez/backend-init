@@ -5,8 +5,9 @@
 
 /**
  * @param {ReturnType<import('../lib/naming.mjs').buildNames>} n
+ * @param {{ withAudit?: boolean }} [opts]
  */
-export function buildTemplateVars(n) {
+export function buildTemplateVars(n, opts = {}) {
   return {
     slug: n.folder,
     singular: n.singular,
@@ -28,6 +29,7 @@ export function buildTemplateVars(n) {
     permUpdateAny: `${n.permission}:update:any`,
     permDeleteOwn: `${n.permission}:delete:own`,
     permDeleteAny: `${n.permission}:delete:any`,
+    withAudit: Boolean(opts.withAudit),
   };
 }
 
@@ -198,7 +200,13 @@ import {
 }
 
 function indexTs(v) {
-  return `import type { Router } from 'express';
+  const auditImport = v.withAudit
+    ? `import { type AuditPort, auditRepository } from '@/shared/infrastructure/audit';\n\n`
+    : '';
+  const auditDepType = v.withAudit ? `\n  audit?: AuditPort;` : '';
+  const auditDefault = v.withAudit ? `\n    audit: overrides.audit ?? auditRepository,` : '';
+
+  return `${auditImport}import type { Router } from 'express';
 
 import { Create${v.pascal}Command } from './application/commands/create-${v.singular}.command';
 import { Delete${v.pascal}Command } from './application/commands/delete-${v.singular}.command';
@@ -220,7 +228,7 @@ import { create${v.pascal}Routes } from './presentation/routes/${v.singular}.rou
  */
 export type ${v.pascal}ModuleDeps = {
   ${v.camel}Repository: ${v.pascal}RepositoryPort;
-  rbac: ${v.pascal}RbacPort;
+  rbac: ${v.pascal}RbacPort;${auditDepType}
 };
 
 export type ${v.pascal}Module = {
@@ -245,7 +253,7 @@ export function createDefault${v.pascal}Deps(
 ): ${v.pascal}ModuleDeps {
   return {
     ${v.camel}Repository: overrides.${v.camel}Repository ?? new Prisma${v.pascal}Repository(),
-    rbac: overrides.rbac ?? create${v.pascal}RbacAdapter(),
+    rbac: overrides.rbac ?? create${v.pascal}RbacAdapter(),${auditDefault}
   };
 }
 
@@ -397,12 +405,29 @@ export type List${v.pascalPlural}Dto = {
 }
 
 function createCommand(v) {
-  return `import type { ${v.pascal}Entity } from '../../domain/entities/${v.singular}.entity';
+  const auditImport = v.withAudit
+    ? `import type { AuditPort } from '@/shared/infrastructure/audit';\n\n`
+    : '';
+  const auditDep = v.withAudit ? `\n  audit?: AuditPort;` : '';
+  const auditCall = v.withAudit
+    ? `
+    await this.deps.audit?.record({
+      actorId: input.ownerId,
+      action: '${v.permission}.create',
+      resource: '${v.permission}',
+      resourceId: created.id,
+    });
+
+    return created;`
+    : `
+    return created;`;
+
+  return `${auditImport}import type { ${v.pascal}Entity } from '../../domain/entities/${v.singular}.entity';
 import type { ${v.pascal}RepositoryPort } from '../../domain/repositories/${v.singular}.repository';
 import type { Create${v.pascal}Dto } from '../dto/${v.singular}.dto';
 
 export type Create${v.pascal}CommandDeps = {
-  ${v.camel}Repository: ${v.pascal}RepositoryPort;
+  ${v.camel}Repository: ${v.pascal}RepositoryPort;${auditDep}
 };
 
 /**
@@ -412,24 +437,42 @@ export class Create${v.pascal}Command {
   constructor(private readonly deps: Create${v.pascal}CommandDeps) {}
 
   async execute(input: Create${v.pascal}Dto): Promise<${v.pascal}Entity> {
-    return this.deps.${v.camel}Repository.create({
+    const created = await this.deps.${v.camel}Repository.create({
       title: input.title.trim(),
       description: input.description?.trim() || null,
       ownerId: input.ownerId,
     });
+${auditCall}
   }
 }
 `;
 }
 
 function updateCommand(v) {
-  return `import type { ${v.pascal}Entity } from '../../domain/entities/${v.singular}.entity';
+  const auditImport = v.withAudit
+    ? `import type { AuditPort } from '@/shared/infrastructure/audit';\n\n`
+    : '';
+  const auditDep = v.withAudit ? `\n  audit?: AuditPort;` : '';
+  const auditCall = v.withAudit
+    ? `
+    await this.deps.audit?.record({
+      actorId: input.actorId,
+      action: '${v.permission}.update',
+      resource: '${v.permission}',
+      resourceId: input.id,
+    });
+
+    return updated;`
+    : `
+    return updated;`;
+
+  return `${auditImport}import type { ${v.pascal}Entity } from '../../domain/entities/${v.singular}.entity';
 import { ${v.pascal}ForbiddenError, ${v.pascal}NotFoundError } from '../../domain/errors/${v.singular}.errors';
 import type { ${v.pascal}RepositoryPort } from '../../domain/repositories/${v.singular}.repository';
 import type { Update${v.pascal}Dto } from '../dto/${v.singular}.dto';
 
 export type Update${v.pascal}CommandDeps = {
-  ${v.camel}Repository: ${v.pascal}RepositoryPort;
+  ${v.camel}Repository: ${v.pascal}RepositoryPort;${auditDep}
 };
 
 /**
@@ -448,24 +491,39 @@ export class Update${v.pascal}Command {
       throw new ${v.pascal}ForbiddenError();
     }
 
-    return this.deps.${v.camel}Repository.update(input.id, {
+    const updated = await this.deps.${v.camel}Repository.update(input.id, {
       ...(input.title !== undefined ? { title: input.title.trim() } : {}),
       ...(input.description !== undefined
         ? { description: input.description?.trim() || null }
         : {}),
     });
+${auditCall}
   }
 }
 `;
 }
 
 function deleteCommand(v) {
-  return `import { ${v.pascal}ForbiddenError, ${v.pascal}NotFoundError } from '../../domain/errors/${v.singular}.errors';
+  const auditImport = v.withAudit
+    ? `import type { AuditPort } from '@/shared/infrastructure/audit';\n\n`
+    : '';
+  const auditDep = v.withAudit ? `\n  audit?: AuditPort;` : '';
+  const auditCall = v.withAudit
+    ? `
+    await this.deps.audit?.record({
+      actorId: input.actorId,
+      action: '${v.permission}.delete',
+      resource: '${v.permission}',
+      resourceId: input.id,
+    });`
+    : '';
+
+  return `${auditImport}import { ${v.pascal}ForbiddenError, ${v.pascal}NotFoundError } from '../../domain/errors/${v.singular}.errors';
 import type { ${v.pascal}RepositoryPort } from '../../domain/repositories/${v.singular}.repository';
 import type { Delete${v.pascal}Dto } from '../dto/${v.singular}.dto';
 
 export type Delete${v.pascal}CommandDeps = {
-  ${v.camel}Repository: ${v.pascal}RepositoryPort;
+  ${v.camel}Repository: ${v.pascal}RepositoryPort;${auditDep}
 };
 
 /**
@@ -484,7 +542,7 @@ export class Delete${v.pascal}Command {
       throw new ${v.pascal}ForbiddenError();
     }
 
-    await this.deps.${v.camel}Repository.update(input.id, { deletedAt: new Date() });
+    await this.deps.${v.camel}Repository.update(input.id, { deletedAt: new Date() });${auditCall}
   }
 }
 `;

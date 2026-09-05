@@ -2,10 +2,26 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 /**
+ * Apply the first matching search/replace. Returns original source when none match.
+ * @param {string} src
+ * @param {Array<{ find: RegExp|string, replace: string }>} attempts
+ */
+function replaceFirst(src, attempts) {
+  for (const { find, replace } of attempts) {
+    if (typeof find === 'string') {
+      if (src.includes(find)) {
+        return src.replace(find, replace);
+      }
+    } else if (find.test(src)) {
+      return src.replace(find, replace);
+    }
+  }
+  return src;
+}
+
+/**
  * @param {string} root
- * @param {import('../lib/naming.mjs').buildNames extends Function
- *   ? ReturnType<import('../lib/naming.mjs').buildNames>
- *   : any} names
+ * @param {ReturnType<import('../lib/naming.mjs').buildNames>} names
  * @param {{ dryRun?: boolean }} opts
  */
 export async function wireModule(root, names, opts = {}) {
@@ -45,31 +61,57 @@ async function patchContainer(root, names, opts) {
       let next = src;
       const importLine = `import { type ${names.pascal}Module, create${names.pascal}Module, createDefault${names.pascal}Deps } from '@/modules/${names.plural}';\n`;
       if (!next.includes(importLine.trim())) {
-        next = next.replace(
-          /(import \{ type FilesModule[\s\S]*?from '@\/modules\/files';\n)/,
-          `$1${importLine}`,
-        );
+        next = replaceFirst(next, [
+          {
+            find: /(import \{ type FilesModule[\s\S]*?from '@\/modules\/files';\n)/,
+            replace: `$1${importLine}`,
+          },
+          {
+            find: /(import \{ type BlogModule[\s\S]*?from '@\/modules\/blog';\n)/,
+            replace: `$1${importLine}`,
+          },
+        ]);
       }
 
-      next = next.replace(
-        /(export type AppContainer = \{[\s\S]*?)(system: SystemRouters;\n\};)/,
-        `$1${names.camelPlural}: ${names.pascal}Module;\n  $2`,
-      );
+      next = replaceFirst(next, [
+        {
+          find: /(export type AppContainer = \{[\s\S]*?)(system: SystemRouters;\n\};)/,
+          replace: `$1${names.camelPlural}: ${names.pascal}Module;\n  $2`,
+        },
+      ]);
 
-      next = next.replace(
-        /(export type ContainerOverrides = \{[\s\S]*?)(files\?: Parameters[\s\S]*?\n\};)/,
-        `$1${names.camelPlural}?: Parameters<typeof createDefault${names.pascal}Deps>[0];\n  $2`,
-      );
+      next = replaceFirst(next, [
+        {
+          find: /(export type ContainerOverrides = \{[\s\S]*?)(files\?: Parameters[\s\S]*?\n\};)/,
+          replace: `$1${names.camelPlural}?: Parameters<typeof createDefault${names.pascal}Deps>[0];\n  $2`,
+        },
+        {
+          find: /(export type ContainerOverrides = \{[\s\S]*?)(blog\?: Parameters[\s\S]*?\n\};)/,
+          replace: `$1${names.camelPlural}?: Parameters<typeof createDefault${names.pascal}Deps>[0];\n  $2`,
+        },
+      ]);
 
-      next = next.replace(
-        /(const files = createFilesModule\(createDefaultFilesDeps\(overrides\.files\)\);\n)/,
-        `$1  const ${names.camelPlural} = create${names.pascal}Module(createDefault${names.pascal}Deps(overrides.${names.camelPlural}));\n`,
-      );
+      next = replaceFirst(next, [
+        {
+          find: /(const files = createFilesModule\(createDefaultFilesDeps\(overrides\.files\)\);\n)/,
+          replace: `$1  const ${names.camelPlural} = create${names.pascal}Module(createDefault${names.pascal}Deps(overrides.${names.camelPlural}));\n`,
+        },
+        {
+          find: /(const blog = createBlogModule\(createDefaultBlogDeps\(overrides\.blog\)\);\n)/,
+          replace: `$1  const ${names.camelPlural} = create${names.pascal}Module(createDefault${names.pascal}Deps(overrides.${names.camelPlural}));\n`,
+        },
+      ]);
 
-      next = next.replace(
-        /(return \{ auth, users, rbac, blog, oauth, files, system \};)/,
-        `return { auth, users, rbac, blog, oauth, files, ${names.camelPlural}, system };`,
-      );
+      next = replaceFirst(next, [
+        {
+          find: 'return { auth, users, rbac, blog, oauth, files, system };',
+          replace: `return { auth, users, rbac, blog, oauth, files, ${names.camelPlural}, system };`,
+        },
+        {
+          find: /(return \{ auth, users, rbac, blog, oauth, files)(, system \};)/,
+          replace: `$1, ${names.camelPlural}$2`,
+        },
+      ]);
 
       return next;
     },
@@ -84,10 +126,16 @@ async function patchRoutes(root, names, opts) {
     (src) => {
       if (src.includes(`container.${names.camelPlural}.router`)) return src;
       const mount = `  api.use('${names.mount}', rateLimitingSubRoute, container.${names.camelPlural}.router);\n`;
-      return src.replace(
-        /(api\.use\('\/files', rateLimitingSubRoute, container\.files\.router\);\n)/,
-        `$1${mount}`,
-      );
+      return replaceFirst(src, [
+        {
+          find: /(api\.use\('\/files', rateLimitingSubRoute, container\.files\.router\);\n)/,
+          replace: `$1${mount}`,
+        },
+        {
+          find: /(api\.use\('\/blogs', rateLimitingSubRoute, container\.blog\.router\);\n)/,
+          replace: `$1${mount}`,
+        },
+      ]);
     },
     opts,
   );
@@ -99,14 +147,26 @@ async function patchOpenApiIndex(root, names, opts) {
     path,
     (src) => {
       if (src.includes(`require('./${names.plural}')`)) return src;
-      let next = src.replace(
-        /(const files = require\('\.\/files'\);\n)/,
-        `$1const ${names.camelPlural} = require('./${names.plural}');\n`,
-      );
-      next = next.replace(
-        /(\.\.\.blogs,\n)/,
-        `$1  ...${names.camelPlural},\n`,
-      );
+      let next = replaceFirst(src, [
+        {
+          find: /(const files = require\('\.\/files'\);\n)/,
+          replace: `$1const ${names.camelPlural} = require('./${names.plural}');\n`,
+        },
+        {
+          find: /(const blogs = require\('\.\/blogs'\);\n)/,
+          replace: `$1const ${names.camelPlural} = require('./${names.plural}');\n`,
+        },
+      ]);
+      next = replaceFirst(next, [
+        {
+          find: /(\.\.\.blogs,\n)/,
+          replace: `$1  ...${names.camelPlural},\n`,
+        },
+        {
+          find: /(\.\.\.files,\n)/,
+          replace: `$1  ...${names.camelPlural},\n`,
+        },
+      ]);
       return next;
     },
     opts,
@@ -120,7 +180,16 @@ async function patchOpenApiTags(root, names, opts) {
     (src) => {
       if (src.includes(`name: '${names.tag}'`)) return src;
       const tag = `  {\n    name: '${names.tag}',\n    description: 'Scaffolded ${names.titlePlural} domain — replace with real business rules',\n  },\n`;
-      return src.replace(/({\n    name: 'Files',[\s\S]*?},)/, `$1\n${tag}`);
+      return replaceFirst(src, [
+        {
+          find: /({\n    name: 'Files',[\s\S]*?},)/,
+          replace: `$1\n${tag}`,
+        },
+        {
+          find: /({\n    name: 'Blog',[\s\S]*?},)/,
+          replace: `$1\n${tag}`,
+        },
+      ]);
     },
     opts,
   );
@@ -139,10 +208,16 @@ async function patchPermissions(root, names, opts) {
   { name: '${names.permission}:delete:own', resource: '${names.permission}', action: 'delete:own' },
   { name: '${names.permission}:delete:any', resource: '${names.permission}', action: 'delete:any' },
 `;
-      return src.replace(
-        /({\s*name: 'audit:read',\s*resource: 'audit',\s*action: 'read'\s*},)/,
-        `${block}  $1`,
-      );
+      return replaceFirst(src, [
+        {
+          find: /({\s*name: 'audit:read',\s*resource: 'audit',\s*action: 'read'\s*},)/,
+          replace: `${block}  $1`,
+        },
+        {
+          find: /({\s*name: 'blog:publish',\s*resource: 'blog',\s*action: 'publish'\s*},)/,
+          replace: `$1\n${block}`,
+        },
+      ]);
     },
     opts,
   );
@@ -161,10 +236,16 @@ async function patchRbacAdminSeed(root, names, opts) {
           '${names.permission}:delete:own',
           '${names.permission}:delete:any',
 `;
-      return src.replace(
-        /(blog:publish',\n\s*'audit:read',)/,
-        `blog:publish',\n${perms}          'audit:read',`,
-      );
+      return replaceFirst(src, [
+        {
+          find: /(blog:publish',\n\s*'audit:read',)/,
+          replace: `blog:publish',\n${perms}          'audit:read',`,
+        },
+        {
+          find: /('blog:publish',\n)/,
+          replace: `'blog:publish',\n${perms}`,
+        },
+      ]);
     },
     opts,
   );
@@ -175,7 +256,9 @@ async function patchRbacUserSeed(root, names, opts) {
   return patchFile(
     path,
     (src) => {
-      // User role block — add own-scoped perms if not already present near blog:publish for user
+      if (src.includes(`'${names.permission}:create'`)) {
+        // May already be on admin seed only — still try user block below.
+      }
       if (
         src.includes(`perms: ['blog:read', 'blog:create'`) &&
         !src.includes(`'${names.permission}:create'`)

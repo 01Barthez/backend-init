@@ -3,7 +3,7 @@
 Generates a full Backend Init bounded context (CRUD vertical slice).
 
 ```bash
-npm run scaffold:module -- <name> [--wire] [--force] [--dry-run] [--mount <slug>]
+npm run scaffold:module -- <name> [--wire] [--with-audit] [--force] [--dry-run] [--mount <slug>]
 ```
 
 See [scaffolding-a-module.md](../docs/guides/scaffolding-a-module.md).

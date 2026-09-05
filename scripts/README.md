@@ -2,9 +2,9 @@
 
 Host-side helpers. Prefer npm scripts in `package.json` for everyday use.
 
-| Script                 | npm                     | Purpose                             |
-| ---------------------- | ----------------------- | ----------------------------------- |
-| `generate-jwt-keys.sh` | `npm run keys:generate` | RS256 PEMs under gitignored `keys/` |
+| Script                 | npm                       | Purpose                             |
+| ---------------------- | ------------------------- | ----------------------------------- |
+| `generate-jwt-keys.sh` | `npm run keys:generate`   | RS256 PEMs under gitignored `keys/` |
 | `scaffold/module.mjs`  | `npm run scaffold:module` | Generate a full domain module slice |
 
 Scaffold docs:

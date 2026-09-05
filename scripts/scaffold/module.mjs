@@ -8,12 +8,12 @@
  *
  * Options:
  *   --wire       Patch container, routes, OpenAPI index/tags, SYSTEM_PERMISSIONS, RBAC seed
+ *   --with-audit Inject optional AuditPort.record into create/update/delete commands
  *   --force      Overwrite existing generated files
  *   --dry-run    Print actions without writing
  *   --mount <p>  Override URL/folder plural (default: pluralized name)
  *   --help       Show help
  */
-
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -37,6 +37,7 @@ Arguments:
 
 Options:
   --wire          Wire container, routes, OpenAPI, permissions + RBAC seed
+  --with-audit    Inject AuditPort.record into create/update/delete commands
   --force         Overwrite files if they already exist
   --dry-run       Show what would be created / patched
   --mount <slug>  Force mount/folder plural (e.g. --mount catalog-items)
@@ -45,6 +46,7 @@ Options:
 Examples:
   npm run scaffold:module -- orders
   npm run scaffold:module -- invoice --wire
+  npm run scaffold:module -- invoice --wire --with-audit
   npm run scaffold:module -- order-item --mount order-items --dry-run
 
 Generates:
@@ -59,6 +61,7 @@ function parseArgs(argv) {
   const args = argv.slice(2);
   const opts = {
     wire: false,
+    withAudit: false,
     force: false,
     dryRun: false,
     mount: undefined,
@@ -70,6 +73,7 @@ function parseArgs(argv) {
     const arg = args[i];
     if (arg === '--help' || arg === '-h') opts.help = true;
     else if (arg === '--wire') opts.wire = true;
+    else if (arg === '--with-audit') opts.withAudit = true;
     else if (arg === '--force') opts.force = true;
     else if (arg === '--dry-run') opts.dryRun = true;
     else if (arg === '--mount') {
@@ -97,6 +101,7 @@ function printBanner(names, opts) {
 │  mount      {API_PREFIX}${names.mount.padEnd(35)}│
 │  prisma     ${names.prismaModel.padEnd(43)}│
 │  wire       ${String(opts.wire).padEnd(43)}│
+│  with-audit ${String(opts.withAudit).padEnd(43)}│
 │  dry-run    ${String(opts.dryRun).padEnd(43)}│
 └──────────────────────────────────────────────────────────┘
 `);
@@ -139,7 +144,7 @@ async function main() {
     return;
   }
 
-  const vars = buildTemplateVars(names);
+  const vars = buildTemplateVars(names, { withAudit: opts.withAudit });
   const files = buildModuleFiles(vars);
   const { written, skipped } = await writeFiles(ROOT, files, {
     force: opts.force,

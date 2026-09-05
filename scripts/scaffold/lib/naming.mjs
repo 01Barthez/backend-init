@@ -13,8 +13,7 @@ const toKebab = (value) =>
     .toLowerCase()
     .replace(/^-|-$/g, '');
 
-const kebabToCamel = (kebab) =>
-  kebab.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
+const kebabToCamel = (kebab) => kebab.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
 
 const kebabToPascal = (kebab) => {
   const camel = kebabToCamel(kebab);
@@ -81,9 +80,7 @@ export function buildNames(input, opts = {}) {
     'app',
   ]);
   if (reserved.has(rawKebab) || reserved.has(singularize(rawKebab))) {
-    throw new Error(
-      `"${rawKebab}" conflicts with an existing template module. Pick another name.`,
-    );
+    throw new Error(`"${rawKebab}" conflicts with an existing template module. Pick another name.`);
   }
 
   const singular = singularize(rawKebab);
