@@ -16,6 +16,11 @@ paths = [
   '''^coverage/''',
   '''^dist/''',
   '''^node_modules/''',
+  # Removed from tree; still appear in git history during full scans.
+  '''^FIXES_CODE_EXAMPLES\.md$''',
+  '''^OAUTH_README\.md$''',
+  '''^docs/OAUTH_SETUP\.md$''',
+  '''^src/config/keys/''',
 ]
 
 # Property access like secretKey: envs.S3_SECRET_KEY is not a hardcoded secret.

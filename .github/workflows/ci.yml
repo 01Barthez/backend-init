@@ -26,6 +26,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      # No secrets in CI — schema defaults from .env.example (see src/app/config/env.ts).
+      - name: Materialize env for tests
+        run: cp .env.example .env
+
       - name: Generate JWT keys
         run: npm run keys:generate
 

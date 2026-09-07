@@ -1,0 +1,6 @@
+# OSV Scanner config (repo root — applies with --config or next to package-lock.json).
+# Align with npm audit --audit-level=high: document known moderate residuals here.
+
+[[IgnoredVulns]]
+id = "GHSA-528h-pc64-c93x"
+reason = "stream-json DoS via minio 1.x path; forcing 3.x breaks MinIO ESM imports. Tracked in docs/deployment/security-scanning.md."

@@ -44,9 +44,9 @@ while npm stayed clean.
 
 Known **moderate** residual (tracked, not forced):
 
-| Package                     | Why kept                                                                                       |
-| --------------------------- | ---------------------------------------------------------------------------------------------- |
-| `stream-json` (via `minio`) | Fixed in 3.x but MinIO still imports the 1.x path layout; forcing 3.x breaks MinIO ESM imports |
+| Package                     | Why kept                                                                                                                                                                               |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stream-json` (via `minio`) | Fixed in 3.x but MinIO still imports the 1.x path layout; forcing 3.x breaks MinIO ESM imports. Ignored in `osv-scanner.toml` (`GHSA-528h-pc64-c93x`) to match npm audit high+ policy. |
 
 `file-type` is pinned to **≥22** (ESM, dynamic import + ambient shim under
 `src/types/shims/`) to clear GHSA-5v7r-6r5c-r473.

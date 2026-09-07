@@ -2,10 +2,10 @@
  * Environment bootstrap.
  *
  * - Local/dev: load `.env` and validate against `.env.example` via dotenv-safe.
- * - Docker/K8s: orchestrator injects env vars; if `.env.example` is missing we
- *   skip file loading so startup does not crash (Compose already set process env).
- * - Vitest: load `.env` for required secrets/URLs, then re-pin `NODE_ENV=test`
- *   so operator guards and bootstrap skips stay consistent (see vitest.config.ts).
+ * - CI / containers without a mounted `.env`: load `.env.example` as the value
+ *   source (allowEmptyValues) so schema keys exist; Compose/K8s should still
+ *   inject real secrets via process env (they override file values).
+ * - Vitest: after load, re-pin `NODE_ENV=test` (see vitest.config.ts).
  *
  * Domain settings live in `sections/` — do not read `process.env` elsewhere.
  */
@@ -19,15 +19,14 @@ const envPath = path.join(process.cwd(), '.env');
 
 /**
  * Only run dotenv-safe when the example schema file exists.
- * Docker images may omit `.env` (vars come from `env_file` / secrets) but should
- * still ship `.env.example` for schema checks when desired.
+ * Prefer `.env` when present; otherwise fall back to `.env.example` so CI
+ * runners (no secrets file) and slim images do not crash on MissingEnvVarsError.
  */
 if (fs.existsSync(examplePath)) {
   dotenvSafe.config({
     allowEmptyValues: true,
     example: examplePath,
-    // If `.env` is absent (typical in containers), validate against process env only.
-    ...(fs.existsSync(envPath) ? { path: envPath } : {}),
+    path: fs.existsSync(envPath) ? envPath : examplePath,
   });
 }
 

@@ -1,0 +1,13 @@
+# Historical / false-positive findings from full-history scans.
+# Format: commit:path:rule:line (see gitleaks fingerprint field).
+# Re-verify before deleting an entry.
+
+023b14c82a65472b20c046ed192592cfce446508:scripts/smoke-routes.sh:curl-auth-user:74
+d35f6bcdaff163677e33ff8ec9c2d9ad93e29e73:FIXES_CODE_EXAMPLES.md:private-key:804
+d35f6bcdaff163677e33ff8ec9c2d9ad93e29e73:FIXES_CODE_EXAMPLES.md:private-key:830
+abdd3774acbca0a5683595ece624eeea6ca4f86b:OAUTH_README.md:curl-auth-header:308
+abdd3774acbca0a5683595ece624eeea6ca4f86b:OAUTH_README.md:curl-auth-header:315
+c34d1c7997aafed7bb4aafa120dc307cfe289fbe:src/config/keys/private.key:private-key:1
+c34d1c7997aafed7bb4aafa120dc307cfe289fbe:src/config/keys/refreshPrivate.key:private-key:1
+abdd3774acbca0a5683595ece624eeea6ca4f86b:docs/OAUTH_SETUP.md:curl-auth-header:277
+abdd3774acbca0a5683595ece624eeea6ca4f86b:docs/OAUTH_SETUP.md:curl-auth-header:286

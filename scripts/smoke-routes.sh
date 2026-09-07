@@ -74,7 +74,8 @@ req GET "$BASE/csrf-token" 200 "GET /csrf-token"
 code=$(curl -sS -o /tmp/m.out -w '%{http_code}' "$BASE/metrics" || echo 000)
 assert_code "GET /metrics without auth" 401 "$code" "$(cat /tmp/m.out)"
 # Local compose defaults (override with METRICS_BASIC_AUTH=user:pass).
-METRICS_BASIC_AUTH="${METRICS_BASIC_AUTH:-admin:admin}"
+: "${METRICS_BASIC_AUTH:=admin:admin}"
+#gitleaks:allow — placeholder basic auth for local metrics smoke only
 code=$(curl -sS -o /tmp/m.out -w '%{http_code}' -u "$METRICS_BASIC_AUTH" "$BASE/metrics" || echo 000)
 assert_code "GET /metrics with basic auth" 200 "$code" "$(head -c 80 /tmp/m.out)"
 req POST "$BASE/security/csp-violation" 204 "POST /security/csp-violation" \
