@@ -91,6 +91,34 @@ jobs:
               exit 1
             fi
 
+            DEPLOY_USER="$(id -un)"
+            DEPLOY_GROUP="$(id -gn)"
+
+            # keys/*.pem must be UID 1000 for the container, but keys/ + README must stay
+            # writable by the deploy user or `git pull` fails (unable to unlink keys/README.md).
+            fix_keys_ownership() {
+              if ! command -v sudo >/dev/null 2>&1 || ! sudo -n true 2>/dev/null; then
+                return 1
+              fi
+              sudo chown "${DEPLOY_USER}:${DEPLOY_GROUP}" keys keys/README.md 2>/dev/null || true
+              sudo chown 1000:1000 keys/*.pem
+              sudo chmod 600 keys/*-private.pem
+              sudo chmod 644 keys/*-public.pem
+              return 0
+            }
+
+            if [ -f keys/README.md ] && [ ! -w keys/README.md ]; then
+              echo "keys/README.md not writable by ${DEPLOY_USER} — fixing ownership…"
+              if ! fix_keys_ownership; then
+                echo "ERROR: cannot write keys/README.md (often after 'chown -R 1000:1000 keys/')."
+                echo "On the VPS, run once (passwordless sudo OR interactive):"
+                echo "  sudo chown -R ${DEPLOY_USER}:${DEPLOY_GROUP} keys/"
+                echo "  sudo chown 1000:1000 keys/*.pem"
+                echo "  sudo chmod 600 keys/*-private.pem && sudo chmod 644 keys/*-public.pem"
+                exit 1
+              fi
+            fi
+
             # Keep infra/compose in sync with the repo (image pull alone does not update YAML).
             if [ -d .git ]; then
               git fetch --prune origin
@@ -103,6 +131,9 @@ jobs:
             else
               echo "WARNING: ${APP_DIR} is not a git checkout — compose/infra will not auto-update."
             fi
+
+            # Re-assert PEM ownership after pull (README stays deploy-user owned).
+            fix_keys_ownership || true
 
             # Drop a leftover nginx container that still has host :80 published (NPM owns :80).
             if docker inspect BACKEND_NGINX >/dev/null 2>&1; then
