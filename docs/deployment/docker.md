@@ -182,4 +182,4 @@ everyday use.
 
 - [Getting started](../development/getting-started.md)
 - [Production](./production.md)
-- [JWT keys](../../keys/README.md)
+- [JWT keys](./jwt-keys.md)

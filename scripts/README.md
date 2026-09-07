@@ -11,7 +11,7 @@ Scaffold docs:
 [scaffolding-a-module.md](../docs/guides/scaffolding-a-module.md).
 
 Do not commit `keys/*.pem`. Do not copy them into the Docker image. See
-[keys/README.md](../keys/README.md) and
+[jwt-keys.md](../docs/deployment/jwt-keys.md) and
 [ADR 005](../docs/architecture/decisions/005-jwt-keys-outside-image.md).
 
 Compose orchestration lives under `infra/scripts/` (start/stop stacks and

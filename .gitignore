@@ -51,5 +51,5 @@ docker-compose.override.yml
 # JWT RSA material — generate with `npm run keys:generate`
 keys/*.pem
 keys/*.key
-!keys/README.md
+!keys/.gitkeep
 guide-github-config.md
