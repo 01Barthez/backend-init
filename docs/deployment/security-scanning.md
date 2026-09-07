@@ -5,11 +5,11 @@ secrets.
 
 ## Tools (three SCA channels)
 
-| Tool            | Role                     | Local                                                                 | CI                               |
-| --------------- | ------------------------ | --------------------------------------------------------------------- | -------------------------------- |
-| **npm audit**   | Node advisory DB         | `npm run security:audit`                                              | `.github/workflows/security.yml` |
-| **Trivy**       | FS + lockfile + IaC      | `npm run security:trivy` (needs vulndb; prefer CI if download stalls) | `trivy-fs` + `trivy-config` jobs |
-| **OSV Scanner** | Google OSV lockfile scan | `osv-scanner -L package-lock.json` (or OSV QueryBatch API)            | same workflow                    |
+| Tool            | Role                     | Local                                                                 | CI                                      |
+| --------------- | ------------------------ | --------------------------------------------------------------------- | --------------------------------------- |
+| **npm audit**   | Node advisory DB         | `npm run security:audit`                                              | `.github/workflows/security.yml`        |
+| **Trivy**       | FS + lockfile + IaC      | `npm run security:trivy` (needs vulndb; prefer CI if download stalls) | `trivy-fs` + `trivy-config` jobs        |
+| **OSV Scanner** | Google OSV lockfile scan | `osv-scanner -L package-lock.json`                                    | `osv-scanner-action/osv-scanner-action` |
 
 SAST:
 
@@ -37,6 +37,10 @@ Production CI fails on **high/critical** for npm audit and Trivy
 (`ignore-unfixed: true`). Prefer fixing via `overrides` or direct bumps; do
 **not** run `npm audit fix --force` blindly — it may downgrade Prisma / MinIO or
 jump Express to v5.
+
+**Lockfile policy:** only `package-lock.json` is scanned / committed. Do not add
+`bun.lock` / `yarn.lock` — a stale Bun lock made Trivy report HIGH/CRITICAL
+while npm stayed clean.
 
 Known **moderate** residual (tracked, not forced):
 

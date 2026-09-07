@@ -60,8 +60,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # Root google/osv-scanner-action@tag has no action.yml `runs:` — use the scanner sub-action.
       - name: Scan lockfile with OSV
-        uses: google/osv-scanner-action@v2.5.1
+        uses: google/osv-scanner-action/osv-scanner-action@v2.5.1
         with:
           scan-args: |-
             --lockfile=package-lock.json

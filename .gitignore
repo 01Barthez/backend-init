@@ -1,5 +1,10 @@
 # Dependencies
 node_modules/
+# npm is the lockfile source of truth — do not reintroduce Bun lockfiles (Trivy SCA noise)
+bun.lock
+bun.lockb
+yarn.lock
+pnpm-lock.yaml
 
 # Build
 dist/
