@@ -54,6 +54,7 @@ Settings → Branches → protect `main`:
 | Name                                                  | Type                                     | Used by                             |
 | ----------------------------------------------------- | ---------------------------------------- | ----------------------------------- |
 | `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_APP_PATH` | Environment `production` secrets         | deploy-vps                          |
+| `VPS_SSH_PORT` (optional, default 22)                 | Environment `production` secret          | deploy-vps                          |
 | `GHCR_USERNAME`, `GHCR_PULL_TOKEN`                    | Environment secrets (if package private) | deploy-vps                          |
 | `DEPLOY_HEALTH_URL`                                   | Variable (repo or environment)           | deploy-vps health probe             |
 | `CONTAINER_REGISTRY`                                  | Variable (optional)                      | docker / deploy (default `ghcr.io`) |

@@ -64,6 +64,8 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          # Non-default SSH port (e.g. 2222). Omit secret → 22.
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
           # Forward env into the remote shell
           envs: IMAGE_REF,GHCR_USER,GHCR_TOKEN,APP_PATH,HEALTH_URL
           script: |
