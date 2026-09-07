@@ -25,7 +25,7 @@ export, and admin force-logout (via a session port into auth).
 | POST   | `/invite`                  | `user:update:any`                             |
 | GET    | `/`                        | `user:read:any` (limit ≤ 100)                 |
 | GET    | `/search`                  | `user:read:any` (limit ≤ 50, paginated)       |
-| GET    | `/export`                  | `user:export` (≤ 10k rows, optional filters)  |
+| GET    | `/export`                  | `user:export` (≤ 2000 rows, optional filters) |
 | GET    | `/:userId`                 | `user:read:any` (includes roles)              |
 | GET    | `/:userId/sessions`        | `user:read:any` (refresh families; audited)   |
 | PATCH  | `/:userId`                 | `user:update:any`                             |

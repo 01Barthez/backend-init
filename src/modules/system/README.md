@@ -33,7 +33,8 @@ system/
 
 Audit HTTP is **read-only** (append-only trail). Filters on list/export:
 `actorId`, `action`, `resource`, `requestId`, `from`, `to`. Export accepts
-`format=csv|json` (default csv, max 10_000 rows).
+`format=csv|json` (default csv, max **2000** rows; `X-Export-Truncated` when
+capped).
 
 Public Nginx exposes only `/health` and `/api/`. Scrape `/metrics` on the
 private network.

@@ -64,11 +64,11 @@ Failures are logged and never block the use case.
 
 Operators with `audit:read` can investigate via:
 
-| Method | Path                            | Notes                                |
-| ------ | ------------------------------- | ------------------------------------ |
-| GET    | `/api/v1/admin/audit`           | Paginated list (limit ≤ 100)         |
-| GET    | `/api/v1/admin/audit/export`    | CSV/JSON dump (≤ 10_000 rows)        |
-| GET    | `/api/v1/admin/audit/{auditId}` | Full entry (`metadata`, `userAgent`) |
+| Method | Path                            | Notes                                                 |
+| ------ | ------------------------------- | ----------------------------------------------------- |
+| GET    | `/api/v1/admin/audit`           | Paginated list (limit ≤ 100)                          |
+| GET    | `/api/v1/admin/audit/export`    | CSV/JSON dump (≤ **2000** rows; `X-Export-Truncated`) |
+| GET    | `/api/v1/admin/audit/{auditId}` | Full entry (`metadata`, `userAgent`)                  |
 
 List and export share filters: `actorId`, `action`, `resource`, `requestId`,
 `from` / `to` (ISO-8601 on `createdAt`). The HTTP API is **read-only**; writes

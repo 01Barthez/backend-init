@@ -121,7 +121,7 @@
   get:
     tags: [Users]
     summary: Export users
-    description: CSV export max 10_000 rows. Requires `user:export`.
+    description: CSV export max 2000 rows. Requires `user:export`.
     security:
       - bearerAuth: []
     parameters:

@@ -3,7 +3,7 @@
 Backend Init uses **Vitest** multi-project suites, path aliases, and Supertest.
 
 See also: [`tests/README.md`](../../tests/README.md) and
-[`.github/README.md`](../../.github/README.md).
+[`.github/WORKFLOWS.md`](../../.github/WORKFLOWS.md).
 
 ## Layout
 

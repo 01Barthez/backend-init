@@ -6,7 +6,7 @@ This repository’s automation lives under `.github/`.
 
 ```
 .github/
-├── README.md
+├── WORKFLOWS.md              # CI/CD inventory (not named README — see GitHub priority)
 ├── CODEOWNERS
 ├── dependabot.yml
 ├── PULL_REQUEST_TEMPLATE.md
@@ -21,6 +21,9 @@ This repository’s automation lives under `.github/`.
     ├── release.yml           # GitHub Release on v* tags
     └── deploy-vps.yml        # SSH pull image + compose up (OVH / any VPS)
 ```
+
+> **Note:** Do not add `.github/README.md`. GitHub prefers that path over the
+> root project README on the repository home page.
 
 ## Pipeline flow
 
@@ -39,7 +42,7 @@ After Docker succeeds on main
 ```
 
 Human checklist for secrets / Environments / package visibility:
-**[guide-github-config.md](../guide-github-config.md)** (repo root).
+**[docs/deployment/github-vps.md](../docs/deployment/github-vps.md)**.
 
 ## Required status checks (recommended)
 

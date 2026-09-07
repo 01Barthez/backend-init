@@ -72,7 +72,7 @@ export interface AuditPort {
   record(entry: AuditEntry): Promise<void>;
   list(filters: AuditListFilters): Promise<AuditListResult>;
   getById(id: string): Promise<AuditDetail | null>;
-  /** Bounded dump (default cap 10_000) for the same filters as list. */
+  /** Bounded dump (default cap 2000) for the same filters as list. */
   export(filters: AuditExportFilters): Promise<AuditExportResult>;
   purgeOlderThan(days: number): Promise<number>;
 }

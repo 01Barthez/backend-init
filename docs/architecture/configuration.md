@@ -32,7 +32,7 @@ src/app/config/
 │   ├── security.ts        # Rate limits, CSRF, CSP, Swagger, ADMIN_BASIC_*
 │   ├── oauth.ts           # Provider client IDs / secrets / redirect URIs
 │   ├── queue.ts           # Backup / maintenance / audit cron expressions
-│   ├── features.ts        # Flagsmith, Infisical placeholders
+│   ├── features.ts        # Flagsmith + FEATURE_*; Infisical placeholders only
 │   └── observability.ts   # Loki, reserved OTEL flag
 ├── swagger.ts             # OpenAPI UI (Basic auth except tests)
 └── README.md
@@ -96,12 +96,15 @@ optional **Loki** — there is no MinIO log-archive bucket in this template.
 ## Secrets and keys
 
 - JWT RS256 private/public keys are referenced by path (`JWT_PRIVATE_KEY_PATH`,
-  refresh key paths, etc.). Generate with `npm run keys:generate`.
+  refresh key paths, etc.). Generate with `npm run keys:generate`. See
+  [jwt-keys.md](../deployment/jwt-keys.md).
 - In Docker/production, mount `keys/` as a read-only volume; do not bake private
   keys into images.
 - OAuth client secrets, MinIO/S3 credentials, SMTP passwords, and backup
   encryption keys must come from the environment or a secret manager — never
   from committed files.
+- `INFISICAL_*` keys are **placeholders** on `config.features.infisical` only —
+  no Infisical client is wired at boot.
 
 ## Related
 

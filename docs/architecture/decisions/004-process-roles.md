@@ -28,7 +28,7 @@ from `npm run dev` without extra processes.
 
 `createApp()` stays side-effect free (tests import it). `bootstrapApplication()`
 and `app.listen` live in `src/index.ts`. Worker-only processes never bind a
-port; Docker `HEALTHCHECK` on `/health` applies to API replicas only.
+port; Docker `HEALTHCHECK` on `/health/live` applies to API replicas only.
 
 ## Consequences
 
@@ -41,5 +41,5 @@ port; Docker `HEALTHCHECK` on `/health` applies to API replicas only.
 
 **Negative / trade-offs**
 
-- Operators must not HEALTHCHECK a worker replica on `/health`
+- Operators must not HEALTHCHECK a worker replica on `/health/live`
 - Two replicas need a shared Redis and Mongo; this is already true for queues

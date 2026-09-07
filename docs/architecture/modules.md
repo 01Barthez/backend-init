@@ -35,23 +35,25 @@ import {
 
 Mounted at: `{API_PREFIX}/auth`.
 
-| Method | Path                  | Notes                                    |
-| ------ | --------------------- | ---------------------------------------- |
-| POST   | `/signup`             | Multipart avatar; idempotency optional   |
-| POST   | `/verify`             | Email OTP                                |
-| POST   | `/resend-otp`         |                                          |
-| POST   | `/login`              | `totpCode` required when TOTP is enabled |
-| POST   | `/refresh`            | Cookie or JSON body                      |
-| POST   | `/forgot-password`    |                                          |
-| POST   | `/reset-password`     | Opaque Redis token                       |
-| POST   | `/logout`             | Auth                                     |
-| POST   | `/change-password`    | Auth; revokes all sessions               |
-| GET    | `/me`                 | Auth                                     |
-| GET    | `/sessions`           | Auth                                     |
-| DELETE | `/sessions/:familyId` | Auth                                     |
-| POST   | `/totp/enroll`        | Auth; otpauth URL + secret once          |
-| POST   | `/totp/confirm`       | Auth                                     |
-| POST   | `/totp/disable`       | Auth; password + current code            |
+| Method | Path                   | Notes                                    |
+| ------ | ---------------------- | ---------------------------------------- |
+| POST   | `/signup`              | Multipart avatar; idempotency optional   |
+| POST   | `/verify`              | Email OTP                                |
+| POST   | `/resend-otp`          |                                          |
+| POST   | `/login`               | `totpCode` required when TOTP is enabled |
+| POST   | `/refresh`             | Cookie or JSON body                      |
+| POST   | `/forgot-password`     |                                          |
+| POST   | `/reset-password`      | Opaque Redis token                       |
+| POST   | `/logout`              | Auth                                     |
+| POST   | `/change-password`     | Auth; revokes all sessions               |
+| GET    | `/me`                  | Auth                                     |
+| GET    | `/sessions`            | Auth                                     |
+| DELETE | `/sessions/:familyId`  | Auth                                     |
+| POST   | `/totp/enroll`         | Auth; otpauth URL + secret once          |
+| POST   | `/totp/confirm`        | Auth                                     |
+| POST   | `/totp/disable`        | Auth; password + current code            |
+| POST   | `/totp/recovery-codes` | Auth; generates one-time recovery codes  |
+| POST   | `/totp/recover`        | Login path with recovery code            |
 
 **Key use cases.** `SignupCommand`, `VerifyOtpCommand`, `ResendOtpCommand`,
 `LoginCommand`, `GetCurrentUserQuery`, session list/revoke, TOTP
@@ -92,8 +94,11 @@ Mounted at: `{API_PREFIX}/users`.
 OTP, TOTP, and session families stay in auth; users calls a `SessionPort` for
 revoke-all / invite reset tokens.
 
-**Caps.** List `limit` max 100. Search `limit` max 50 (paginated). Export max
-10_000 rows. Assignable roles: `admin`, `user`, `guest`.
+**Caps.** List `limit` max 100. Search `limit` max 50 (paginated). Sync export
+max **2000** rows (`X-Export-Truncated` when capped; async MinIO export is a
+follow-up). Assignable roles: `admin`, `user`, `guest`.
+
+Full HTTP table: [users module README](../../src/modules/users/README.md).
 
 **GDPR hard-delete** (`DELETE /:userId/permanent`): anonymize PII, tombstone
 blogs, drop the user row only when no blogs remain.

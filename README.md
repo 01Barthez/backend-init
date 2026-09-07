@@ -183,7 +183,7 @@ Full contract: [docs/api/openapi.yaml](./docs/api/openapi.yaml)
 | Git hooks (Husky)                       | [docs/development/git-hooks.md](./docs/development/git-hooks.md)               |
 | Docker & production                     | [docs/deployment/](./docs/deployment/README.md)                                |
 | Security scanning (audit / Trivy / OSV) | [docs/deployment/security-scanning.md](./docs/deployment/security-scanning.md) |
-| GitHub → GHCR → VPS deploy              | [guide-github-config.md](./guide-github-config.md)                             |
+| GitHub → GHCR → VPS deploy              | [GitHub → VPS](./docs/deployment/github-vps.md)                                |
 | Guides (auth, flags, storage, jobs, …)  | [docs/guides/](./docs/guides/README.md)                                        |
 | Feature flags                           | [docs/guides/feature-flags.md](./docs/guides/feature-flags.md)                 |
 | OpenAPI                                 | [docs/api/](./docs/api/README.md)                                              |
@@ -219,7 +219,7 @@ Full contract: [docs/api/openapi.yaml](./docs/api/openapi.yaml)
 ## Deploy (short path)
 
 1. Configure GitHub secrets / Environments — see
-   [guide-github-config.md](./guide-github-config.md).
+   [GitHub → VPS](./docs/deployment/github-vps.md).
 2. Push to `main` →
    [`.github/workflows/docker.yml`](./.github/workflows/docker.yml) builds and
    pushes to GHCR (`main`, `latest`, `sha-<full>`).

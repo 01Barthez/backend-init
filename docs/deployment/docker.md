@@ -70,6 +70,26 @@ docker compose -f infra/docker/docker-compose.prod.example.yml --env-file .env u
 
 Adapt healthchecks, SMTP, and secrets for your environment before using it.
 
+### Continuous delivery compose (`docker-compose.deploy.yml`)
+
+This is the file **GitHub Actions** runs on the VPS (pull pre-built GHCR image):
+
+- `IMAGE_REF` via `.env.image` (workflow-written)
+- Root `.env` only (`env_file: ../../.env`)
+- `backend-api` + `backend-worker` (`PROCESS_ROLE` split)
+- External Docker network **`web-proxy`** for Nginx Proxy Manager (or similar)
+- Nginx **does not** publish host `:80` (edge proxy already owns 80/443)
+
+```bash
+docker network create web-proxy 2>/dev/null || true
+export IMAGE_REF=ghcr.io/<owner>/<repo>:main
+printf 'IMAGE_REF=%s\n' "$IMAGE_REF" > .env.image
+docker compose -f infra/docker/docker-compose.deploy.yml \
+  --env-file .env --env-file .env.image up -d
+```
+
+Full secrets / Environments / NPM notes: [GitHub → VPS](./github-vps.md).
+
 Dockerfile `HEALTHCHECK` hits `http://localhost:3000/health/live` (process up).
 Use `/health/ready` for dependency probes (Mongo + Redis).
 

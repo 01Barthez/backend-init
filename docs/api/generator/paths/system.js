@@ -220,7 +220,7 @@ module.exports = {
       tags: ['System'],
       summary: 'Export audit log',
       description:
-        'Download matching entries as CSV or JSON (max 10_000 rows). Same filters as list. ' +
+        'Download matching entries as CSV or JSON (max 2000 rows; `X-Export-Truncated` when capped). Same filters as list. ' +
         'Requires `audit:read`. Response includes `Content-Disposition` and `X-Export-Count`. ' +
         'Not a mutation API — trail remains append-only; retention purge is cron-only.',
       security: bearer,
@@ -247,7 +247,7 @@ module.exports = {
           },
           headers: {
             'X-Export-Count': {
-              description: 'Number of rows in this export (≤ 10_000)',
+              description: 'Number of rows in this export (≤ 2000)',
               schema: { type: 'integer' },
             },
           },

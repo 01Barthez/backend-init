@@ -37,5 +37,5 @@ permission — typically under `modules/<name>/presentation/`.
 Bull Board (`/admin/queues`) is mounted in `setupBullBoard`: HTTP Basic, then
 JWT `authenticate`, then `isAdmin`.
 
-See [Platform kernel](../../docs/architecture/platform-kernel.md) for audit,
+See [Platform kernel](../../../docs/architecture/platform-kernel.md) for audit,
 locks, search, and outbound HTTP defaults.

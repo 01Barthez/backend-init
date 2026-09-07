@@ -1336,7 +1336,7 @@ paths:
       tags:
         - Users
       summary: 'Export users'
-      description: 'CSV export (max 10_000 rows). Optional filters. Requires `user:export`.'
+      description: 'CSV export (max 2000 rows; X-Export-Truncated when capped). Optional filters. Requires `user:export`.'
       security:
         -
           bearerAuth: []
@@ -2284,7 +2284,7 @@ paths:
       tags:
         - System
       summary: 'Export audit log'
-      description: 'Download matching entries as CSV or JSON (max 10_000 rows). Same filters as list. Requires `audit:read`. Response includes `Content-Disposition` and `X-Export-Count`. Not a mutation API — trail remains append-only; retention purge is cron-only.'
+      description: 'Download matching entries as CSV or JSON (max 2000 rows; `X-Export-Truncated` when capped). Same filters as list. Requires `audit:read`. Response includes `Content-Disposition` and `X-Export-Count`. Not a mutation API — trail remains append-only; retention purge is cron-only.'
       security:
         -
           bearerAuth: []
@@ -2352,7 +2352,7 @@ paths:
                   $ref: '#/components/schemas/AuditLogDetail'
           headers:
             X-Export-Count:
-              description: 'Number of rows in this export (≤ 10_000)'
+              description: 'Number of rows in this export (≤ 2000)'
               schema:
                 type: integer
         '400':

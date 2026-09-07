@@ -93,7 +93,7 @@ and this project adheres to
 - `GET /api/v1/auth/me`, sessions, TOTP enroll/confirm/disable.
 - `GET`/`POST /api/v1/files/presign` for large objects.
 - `GET /health/live` and `/health/ready`.
-- `docs/guides/backup.md` and `keys/README.md`.
+- `docs/guides/backup.md` and `docs/deployment/jwt-keys.md`.
 
 - Auth sessions no longer use `isActive` as a logout switch; logout blacklists
   the access `jti` and refresh family.

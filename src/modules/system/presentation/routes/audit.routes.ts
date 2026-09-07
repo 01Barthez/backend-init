@@ -34,7 +34,7 @@ export function createAuditRoutes(): Router {
     controller.list,
   );
 
-  /** GET /export — CSV or JSON dump (max 10_000 rows), same filters as list. */
+  /** GET /export — CSV or JSON dump (max 2000 rows), same filters as list. */
   audit.get(
     '/export',
     authenticate,

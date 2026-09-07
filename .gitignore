@@ -52,4 +52,3 @@ docker-compose.override.yml
 keys/*.pem
 keys/*.key
 !keys/.gitkeep
-guide-github-config.md

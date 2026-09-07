@@ -21,13 +21,13 @@ tree is the cross-cutting narrative.
 
 ## Quick links
 
-| Audience            | Start here                                                                                          |
-| ------------------- | --------------------------------------------------------------------------------------------------- |
-| First run           | [Getting started](./development/getting-started.md)                                                 |
-| Architecture        | [Overview](./architecture/overview.md)                                                              |
-| Extend the template | [Extending](./architecture/extending.md)                                                            |
-| Ship to production  | [Production](./deployment/production.md) + root [guide-github-config.md](../guide-github-config.md) |
-| HTTP contract       | [OpenAPI](./api/README.md)                                                                          |
+| Audience            | Start here                                                                            |
+| ------------------- | ------------------------------------------------------------------------------------- |
+| First run           | [Getting started](./development/getting-started.md)                                   |
+| Architecture        | [Overview](./architecture/overview.md)                                                |
+| Extend the template | [Extending](./architecture/extending.md)                                              |
+| Ship to production  | [Production](./deployment/production.md) + [GitHub → VPS](./deployment/github-vps.md) |
+| HTTP contract       | [OpenAPI](./api/README.md)                                                            |
 
 ## Contents
 
@@ -59,7 +59,7 @@ tree is the cross-cutting narrative.
 
 - [Docker](./deployment/docker.md)
 - [Production](./deployment/production.md)
-- [GitHub deploy tutorial](../guide-github-config.md) — secrets, GHCR, VPS/OVH
+- [GitHub → VPS](./deployment/github-vps.md) — secrets, GHCR, OVH/NPM
 - [Observability](./deployment/observability.md)
 - [Security scanning](./deployment/security-scanning.md) — npm audit, Trivy,
   OSV, gitleaks, SAST
@@ -72,9 +72,12 @@ tree is the cross-cutting narrative.
 - [Adding an OAuth provider](./guides/adding-oauth-provider.md)
 - [Background jobs](./guides/background-jobs.md) — BullMQ queues and crons
 - [Feature flags](./guides/feature-flags.md) — Flagsmith + `FEATURE_*` overrides
+- [MongoDB indexes](./guides/mongodb-indexes.md) — `db push` checklist + Atlas
+  Search
 - [Backups](./guides/backup.md) — encrypted Mongo dumps
 - [Scaffolding a module](./guides/scaffolding-a-module.md) —
   `npm run scaffold:module`
+- [JWT keys](./deployment/jwt-keys.md) — PEMs outside the image
 
 ### API
 

@@ -190,7 +190,8 @@ module.exports = {
     get: {
       tags: ['Users'],
       summary: 'Export users',
-      description: 'CSV export (max 10_000 rows). Optional filters. Requires `user:export`.',
+      description:
+        'CSV export (max 2000 rows; X-Export-Truncated when capped). Optional filters. Requires `user:export`.',
       security: bearer,
       parameters: [
         { name: 'isActive', in: 'query', schema: { type: 'boolean' } },

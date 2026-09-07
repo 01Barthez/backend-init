@@ -15,17 +15,20 @@ and compliance needs.
    (`env_file: ../../.env` — no duplicate env under `infra/docker/`).
 
 Human setup (secrets, OVH, PAT, Environments): see the root tutorial
-[`guide-github-config.md`](../../guide-github-config.md).
+[`github-vps.md`](./github-vps.md).
 
 App `.env` and `keys/` stay on the server — Actions never injects runtime
 DB/SMTP secrets into the image.
 
 ## Secrets
 
-- Inject secrets at runtime (platform secrets, Vault, Infisical, Kubernetes
-  secrets). Config already exposes Infisical-related env placeholders under
-  `config.features.infisical`.
-- Never bake `.env` with production credentials into images.
+- Keep the runtime `.env` on the host (or a secret manager that **writes** that
+  file). Do not bake production credentials into images.
+- **Infisical:** `INFISICAL_*` env keys are mapped into
+  `config.features.infisical` as **placeholders only** — this template does
+  **not** ship an Infisical SDK client or boot-time sync. Use the
+  CLI/`infisical export` on the VPS (or Vault / Doppler) to materialize `.env`
+  until you wire a client yourself.
 - Rotate OAuth client secrets, SMTP credentials, MinIO/S3 keys,
   `BACKUP_ENCRYPTION_KEY`, and `AUTH_ENCRYPTION_KEY` on a schedule.
 - Set `ADMIN_BASIC_PASSWORD` to a non-default value. `validateRuntimeConfig()`
@@ -142,8 +145,9 @@ CORS allowlist is `CLIENT_URL` plus `CLIENT_URLS` (CSV). Never `*`.
 | `GET /health/live`  | Process up. Does **not** check deps.        |
 | `GET /metrics`      | Prometheus scrape (Basic auth, private net) |
 
-Compose/Dockerfile `HEALTHCHECK` uses `GET /health`. Wire kube/load-balancer
-readiness to `/health` or `/health/ready`; liveness to `/health/live`.
+Compose/Dockerfile `HEALTHCHECK` uses `GET /health/live` (process up). Wire
+kube/load-balancer readiness to `/health` or `/health/ready`; liveness to
+`/health/live`.
 
 ## Redis TLS
 
