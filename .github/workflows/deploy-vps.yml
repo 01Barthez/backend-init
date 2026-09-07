@@ -91,6 +91,28 @@ jobs:
               exit 1
             fi
 
+            # Keep infra/compose in sync with the repo (image pull alone does not update YAML).
+            if [ -d .git ]; then
+              git fetch --prune origin
+              BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+              if [ "${BRANCH}" = "HEAD" ]; then
+                BRANCH="main"
+              fi
+              git checkout "${BRANCH}"
+              git pull --ff-only origin "${BRANCH}"
+            else
+              echo "WARNING: ${APP_DIR} is not a git checkout — compose/infra will not auto-update."
+            fi
+
+            # Drop a leftover nginx container that still has host :80 published (NPM owns :80).
+            if docker inspect BACKEND_NGINX >/dev/null 2>&1; then
+              HAS_80="$(docker inspect -f '{{range $p, $c := .HostConfig.PortBindings}}{{println $p}}{{end}}' BACKEND_NGINX || true)"
+              if echo "${HAS_80}" | grep -q '^80/'; then
+                echo "Removing stale BACKEND_NGINX (still bound to host :80)…"
+                docker rm -f BACKEND_NGINX
+              fi
+            fi
+
             # Login to GHCR when pulling a private package
             if [ -n "${GHCR_TOKEN:-}" ]; then
               echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER:-${USER}}" --password-stdin
