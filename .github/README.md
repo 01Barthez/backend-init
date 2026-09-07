@@ -51,14 +51,14 @@ Settings → Branches → protect `main`:
 
 ## Secrets & variables (summary)
 
-| Name                                                  | Type                                     | Used by                             |
-| ----------------------------------------------------- | ---------------------------------------- | ----------------------------------- |
-| `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_APP_PATH` | Environment `production` secrets         | deploy-vps                          |
-| `VPS_SSH_PORT` (optional, default 22)                 | Environment `production` secret          | deploy-vps                          |
-| `GHCR_USERNAME`, `GHCR_PULL_TOKEN`                    | Environment secrets (if package private) | deploy-vps                          |
-| `DEPLOY_HEALTH_URL`                                   | Variable (repo or environment)           | deploy-vps health probe             |
-| `CONTAINER_REGISTRY`                                  | Variable (optional)                      | docker / deploy (default `ghcr.io`) |
-| `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`              | Secrets (non-GHCR only)                  | docker                              |
+| Name                                                  | Type                                     | Used by                                                                                                      |
+| ----------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_APP_PATH` | Environment `production` secrets         | deploy-vps                                                                                                   |
+| `VPS_SSH_PORT` (optional, default 22)                 | Environment `production` secret          | deploy-vps                                                                                                   |
+| `GHCR_USERNAME`, `GHCR_PULL_TOKEN`                    | Environment secrets (if package private) | deploy-vps                                                                                                   |
+| `DEPLOY_HEALTH_URL`                                   | Variable (optional public URL)           | deploy-vps: optional probe; local container health is authoritative (Cloudflare challenges often 403 `curl`) |
+| `CONTAINER_REGISTRY`                                  | Variable (optional)                      | docker / deploy (default `ghcr.io`)                                                                          |
+| `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`              | Secrets (non-GHCR only)                  | docker                                                                                                       |
 
 App runtime `.env` (Mongo, JWT paths, SMTP, MinIO, …) lives **on the VPS**, not
 in GitHub Actions.
