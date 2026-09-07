@@ -9,7 +9,7 @@ module.exports = {
   jsxSingleQuote: false,
   trailingComma: 'all',
   bracketSpacing: true,
-  bracketSameLine: false,
+  bracketSameLine: false, // false for multi-line arrow functions
   arrowParens: 'always',
   endOfLine: 'lf',
   singleAttributePerLine: true,

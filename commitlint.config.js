@@ -21,7 +21,7 @@ module.exports = {
     'scope-case': [0, 'always', 'lower-case'],
     'scope-empty': [1, 'never'], // ⚠️ warning instead of error
     'subject-case': [0, 'never'],
-    'subject-max-length': [2, 'always', 100],
+    'subject-max-length': [2, 'always', 100], // 100 characters is the max length for the subject line in the commit message
   },
   prompt: {
     messages: {
